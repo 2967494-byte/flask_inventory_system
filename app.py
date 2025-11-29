@@ -130,9 +130,15 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    import os
-    with open('templates/main.html', 'r', encoding='utf-8') as f:
-        return f.read()
+    from app.models import Product, Category
+    from flask import render_template
+    
+    # Получаем данные из БД
+    products = Product.query.filter_by(status='active').order_by(Product.created_at.desc()).all()
+    categories = Category.query.all()
+    
+    # Рендерим шаблон с данными
+    return render_template('main.html', products=products, categories=categories)
 
 setup_database()
 
