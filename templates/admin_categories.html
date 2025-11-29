@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="admin-header">
+        <h1 class="page-title">📊 Управление категориями</h1>
+        <p class="admin-subtitle">Загрузка и управление категориями товаров</p>
+    </div>
+
+    <div class="admin-content">
+        <!-- Статистика -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-number">{{ categories|length }}</div>
+                <div class="stat-label">Всего категорий</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ parent_categories|length }}</div>
+                <div class="stat-label">Родительских</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ categories|length - parent_categories|length }}</div>
+                <div class="stat-label">Дочерних</div>
+            </div>
+        </div>
+
+        <!-- Загрузка категорий -->
+        <div class="upload-section">
+            <h3>📁 Загрузка категорий из JSON</h3>
+            <div class="upload-card">
+                <form method="POST" action="{{ url_for('main.upload_categories') }}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label">Выберите JSON файл с категориями:</label>
+                        <input type="file" name="categories_file" accept=".json" class="form-control" required>
+                        <small class="form-text">Файл должен содержать массив категорий с полями name, description и children</small>
+                    </div>
+                    <button type="submit" class="btn-primary">📤 Загрузить категории</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Очистка категорий -->
+        <div class="danger-section">
+            <h3>⚠️ Опасные действия</h3>
+            <div class="danger-card">
+                <p>Удалить все категории (включая товары в них)</p>
+                <form method="POST" action="{{ url_for('main.clear_categories') }}" onsubmit="return confirm('Вы уверены? Все категории и связанные товары будут удалены!')">
+                    <button type="submit" class="btn-danger">🗑️ Удалить все категории</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Список категорий -->
+        <div class="categories-list">
+            <h3>📂 Текущие категории</h3>
+            {% if categories %}
+                <div class="categories-tree">
+                    {% for parent in parent_categories %}
+                    <div class="parent-category">
+                        <strong>📁 {{ parent.name }}</strong>
+                        {% if parent.description %}
+                        <br><small class="text-muted">{{ parent.description }}</small>
+                        {% endif %}
+                        
+                        {% set children = categories|selectattr('parent_id', 'equalto', parent.id)|list %}
+                        {% if children %}
+                        <div class="children-categories">
+                            {% for child in children %}
+                            <div class="child-category">
+                                📄 {{ child.name }}
+                                {% if child.description %}
+                                <br><small class="text-muted">{{ child.description }}</small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>📭 Категории еще не загружены</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-header {
+    background: linear-gradient(135deg, var(--avito-blue) 0%, var(--avito-blue-hover) 100%);
+    color: white;
+    padding: 32px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.admin-header .page-title {
+    color: white;
+    margin-bottom: 8px;
+}
+
+.admin-subtitle {
+    opacity: 0.9;
+}
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-light);
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--avito-blue);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.upload-section, .danger-section, .categories-list {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-light);
+}
+
+.upload-card, .danger-card {
+    background: var(--background-secondary);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.categories-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.parent-category {
+    background: var(--avito-blue-light);
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid var(--avito-blue);
+}
+
+.children-categories {
+    margin-left: 20px;
+    margin-top: 12px;
+}
+
+.child-category {
+    background: var(--background-secondary);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 2px solid var(--text-tertiary);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+</style>
+{% endblock %}

@@ -267,3 +267,92 @@ def delete_product(product_id):
     db.session.commit()
     flash('Товар успешно удален', 'success')
     return redirect(url_for('main.index'))
+
+@main.route('/admin/categories')
+@login_required
+def admin_categories():
+    """Админка управления категориями"""
+    from app.models import Category
+    
+    categories = Category.query.all()
+    parent_categories = Category.query.filter_by(parent_id=None).all()
+    
+    return render_template('admin_categories.html', 
+                         categories=categories,
+                         parent_categories=parent_categories)
+
+@main.route('/admin/upload-categories', methods=['POST'])
+@login_required
+def upload_categories():
+    """Загрузка категорий из JSON файла"""
+    from app.models import Category
+    import json
+    
+    if 'categories_file' not in request.files:
+        flash('Файл не выбран', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    file = request.files['categories_file']
+    if file.filename == '':
+        flash('Файл не выбран', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    if not file.filename.endswith('.json'):
+        flash('Только JSON файлы поддерживаются', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    try:
+        # Читаем и парсим JSON
+        categories_data = json.load(file)
+        
+        # Очищаем старые категории
+        Category.query.delete()
+        
+        # Создаем новые категории
+        parent_count = 0
+        child_count = 0
+        
+        for parent_data in categories_data:
+            parent_category = Category(
+                name=parent_data['name'],
+                description=parent_data.get('description', '')
+            )
+            db.session.add(parent_category)
+            db.session.flush()
+            parent_count += 1
+            
+            for child_data in parent_data.get('children', []):
+                child_category = Category(
+                    name=child_data['name'],
+                    description=child_data.get('description', ''),
+                    parent_id=parent_category.id
+                )
+                db.session.add(child_category)
+                child_count += 1
+        
+        db.session.commit()
+        
+        flash(f'✅ Загружено {parent_count} родительских и {child_count} дочерних категорий!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Ошибка загрузки: {str(e)}', 'error')
+    
+    return redirect(url_for('main.admin_categories'))
+
+@main.route('/admin/clear-categories', methods=['POST'])
+@login_required
+def clear_categories():
+    """Очистка всех категорий"""
+    from app.models import Category
+    
+    try:
+        count = Category.query.count()
+        Category.query.delete()
+        db.session.commit()
+        flash(f'✅ Удалено {count} категорий', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Ошибка очистки: {str(e)}', 'error')
+    
+    return redirect(url_for('main.admin_categories'))

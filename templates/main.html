@@ -1,12 +1,14 @@
+[file name]: main.html
+[file content begin]
 {% extends "base.html" %}
 
 {% block title %}Главная - Система продажи неликвидов{% endblock %}
 
 {% block styles %}
 <style>
-    /* Hero Section Styles */
+    /* Используем стили из style.css, добавляем только специфичные для главной страницы */
     .hero-section {
-        background: linear-gradient(135deg, #0057FF 0%, #0045CC 100%);
+        background: linear-gradient(135deg, var(--avito-blue) 0%, var(--avito-blue-hover) 100%);
         padding: 60px 0;
         color: white;
         text-align: center;
@@ -18,304 +20,18 @@
         opacity: 0.9;
     }
     
-    /* Search Section */
     .search-section {
-        background: white;
-        border-bottom: 1px solid #e6e6e6;
+        background: var(--background);
+        border-bottom: 1px solid var(--border);
         padding: 16px 0;
     }
 
-    .search-wrapper {
-        max-width: 100%;
-    }
-
-    .search-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .search-group {
-        display: flex;
-        flex: 1;
-        height: 48px;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 2px solid #0057FF;
-        background: white;
-        min-width: 0;
-    }
-
-    .search-field {
-        flex: 1;
-        border: none;
-        outline: none;
-        padding: 0 16px;
-        font-size: 16px;
-        background: transparent;
-        min-width: 0;
-    }
-
-    .search-field::placeholder {
-        color: #999;
-    }
-
-    .search-btn {
-        background: #0057FF;
-        color: white;
-        border: none;
-        padding: 0 20px;
-        font-size: 16px;
-        font-weight: 500;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background 0.2s;
-        white-space: nowrap;
-    }
-
-    .search-btn:hover {
-        background: #0045CC;
-    }
-
-    .search-btn-icon {
-        display: flex;
-        align-items: center;
-    }
-
-    .search-btn-text {
-        font-weight: 500;
-    }
-
-    .category-filter {
-        height: 48px;
-        padding: 0 16px;
-        border: 2px solid #e6e6e6;
-        border-radius: 8px;
-        font-size: 16px;
-        background: white;
-        cursor: pointer;
-        min-width: 200px;
-        transition: border-color 0.2s;
-    }
-
-    .category-filter:focus {
-        outline: none;
-        border-color: #0057FF;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .search-row {
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .search-group {
-            width: 100%;
-        }
-        
-        .category-filter {
-            width: 100%;
-            min-width: auto;
-        }
-        
-        .search-btn-text {
-            display: none;
-        }
-        
-        .search-btn {
-            padding: 0 16px;
-        }
-    }
-    
-    /* Sidebar */
-    .sidebar {
-        background: #F8F9FA;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        height: fit-content;
-    }
-    
-    .sidebar-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 16px;
-    }
-    
-    .categories-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .category-item {
-        padding: 12px 0;
-        border-bottom: 1px solid #E5E5E5;
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-    
-    .category-item.active {
-        color: #0057FF;
-        font-weight: 600;
-    }
-    
-    /* Listings */
     .listings-section {
-        background: #F8F9FA;
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .listing-item {
-        display: flex;
-        gap: 16px;
-        padding: 20px 0;
-        border-bottom: 1px solid #E5E5E5;
-    }
-    
-    .listing-image {
-        width: 120px;
-        height: 120px;
-        background: #F8F9FA;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        overflow: hidden;
-        border: 1px solid #E5E5E5;
-    }
-    
-    .listing-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .listing-content {
-        flex: 1;
-    }
-    
-    .listing-price {
-        font-size: 20px;
-        font-weight: bold;
-        color: #0057FF;
-        margin-bottom: 8px;
-    }
-    
-    .listing-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #333;
-        text-decoration: none;
-        display: block;
-        margin-bottom: 8px;
-    }
-    
-    .listing-title:hover {
-        color: #0057FF;
-    }
-    
-    .listing-details {
-        font-size: 14px;
-        color: #666;
-        margin-bottom: 4px;
-    }
-    
-    .listing-date {
-        font-size: 12px;
-        color: #999;
-        margin-top: 8px;
-    }
-
-    /* Grid view styles */
-    .products-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
-        margin-bottom: 32px;
-    }
-    
-    .product-card {
         background: var(--background);
-        border-radius: 12px;
-        overflow: hidden;
+        border-radius: var(--radius-lg);
+        padding: 24px;
         box-shadow: var(--shadow);
-        transition: transform 0.2s, box-shadow 0.2s;
-        cursor: pointer;
-        height: fit-content;
-    }
-    
-    .product-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    }
-    
-    .product-image {
-        width: 100%;
-        height: 200px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 48px;
-        overflow: hidden;
-    }
-
-    .product-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: center;
-    }
-    
-    .product-info {
-        padding: 16px;
-    }
-    
-    .product-category {
-        color: var(--text-secondary);
-        font-size: 12px;
-        text-transform: uppercase;
-        margin-bottom: 4px;
-    }
-    
-    .product-name {
-        font-weight: 500;
-        margin-bottom: 8px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    
-    .product-price {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
-    
-    .current-price {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--avito-blue);
-    }
-    
-    .product-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 12px;
-        color: var(--text-secondary);
+        border: 1px solid var(--border);
     }
 
     /* Custom layout without Bootstrap */
@@ -377,7 +93,7 @@
     }
 
     .text-muted {
-        color: #6c757d;
+        color: var(--text-tertiary);
     }
 
     .py-5 {
@@ -437,15 +153,29 @@
             <div class="sidebar">
                 <h3 class="sidebar-title">Категории</h3>
                 <ul class="categories-list">
-                    <li class="category-item {% if not request.args.get('category_id') %}active{% endif %}" 
-                        data-category-id="">
-                        Все категории
-                    </li>
+                    <!-- УДАЛЕНА СТРОКА "ВСЕ КАТЕГОРИИ" -->
                     {% for category in categories %}
-                    <li class="category-item {% if request.args.get('category_id') == category.id|string %}active{% endif %}" 
-                        data-category-id="{{ category.id }}">
-                        {{ category.name }}
-                    </li>
+                        {% if not category.parent_id %}
+                        <li class="category-item has-children {% if request.args.get('category_id') == category.id|string %}active{% endif %}" 
+                            data-category-id="{{ category.id }}">
+                            <div class="category-main">
+                                <span class="category-name">{{ category.name }}</span>
+                                {% if category.children %}
+                                <span class="category-arrow">›</span>
+                                {% endif %}
+                            </div>
+                            {% if category.children %}
+                            <ul class="subcategories-list">
+                                {% for child in category.children %}
+                                <li class="subcategory-item {% if request.args.get('category_id') == child.id|string %}active{% endif %}" 
+                                    data-category-id="{{ child.id }}">
+                                    {{ child.name }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
             </div>
@@ -463,15 +193,14 @@
                     <div class="products-grid">
                         {% for product in products %}
                         <div class="product-card" onclick="location.href='{{ url_for('main.product_detail', product_id=product.id) }}'">
-                    
-                        <div class="product-image">
+                            <div class="product-image">
                                 {% if product.images and product.images|length > 0 %}
                                     <img src="{{ url_for('main.serve_uploaded_file', filename=product.images[0]) }}" 
                                         alt="{{ product.title }}"
                                         onerror="console.log('Ошибка загрузки изображения: {{ product.images[0] }}')">
-                                        {% else %}
-                                         <i>📷</i>
-                                 {% endif %}
+                                {% else %}
+                                    <i>📷</i>
+                                {% endif %}
                             </div>
                             <div class="product-info">
                                 <div class="product-category">
@@ -503,19 +232,32 @@
 </div>
 
 <script>
-// JavaScript для фильтрации по категориям
+// JavaScript для фильтрации по категориям и управления меню
 document.addEventListener('DOMContentLoaded', function() {
-    const categoryItems = document.querySelectorAll('.category-item');
+    const categoryItems = document.querySelectorAll('.category-item:not(.has-children), .subcategory-item');
+    const parentCategories = document.querySelectorAll('.category-item.has-children');
     const categorySelect = document.getElementById('categoryFilter');
     const searchInput = document.getElementById('searchInput');
     
     // Обработчик для клика по категориям в сайдбаре
     categoryItems.forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
             const categoryId = this.getAttribute('data-category-id');
             const searchTerm = searchInput ? searchInput.value.trim() : '';
             applyFilters(categoryId, searchTerm);
         });
+    });
+    
+    // Обработчик для родительских категорий (только для открытия/закрытия)
+    parentCategories.forEach(item => {
+        const categoryMain = item.querySelector('.category-main');
+        if (categoryMain) {
+            categoryMain.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Не применяем фильтры для родительских категорий, только для подкатегорий
+            });
+        }
     });
     
     // Обработчик для селекта категорий
@@ -558,3 +300,4 @@ function applyFilters(categoryId = '', searchTerm = '') {
 }
 </script>
 {% endblock %}
+[file content end]
