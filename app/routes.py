@@ -259,14 +259,33 @@ def edit_product(product_id):
 @login_required
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
-    if product.user_id != current_user.id:
+    
+    # Проверяем права доступа
+    if product.user_id != current_user.id and current_user.role != 'admin':
         flash('У вас нет прав для удаления этого товара', 'error')
         return redirect(url_for('main.product_detail', product_id=product_id))
     
-    db.session.delete(product)
-    db.session.commit()
-    flash('Товар успешно удален', 'success')
-    return redirect(url_for('main.index'))
+    try:
+        # Удаляем изображения товара из файловой системы
+        if product.images:
+            for image_filename in product.images:
+                image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], image_filename)
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+                    print(f"🗑️ Удалено изображение: {image_filename}")
+        
+        # Удаляем товар из базы данных
+        db.session.delete(product)
+        db.session.commit()
+        
+        flash('Товар успешно удален', 'success')
+        return redirect(url_for('main.dashboard'))
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Ошибка при удалении товара: {e}")
+        flash('Ошибка при удалении товара', 'error')
+        return redirect(url_for('main.product_detail', product_id=product_id))
 
 @main.route('/admin/categories')
 @login_required

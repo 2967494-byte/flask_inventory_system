@@ -81,23 +81,25 @@
                     </div>
                 </div>
                 
-                {% if current_user.id == product.user_id %}
+                {% if current_user.id == product.user_id or current_user.role == 'admin' %}
                 <div class="product-actions">
-                    <a href="{{ url_for('main.edit_product', product_id=product.id) if 'edit_product' in main_view_functions else '#' }}" 
-                        class="btn-edit"
-                        {% if 'edit_product' not in main_view_functions %}onclick="alert('Функция редактирования скоро будет добавлена')"{% endif %}>
-                        Редактировать
+                    {% if current_user.id == product.user_id %}
+                    <a href="{{ url_for('main.edit_product', product_id=product.id) }}" 
+                       class="btn-edit">
+                        ✏️ Редактировать
                     </a>
-                    <form action="{{ url_for('main.delete_product', product_id=product.id) if 'delete_product' in main_view_functions else '#' }}" 
-                        method="POST" 
-                        style="display: inline;"
-                        onsubmit="return confirm('Вы уверены, что хотите удалить этот товар?')">
-                     <button type="submit" class="btn-delete">
-                        Удалить
+                    {% endif %}
+                    
+                    <form action="{{ url_for('main.delete_product', product_id=product.id) }}" 
+                          method="POST" 
+                          style="display: inline;"
+                          onsubmit="return confirm('Вы уверены, что хотите удалить этот товар? Это действие нельзя отменить.')">
+                        <button type="submit" class="btn-delete">
+                            🗑️ Удалить
                         </button>
                     </form>
                 </div>
-{% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -357,15 +359,6 @@
     box-shadow: 0 4px 16px rgba(245, 87, 108, 0.4);
     color: white;
     text-decoration: none;
-}
-
-/* Иконки для кнопок */
-.btn-edit::before {
-    content: '✏️';
-}
-
-.btn-delete::before {
-    content: '🗑️';
 }
 
 @media (max-width: 768px) {
