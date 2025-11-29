@@ -7,6 +7,17 @@ from app.utils import save_uploaded_files
 import os
 main = Blueprint('main', __name__, template_folder='../templates')
 
+@main.route('/')
+def index():
+    category_id = request.args.get('category_id')
+    if category_id:
+        products = Product.query.filter_by(category_id=category_id).all()
+    else:
+        products = Product.query.all()
+    
+    categories = Category.query.all()
+    return render_template('main.html', products=products, categories=categories)
+
 @main.route('/dashboard')
 @login_required
 def dashboard():
