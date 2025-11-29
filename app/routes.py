@@ -1,16 +1,16 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, send_from_directory, current_app
 from flask_login import login_required, current_user
 from app import db
 from app.models import Product, Category
 from app.utils import save_uploaded_files
-
 import os
+
 main = Blueprint('main', __name__, template_folder='../templates')
 
 @main.route('/')
 def index():
     category_id = request.args.get('category_id')
-    search_term = request.args.get('search', '').strip()  # Добавляем поиск
+    search_term = request.args.get('search', '').strip()
     
     # Базовый запрос
     query = Product.query
@@ -32,7 +32,7 @@ def index():
     return render_template('main.html', 
                          products=products, 
                          categories=categories,
-                         search_term=search_term)  # Передаем поисковый запрос в шаблон
+                         search_term=search_term)
 
 @main.route('/dashboard')
 @login_required
@@ -99,13 +99,10 @@ def test_upload():
             else:
                 print(f"🔍 Файл {i}: ПУСТОЙ или без имени")
         
-        # Проверяем конфигурацию
-        from flask import current_app
         upload_folder = current_app.config['UPLOAD_FOLDER']
         print(f"🔍 Конфигурация UPLOAD_FOLDER: '{upload_folder}'")
         
         # Проверяем существование папки
-        import os
         print(f"🔍 Папка существует: {os.path.exists(upload_folder)}")
         
         # Показываем что в папке ДО сохранения
@@ -167,9 +164,6 @@ def debug_products():
 
 @main.route('/check_uploads')
 def check_uploads():
-    import os
-    from flask import current_app
-    
     upload_folder = current_app.config['UPLOAD_FOLDER']
     
     result = {
@@ -192,3 +186,19 @@ def check_uploads():
             })
     
     return result
+
+@main.route('/uploads/<filename>')
+def serve_uploaded_file(filename):
+    """Обслуживает загруженные файлы из папки uploads"""
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    print(f"🔍 Запрос файла: {filename}")
+    print(f"📁 Папка: {upload_folder}")
+    
+    # Проверяем существование файла
+    file_path = os.path.join(upload_folder, filename)
+    if os.path.exists(file_path):
+        print(f"✅ Файл найден: {filename} ({os.path.getsize(file_path)} байт)")
+        return send_from_directory(upload_folder, filename)
+    else:
+        print(f"❌ Файл не найден: {filename}")
+        return "File not found", 404

@@ -463,14 +463,15 @@
                     <div class="products-grid">
                         {% for product in products %}
                         <div class="product-card" onclick="location.href='{{ url_for('main.product_detail', product_id=product.id) }}'">
-                            <div class="product-image">
+                    
+                        <div class="product-image">
                                 {% if product.images and product.images|length > 0 %}
-                                    <img src="{{ url_for('static', filename='uploads/' + product.images[0]) }}" 
-                                         alt="{{ product.title }}"
-                                         onerror="this.style.display='none'; this.parentNode.innerHTML='<i>📷</i>';">
-                                {% else %}
-                                    <i>📷</i>
-                                {% endif %}
+                                    <img src="{{ url_for('main.serve_uploaded_file', filename=product.images[0]) }}" 
+                                        alt="{{ product.title }}"
+                                        onerror="console.log('Ошибка загрузки изображения: {{ product.images[0] }}')">
+                                        {% else %}
+                                         <i>📷</i>
+                                 {% endif %}
                             </div>
                             <div class="product-info">
                                 <div class="product-category">

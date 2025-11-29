@@ -23,9 +23,9 @@
                 <div class="product-card" onclick="location.href='{{ url_for('main.product_detail', product_id=product.id) }}'">
                     <div class="product-image">
                         {% if product.images and product.images|length > 0 %}
-                            <img src="{{ url_for('static', filename='uploads/' + product.images[0]) }}" 
-                                 alt="{{ product.title }}"
-                                 onerror="this.style.display='none'; this.parentNode.innerHTML='<i>📷</i>';">
+                            <img src="{{ url_for('main.serve_uploaded_file', filename=product.images[0]) }}" 
+                                alt="{{ product.title }}"
+                                onerror="this.style.display='none'; this.parentNode.innerHTML='<i>📷</i>';">
                         {% else %}
                             <i>📷</i>
                         {% endif %}
