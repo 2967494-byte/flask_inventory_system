@@ -202,3 +202,39 @@ def serve_uploaded_file(filename):
     else:
         print(f"❌ Файл не найден: {filename}")
         return "File not found", 404
+
+# ✅ ПРАВИЛЬНО ВЫНЕСЕНО ИЗ ФУНКЦИИ serve_uploaded_file
+@main.route('/product/<int:product_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.user_id != current_user.id:
+        flash('У вас нет прав для редактирования этого товара', 'error')
+        return redirect(url_for('main.product_detail', product_id=product_id))
+    
+    if request.method == 'POST':
+        # Логика обновления товара
+        product.title = request.form.get('title')
+        product.description = request.form.get('description')
+        product.price = float(request.form.get('price'))
+        product.category_id = request.form.get('category_id')
+        
+        db.session.commit()
+        flash('Товар успешно обновлен', 'success')
+        return redirect(url_for('main.product_detail', product_id=product_id))
+    
+    categories = Category.query.all()
+    return render_template('edit_product.html', product=product, categories=categories)
+
+@main.route('/product/<int:product_id>/delete', methods=['POST'])
+@login_required
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.user_id != current_user.id:
+        flash('У вас нет прав для удаления этого товара', 'error')
+        return redirect(url_for('main.product_detail', product_id=product_id))
+    
+    db.session.delete(product)
+    db.session.commit()
+    flash('Товар успешно удален', 'success')
+    return redirect(url_for('main.index'))
