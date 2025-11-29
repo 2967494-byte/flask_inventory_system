@@ -11,8 +11,6 @@ app.jinja_env.auto_reload = True
 
 def setup_database():
     with app.app_context():
-        # ПЕРЕСОЗДАЕМ ТАБЛИЦЫ - ДОБАВЬТЕ ЭТИ 2 СТРОКИ
-        db.drop_all()
         db.create_all()
         
         # Создаем структуру категорий если её нет
@@ -125,10 +123,31 @@ def index():
     with open('templates/main.html', 'r', encoding='utf-8') as f:
         return f.read()
 
-# ... остальные маршруты ...
-
-# Вызываем setup при запуске
 setup_database()
+
+@app.before_first_request
+def create_default_data():
+    """Создает начальные категории и единицы измерения"""
+    # Базовые категории
+    default_categories = [
+        'Электроника', 'Оборудование', 'Мебель', 
+        'Стройматериалы', 'Тара и упаковка', 'Офисная техника',
+        'Инструменты', 'Химия', 'Текстиль', 'Прочее'
+    ]
+    
+    for cat_name in default_categories:
+        if not Category.query.filter_by(name=cat_name).first():
+            db.session.add(Category(name=cat_name))
+    
+    # Единицы измерения
+    default_units = ['шт', 'кг', 'г', 'т', 'м', 'м²', 'м³', 'л', 'уп', 'упаковка']
+    
+    for unit_name in default_units:
+        if not Unit.query.filter_by(name=unit_name).first():
+            db.session.add(Unit(name=unit_name))
+    
+    db.session.commit()
+    print("✅ Созданы базовые категории и единицы измерения")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
