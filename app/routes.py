@@ -13,8 +13,9 @@ def index():
     category_id = request.args.get('category_id')
     search_term = request.args.get('search', '').strip()
     
-    # Базовый запрос - только опубликованные товары
-    query = Product.query.filter_by(status=Product.STATUS_PUBLISHED)
+    # ВРЕМЕННО: показываем все товары до завершения миграции
+    query = Product.query
+    # ПОТОМ ВЕРНУТЬ: query = Product.query.filter_by(status=Product.STATUS_PUBLISHED)
     
     # Фильтрация по категории
     if category_id:

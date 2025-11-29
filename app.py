@@ -1,5 +1,5 @@
 from app import create_app, db
-from app.models import User, Category, Product  # ← УДАЛЕН Unit
+from app.models import User, Category, Product
 import json
 from werkzeug.security import generate_password_hash
 from flask import render_template
@@ -8,6 +8,40 @@ import os
 app = create_app()
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.auto_reload = True
+
+def migrate_database():
+    """Автоматическая миграция базы данных"""
+    print("🔧 Проверяем необходимость миграции...")
+    
+    try:
+        # Проверяем существование колонки status
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('product')]
+        
+        if 'status' not in columns:
+            print("🔄 Обнаружена старая структура БД, применяем миграцию...")
+            
+            # Добавляем колонку status
+            db.session.execute('ALTER TABLE product ADD COLUMN status INTEGER DEFAULT 1')
+            print("✅ Добавлена колонка status")
+            
+            # Добавляем колонку expires_at
+            db.session.execute('ALTER TABLE product ADD COLUMN expires_at TIMESTAMP')
+            print("✅ Добавлена колонка expires_at")
+            
+            # Обновляем существующие записи
+            db.session.execute("UPDATE product SET status = 1 WHERE status IS NULL")
+            db.session.execute("UPDATE product SET expires_at = NOW() + INTERVAL '30 days' WHERE expires_at IS NULL")
+            
+            db.session.commit()
+            print("✅ Миграция базы данных завершена успешно!")
+        else:
+            print("✅ Структура базы данных актуальна")
+            
+    except Exception as e:
+        print(f"⚠️ Ошибка при миграции: {e}")
+        db.session.rollback()
 
 def create_default_categories():
     """Создает готовую структуру категорий для неликвидов из JSON файла"""
@@ -65,6 +99,9 @@ def create_default_categories():
 
 def setup_database():
     with app.app_context():
+        # ВЫПОЛНЯЕМ МИГРАЦИЮ ПЕРВЫМ ДЕЛОМ
+        migrate_database()
+        
         # Создаем структуру категорий если её нет
         create_default_categories()
         
