@@ -19,144 +19,117 @@
     }
     
     /* Search Section */
-.search-section {
-    background: white;
-    border-bottom: 1px solid #e6e6e6;
-    padding: 16px 0;
-}
-
-.search-wrapper {
-    max-width: 100%;
-}
-
-.search-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.search-group {
-    display: flex;
-    flex: 1;
-    height: 48px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 2px solid #0057FF;
-    background: white;
-    min-width: 0;
-}
-
-.search-field {
-    flex: 1;
-    border: none;
-    outline: none;
-    padding: 0 16px;
-    font-size: 16px;
-    background: transparent;
-    min-width: 0;
-}
-
-.search-field::placeholder {
-    color: #999;
-}
-
-.search-btn {
-    background: #0057FF;
-    color: white;
-    border: none;
-    padding: 0 20px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background 0.2s;
-    white-space: nowrap;
-}
-
-.search-btn:hover {
-    background: #0045CC;
-}
-
-.search-btn-icon {
-    display: flex;
-    align-items: center;
-}
-
-.search-btn-text {
-    font-weight: 500;
-}
-
-.category-filter {
-    height: 48px;
-    padding: 0 16px;
-    border: 2px solid #e6e6e6;
-    border-radius: 8px;
-    font-size: 16px;
-    background: white;
-    cursor: pointer;
-    min-width: 200px;
-    transition: border-color 0.2s;
-}
-
-.category-filter:focus {
-    outline: none;
-    border-color: #0057FF;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .search-row {
-        flex-direction: column;
-        gap: 12px;
-    }
-    
-    .search-group {
-        width: 100%;
-    }
-    
-    .category-filter {
-        width: 100%;
-        min-width: auto;
-    }
-    
-    .search-btn-text {
-        display: none;
-    }
-    
-    .search-btn {
-        padding: 0 16px;
-    }
-}
-    
-    
-    .category-select, .search-input {
-        padding: 12px 16px;
-        border: 2px solid #E5E5E5;
-        border-radius: 8px;
-        font-size: 16px;
+    .search-section {
         background: white;
+        border-bottom: 1px solid #e6e6e6;
+        padding: 16px 0;
     }
-    
-    .category-select {
-        min-width: 200px;
+
+    .search-wrapper {
+        max-width: 100%;
     }
-    
-    .search-input {
+
+    .search-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .search-group {
+        display: flex;
         flex: 1;
+        height: 48px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #0057FF;
+        background: white;
+        min-width: 0;
     }
-    
-    .search-button {
+
+    .search-field {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 0 16px;
+        font-size: 16px;
+        background: transparent;
+        min-width: 0;
+    }
+
+    .search-field::placeholder {
+        color: #999;
+    }
+
+    .search-btn {
         background: #0057FF;
         color: white;
         border: none;
-        padding: 12px 24px;
+        padding: 0 20px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+        white-space: nowrap;
+    }
+
+    .search-btn:hover {
+        background: #0045CC;
+    }
+
+    .search-btn-icon {
+        display: flex;
+        align-items: center;
+    }
+
+    .search-btn-text {
+        font-weight: 500;
+    }
+
+    .category-filter {
+        height: 48px;
+        padding: 0 16px;
+        border: 2px solid #e6e6e6;
         border-radius: 8px;
         font-size: 16px;
+        background: white;
         cursor: pointer;
+        min-width: 200px;
+        transition: border-color 0.2s;
+    }
+
+    .category-filter:focus {
+        outline: none;
+        border-color: #0057FF;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .search-row {
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .search-group {
+            width: 100%;
+        }
+        
+        .category-filter {
+            width: 100%;
+            min-width: auto;
+        }
+        
+        .search-btn-text {
+            display: none;
+        }
+        
+        .search-btn {
+            padding: 0 16px;
+        }
     }
     
     /* Sidebar */
@@ -411,141 +384,6 @@
         padding-top: 48px;
         padding-bottom: 48px;
     }
-/* Avito-like Search Styles */
-.search-section {
-    background: var(--background);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.avito-search {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    max-width: 100%;
-}
-
-.search-main {
-    flex: 1;
-    max-width: 700px;
-}
-
-.search-input-container {
-    width: 100%;
-}
-
-.search-form {
-    width: 100%;
-}
-
-.search-input-wrapper {
-    display: flex;
-    height: 48px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--avito-blue);
-    background: white;
-}
-
-.search-input {
-    flex: 1;
-    padding: 0 20px;
-    border: none;
-    outline: none;
-    font-size: 16px;
-    background: transparent;
-    min-width: 0;
-}
-
-.search-input::placeholder {
-    color: #999;
-}
-
-.search-button {
-    background: var(--avito-blue);
-    color: white;
-    border: none;
-    padding: 0 24px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background 0.2s;
-    white-space: nowrap;
-    min-width: fit-content;
-}
-
-.search-button:hover {
-    background: var(--avito-blue-hover);
-}
-
-.search-icon {
-    display: flex;
-    align-items: center;
-}
-
-.search-text {
-    font-weight: 500;
-}
-
-.category-filter-container {
-    min-width: 200px;
-    flex-shrink: 0;
-}
-
-.category-select {
-    width: 100%;
-    height: 48px;
-    padding: 0 16px;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 16px;
-    background: white;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.category-select:focus {
-    outline: none;
-    border-color: var(--avito-blue);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .avito-search {
-        flex-direction: column;
-        gap: 12px;
-    }
-    
-    .search-main {
-        max-width: 100%;
-        width: 100%;
-    }
-    
-    .category-filter-container {
-        width: 100%;
-    }
-    
-    .search-input-wrapper {
-        height: 44px;
-    }
-    
-    .search-button {
-        padding: 0 16px;
-    }
-    
-    .search-text {
-        display: none;
-    }
-    
-    .search-button {
-        padding: 0 12px;
-    }
-}
 </style>
 {% endblock %}
 
@@ -668,37 +506,38 @@
 document.addEventListener('DOMContentLoaded', function() {
     const categoryItems = document.querySelectorAll('.category-item');
     const categorySelect = document.getElementById('categoryFilter');
+    const searchInput = document.getElementById('searchInput');
     
     // Обработчик для клика по категориям в сайдбаре
     categoryItems.forEach(item => {
         item.addEventListener('click', function() {
             const categoryId = this.getAttribute('data-category-id');
-            applyCategoryFilter(categoryId);
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            applyFilters(categoryId, searchTerm);
         });
     });
     
     // Обработчик для селекта категорий
     if (categorySelect) {
         categorySelect.addEventListener('change', function() {
-            applyCategoryFilter(this.value);
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            applyFilters(this.value, searchTerm);
         });
     }
     
     // Обработчик для поиска по Enter
-    const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                applyFilters();
+                const categorySelect = document.getElementById('categoryFilter');
+                const categoryId = categorySelect ? categorySelect.value : '';
+                applyFilters(categoryId, this.value.trim());
             }
         });
     }
 });
 
-function applyCategoryFilter(categoryId) {
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput ? searchInput.value : '';
-    
+function applyFilters(categoryId = '', searchTerm = '') {
     let url = '/';
     const params = new URLSearchParams();
     
@@ -716,77 +555,5 @@ function applyCategoryFilter(categoryId) {
     
     window.location.href = url;
 }
-
-function applyFilters() {
-    const categorySelect = document.getElementById('categoryFilter');
-    const searchInput = document.getElementById('searchInput');
-    
-    const categoryId = categorySelect ? categorySelect.value : '';
-    const searchTerm = searchInput ? searchInput.value.trim() : '';
-    
-    applyCategoryFilter(categoryId, searchTerm);
-}
-
-function applyCategoryFilter(categoryId, searchTerm = '') {
-    let url = '/';
-    const params = new URLSearchParams();
-    
-    if (categoryId) {
-        params.append('category_id', categoryId);
-    }
-    
-    if (searchTerm) {
-        params.append('search', searchTerm);
-    }
-    
-    if (params.toString()) {
-        url += '?' + params.toString();
-    }
-    
-    window.location.href = url;
-}
-
-// Обновите обработчики
-document.addEventListener('DOMContentLoaded', function() {
-    const categoryItems = document.querySelectorAll('.category-item');
-    const categorySelect = document.getElementById('categoryFilter');
-    const searchInput = document.getElementById('searchInput');
-    const searchForm = document.querySelector('.search-form');
-    
-    // Обработчик для формы поиска
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            applyFilters();
-        });
-    }
-    
-    // Обработчик для клика по категориям в сайдбаре
-    categoryItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const categoryId = this.getAttribute('data-category-id');
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            applyCategoryFilter(categoryId, searchTerm);
-        });
-    });
-    
-    // Обработчик для селекта категорий
-    if (categorySelect) {
-        categorySelect.addEventListener('change', function() {
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            applyCategoryFilter(this.value, searchTerm);
-        });
-    }
-    
-    // Обработчик для поиска по Enter
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyFilters();
-            }
-        });
-    }
-});
-
 </script>
 {% endblock %}
