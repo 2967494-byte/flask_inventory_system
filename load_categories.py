@@ -19,6 +19,11 @@ def load_categories():
             
             print("📂 Загружаем структуру категорий из JSON файла...")
             
+            # УДАЛЯЕМ СТАРЫЕ КАТЕГОРИИ (если нужно)
+            print("🔄 Очищаем старые категории...")
+            Category.query.delete()
+            db.session.commit()
+            
             # Счетчики
             parent_count = 0
             child_count = 0
@@ -26,33 +31,25 @@ def load_categories():
             # Обрабатываем каждую родительскую категорию
             for parent_data in categories_data:
                 # Создаем родительскую категорию
-                parent_category = Category.query.filter_by(name=parent_data['name']).first()
-                if not parent_category:
-                    parent_category = Category(
-                        name=parent_data['name'],
-                        description=parent_data.get('description', '')
-                    )
-                    db.session.add(parent_category)
-                    db.session.flush()  # Получаем ID
-                    parent_count += 1
-                    print(f"✅ Родительская категория: {parent_data['name']}")
+                parent_category = Category(
+                    name=parent_data['name'],
+                    description=parent_data.get('description', '')
+                )
+                db.session.add(parent_category)
+                db.session.flush()  # Получаем ID
+                parent_count += 1
+                print(f"✅ Родительская категория: {parent_data['name']}")
                 
                 # Создаем дочерние категории
                 for child_data in parent_data.get('children', []):
-                    child_category = Category.query.filter_by(
+                    child_category = Category(
                         name=child_data['name'],
+                        description=child_data.get('description', ''),
                         parent_id=parent_category.id
-                    ).first()
-                    
-                    if not child_category:
-                        child_category = Category(
-                            name=child_data['name'],
-                            description=child_data.get('description', ''),
-                            parent_id=parent_category.id
-                        )
-                        db.session.add(child_category)
-                        child_count += 1
-                        print(f"   ↳ Дочерняя категория: {child_data['name']}")
+                    )
+                    db.session.add(child_category)
+                    child_count += 1
+                    print(f"   ↳ Дочерняя категория: {child_data['name']}")
             
             # Сохраняем в базу
             db.session.commit()
