@@ -7,36 +7,6 @@ from app.utils import save_uploaded_files
 import os
 main = Blueprint('main', __name__, template_folder='../templates')
 
-# ДОБАВЬТЕ ЭТОТ ПРОСТОЙ ТЕСТОВЫЙ МАРШРУТ
-@main.route('/simple_test')
-def simple_test():
-    return "SIMPLE TEST WORKS!"
-@main.route('/health')
-def health():
-    return "✅ Приложение работает!"
-
-@main.route('/create-tables')
-def create_tables():
-    try:
-        from app import db
-        db.create_all()
-        return "✅ Таблицы созданы!"
-    except Exception as e:
-        return f"❌ Ошибка: {str(e)}"
-
-@main.route('/')
-def index():
-    category_id = request.args.get('category_id')
-    if category_id:
-        # ИСПРАВЛЕНО: убран фильтр по status
-        products = Product.query.filter_by(category_id=category_id).all()
-    else:
-        # ИСПРАВЛЕНО: убран фильтр по status
-        products = Product.query.all()
-    
-    categories = Category.query.all()
-    return render_template('main.html', products=products, categories=categories)
-
 @main.route('/dashboard')
 @login_required
 def dashboard():
