@@ -32,9 +32,9 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="category_id">Категория</label>
-                        <select class="form-select" id="category_id" name="category_id">
-                            <option value="">Без категории</option>
+                        <label class="form-label" for="category_id">Категория <span class="required">*</span></label>
+                        <select class="form-select" id="category_id" name="category_id" required>
+                            <option value="">Выберите категорию</option>
                             {% for category in categories %}
                             <option value="{{ category.id }}" 
                                     {% if product.category_id == category.id %}selected{% endif %}>
@@ -86,19 +86,28 @@
                         <h3>Изображения</h3>
                     </div>
                     
+                    <!-- Информация о количестве -->
+                    <div class="image-info-alert">
+                        <div class="alert-icon">ℹ️</div>
+                        <div class="alert-content">
+                            <strong>Максимум 8 изображений всего</strong>
+                            <span>Текущие: {{ product.images|length if product.images else 0 }}/8</span>
+                        </div>
+                    </div>
+                    
                     <!-- Загрузка новых файлов -->
                     <div class="form-group">
                         <label class="form-label" for="image_files">Добавить новые изображения</label>
                         <div class="file-upload-area" id="file-upload-area">
                             <input type="file" class="file-input" id="image_files" name="image_files" 
-                                   multiple accept="image/*" style="display: none;">
+                                multiple accept="image/*" style="display: none;">
                             <div class="upload-placeholder" onclick="document.getElementById('image_files').click()">
                                 <div class="upload-icon">📁</div>
                                 <div class="upload-text">
                                     <strong>Нажмите для выбора файлов</strong>
                                     <span>или перетащите сюда изображения</span>
                                 </div>
-                                <div class="upload-hint">Можно добавить до 4 новых изображений</div>
+                                <div class="upload-hint">Можно добавить до 8 изображений всего</div>
                             </div>
                         </div>
                     </div>
@@ -118,8 +127,8 @@
                             <div class="existing-image-item" id="image-{{ loop.index0 }}">
                                 <div class="existing-image-wrapper">
                                     <img src="/uploads/{{ image }}" 
-                                         alt="Изображение {{ loop.index }}"
-                                         onerror="this.src='/static/images/no-image.png'">
+                                        alt="Изображение {{ loop.index }}"
+                                        onerror="this.src='/static/images/no-image.png'">
                                     <button type="button" class="btn-remove-existing" 
                                             onclick="removeExistingImage('{{ image }}', {{ loop.index0 }})">
                                         <svg width="16" height="16" viewBox="0 0 16 16">
@@ -128,14 +137,14 @@
                                     </button>
                                 </div>
                                 <div class="image-number">#{{ loop.index }}</div>
-                                <input type="hidden" name="keep_images" value="{{ image }}">
                             </div>
                             {% endfor %}
                         </div>
-                        <input type="hidden" name="removed_images" id="removed_images">
+                        <!-- Скрытое поле для удаленных изображений -->
+                        <input type="hidden" name="removed_images" id="removed_images" value="">
                     </div>
                     {% endif %}
-                </div>
+                </div>  
             </div>
             
             <!-- Статус и даты -->
@@ -202,6 +211,10 @@
     --background-secondary: #F8F9FA;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     --radius: 8px;
+    --success: #34C759;
+    --info: #007AFF;
+    --warning: #FF9500;
+    --danger: #FF3B30;
 }
 
 .edit-product-container {
@@ -340,6 +353,39 @@
     font-size: 12px;
     line-height: 1.4;
     margin-top: 4px;
+}
+
+/* Информационное сообщение о количестве */
+.image-info-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #F0F9FF;
+    border-radius: var(--radius);
+    border: 1px solid #E1F0FF;
+    margin-bottom: 16px;
+}
+
+.alert-icon {
+    font-size: 18px;
+}
+
+.alert-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.alert-content strong {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.alert-content span {
+    color: var(--text-secondary);
+    font-size: 13px;
 }
 
 /* Стили для загрузки файлов */
@@ -491,6 +537,19 @@
     margin-top: 4px;
 }
 
+/* Стили для удаленных изображений */
+.existing-image-item.removed {
+    opacity: 0.5;
+}
+
+.existing-image-item.removed .existing-image-wrapper {
+    border: 2px dashed #FF3B30;
+}
+
+.existing-image-item.removed .btn-remove-existing {
+    display: none;
+}
+
 /* Кнопки действий */
 .form-actions {
     display: flex;
@@ -615,8 +674,18 @@ function previewNewImages(input) {
     const previewMainContainer = document.getElementById('new-images-preview');
     
     if (input.files && input.files.length > 0) {
-        if (input.files.length > 4) {
-            alert('Можно выбрать не более 4 изображений!');
+        // Получаем количество текущих изображений (не удаленных)
+        const currentImagesCount = document.querySelectorAll('.existing-image-item:not(.removed)').length;
+        const totalImages = currentImagesCount + input.files.length;
+        
+        if (totalImages > 8) {
+            alert('Максимальное количество изображений - 8! У вас уже есть ' + currentImagesCount + ' изображений.');
+            input.value = '';
+            return;
+        }
+        
+        if (input.files.length > 8) {
+            alert('Можно выбрать не более 8 изображений!');
             input.value = '';
             return;
         }
@@ -655,6 +724,7 @@ function removeExistingImage(imageName, index) {
         const imageElement = document.getElementById(`image-${index}`);
         if (imageElement) {
             imageElement.style.opacity = '0.5';
+            imageElement.classList.add('removed');
             imageElement.querySelector('.btn-remove-existing').style.display = 'none';
             imageElement.querySelector('.existing-image-wrapper').style.border = '2px dashed #FF3B30';
         }
@@ -696,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
         previewNewImages(this);
     });
     
-    // Инициализируем скрытое поле для удаленных изображений
+    // Инициализируем скрытое поле для удаленных изображений, если его нет
     if (!document.getElementById('removed_images')) {
         const hiddenInput = document.createElement('input');
         hiddenInput.type = 'hidden';
