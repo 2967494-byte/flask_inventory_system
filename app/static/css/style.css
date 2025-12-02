@@ -963,3 +963,17 @@ select:focus-visible {
 .btn-remove-image:hover {
     background: rgba(255, 0, 0, 1);
 }
+
+:root {
+    --avito-blue: #0057FF;
+    --avito-blue-light: #E6F0FF;
+    --avito-blue-hover: #0047D6;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --border: #E0E0E0;
+    --border-light: #F0F0F0;
+    --background-secondary: #F8F9FA;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --radius: 8px;
+}

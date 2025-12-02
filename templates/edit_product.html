@@ -1,167 +1,188 @@
+<!-- edit_product.html -->
 {% extends "base.html" %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="edit-product-container">
-        <h2>✏️ Редактировать товар</h2>
+        <div class="edit-product-header">
+            <div>
+                <h1 class="edit-product-title">✏️ Редактировать товар</h1>
+                <p class="edit-product-subtitle">Измените информацию о товаре</p>
+            </div>
+            <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="btn-back">
+                ← Назад к товару
+            </a>
+        </div>
         
         <form method="POST" enctype="multipart/form-data" class="edit-product-form">
-            <!-- Убрали CSRF токен, так как он не настроен -->
-            
             <div class="form-grid">
                 <!-- Основная информация -->
                 <div class="form-section">
-                    <h3>Основная информация</h3>
+                    <div class="form-section-header">
+                        <span class="form-section-icon">📋</span>
+                        <h3>Основная информация</h3>
+                    </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="title">Название товара</label>
+                        <label class="form-label" for="title">
+                            Название товара <span class="required">*</span>
+                        </label>
                         <input type="text" class="form-control" id="title" name="title" 
                                value="{{ product.title }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="category_id">Категория</label>
+                        <select class="form-select" id="category_id" name="category_id">
+                            <option value="">Без категории</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" 
+                                    {% if product.category_id == category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="manufacturer">Производитель</label>
+                            <input type="text" class="form-control" id="manufacturer" name="manufacturer" 
+                                   value="{{ product.manufacturer or '' }}"
+                                   placeholder="Например: IKEA, Herman Miller, Xiaomi">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="quantity">Количество</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" 
+                                   value="{{ product.quantity or 1 }}"
+                                   min="1" step="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="price">
+                            Цена <span class="required">*</span>
+                        </label>
+                        <div class="price-input-container">
+                            <input type="number" class="form-control" id="price" name="price" 
+                                   value="{{ product.price }}" step="0.01" min="0" required>
+                            <span class="price-currency">₽</span>
+                        </div>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="description">Описание</label>
                         <textarea class="form-control" id="description" name="description" 
                                   rows="6" placeholder="Подробное описание товара...">{{ product.description or '' }}</textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="price">Цена</label>
-                            <input type="number" class="form-control" id="price" name="price" 
-                                   value="{{ product.price }}" step="0.01" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label" for="category_id">Категория</label>
-                            <select class="form-select" id="category_id" name="category_id">
-                                <option value="">Без категории</option>
-                                {% for category in categories %}
-                                <option value="{{ category.id }}" 
-                                        {% if product.category_id == category.id %}selected{% endif %}>
-                                    {{ category.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        <div class="form-text">Опишите состояние, характеристики, комплектацию и размеры товара</div>
                     </div>
                 </div>
                 
-                <!-- Статус и даты -->
+                <!-- Изображения -->
                 <div class="form-section">
-                    <h3>Статус и сроки</h3>
+                    <div class="form-section-header">
+                        <span class="form-section-icon">🖼️</span>
+                        <h3>Изображения</h3>
+                    </div>
                     
+                    <!-- Загрузка новых файлов -->
                     <div class="form-group">
-                        <label class="form-label" for="status">Статус</label>
+                        <label class="form-label" for="image_files">Добавить новые изображения</label>
+                        <div class="file-upload-area" id="file-upload-area">
+                            <input type="file" class="file-input" id="image_files" name="image_files" 
+                                   multiple accept="image/*" style="display: none;">
+                            <div class="upload-placeholder" onclick="document.getElementById('image_files').click()">
+                                <div class="upload-icon">📁</div>
+                                <div class="upload-text">
+                                    <strong>Нажмите для выбора файлов</strong>
+                                    <span>или перетащите сюда изображения</span>
+                                </div>
+                                <div class="upload-hint">Можно добавить до 4 новых изображений</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Предпросмотр новых изображений -->
+                    <div id="new-images-preview" class="new-images-preview" style="display: none;">
+                        <h4>Новые изображения:</h4>
+                        <div id="new-images-container" class="image-preview-grid"></div>
+                    </div>
+                    
+                    <!-- Существующие изображения -->
+                    {% if product.images and product.images|length > 0 %}
+                    <div class="existing-images">
+                        <h4>Текущие изображения:</h4>
+                        <div class="existing-images-grid">
+                            {% for image in product.images %}
+                            <div class="existing-image-item" id="image-{{ loop.index0 }}">
+                                <div class="existing-image-wrapper">
+                                    <img src="/uploads/{{ image }}" 
+                                         alt="Изображение {{ loop.index }}"
+                                         onerror="this.src='/static/images/no-image.png'">
+                                    <button type="button" class="btn-remove-existing" 
+                                            onclick="removeExistingImage('{{ image }}', {{ loop.index0 }})">
+                                        <svg width="16" height="16" viewBox="0 0 16 16">
+                                            <path d="M4 12L12 4M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="image-number">#{{ loop.index }}</div>
+                                <input type="hidden" name="keep_images" value="{{ image }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="removed_images" id="removed_images">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Статус и даты -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <span class="form-section-icon">📊</span>
+                    <h3>Статус и сроки</h3>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="status">Статус товара</label>
                         <select class="form-select" id="status" name="status" required>
-                            <option value="1" {% if product.status == 1 %}selected{% endif %}>Опубликован</option>
-                            <option value="2" {% if product.status == 2 %}selected{% endif %}>Готов к публикации</option>
-                            <option value="3" {% if product.status == 3 %}selected{% endif %}>На проверке</option>
-                            <option value="4" {% if product.status == 4 %}selected{% endif %}>Не опубликован</option>
+                            <option value="1" {% if product.status == 1 %}selected{% endif %}>✅ Опубликован</option>
+                            <option value="4" {% if product.status == 4 %}selected{% endif %}>🚫 Не опубликован</option>
+                            <option value="3" {% if product.status == 3 %}selected{% endif %}>⏳ Готов к публикации</option>
                         </select>
-                        <small class="form-text">
-                            • Опубликован - виден всем пользователям<br>
-                            • Готов к публикации - срок истек, виден только вам<br>
-                            • Не опубликован - снят с публикации<br>
-                            • На проверке - ожидает модерации
-                        </small>
+                        <div class="form-text">
+                            • Опубликован — виден всем пользователям<br>
+                            • Не опубликован — виден только вам<br>
+                            • Готов к публикации — истек срок публикации
+                        </div>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="expires_at">Действует до</label>
                         <input type="datetime-local" class="form-control" id="expires_at" name="expires_at" 
                                value="{{ product.expires_at.strftime('%Y-%m-%dT%H:%M') if product.expires_at else '' }}">
-                        <small class="form-text">Дата, до которой товар будет опубликован</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" 
-                                   {% if product.is_active %}checked{% endif %}>
-                            <label class="form-check-label" for="is_active">Активный товар</label>
-                        </div>
+                        <div class="form-text">Дата, до которой товар будет опубликован</div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Изображения -->
-                    <div class="form-section">
-            <h3>Изображения</h3>
-            
-            <!-- Поле для загрузки новых файлов -->
-            <div class="form-group">
-                <label class="form-label" for="image_files">Добавить новые изображения</label>
-                <input type="file" class="form-control" id="image_files" name="image_files" 
-                    multiple accept="image/*">
-                <small class="form-text">
-                    Можно загрузить до 4 изображений. Новые изображения будут добавлены к существующим.
-                </small>
-            </div>
-            
-            <!-- Поле для URL изображений -->
-            <div class="form-group">
-                <label class="form-label" for="images">Или указать URL изображений</label>
-                <input type="text" class="form-control" id="images" name="images" 
-                    value="{{ product.images if product.images is string else '' }}" 
-                    placeholder="URL изображений через запятую">
-                <small class="form-text">
-                    Введите URL изображений через запятую. Если оставить пустым, текущие изображения сохранятся.
-                </small>
-            </div>
-            
-            {% if product.images and product.images|length > 0 %}
-            <div class="current-images">
-                <h4>Текущие изображения:</h4>
-                <div class="image-preview">
-                    {% for image in product.images %}
-                    <div class="image-preview-item">
-                        <img src="/uploads/{{ image }}" alt="Изображение {{ loop.index }}" 
-                            onerror="this.style.display='none'">
-                        <span class="image-number">{{ loop.index }}</span>
-                        <button type="button" class="btn-remove-image" 
-                                onclick="removeImage({{ loop.index0 }})">×</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-            <div class="form-section">
-                <h3>Изображения</h3>
-                <div class="form-group">
-                    <label class="form-label" for="images">Изображения (URL через запятую)</label>
-                    <input type="text" class="form-control" id="images" name="images" 
-                           value="{{ product.images or '' }}" 
-                           placeholder="URL изображений через запятую">
-                    <small class="form-text">
-                        Введите URL изображений через запятую. Первое изображение будет основным.
-                    </small>
-                </div>
-                
-                {% if product.images and product.images|length > 0 %}
-                <div class="current-images">
-                    <h4>Текущие изображения:</h4>
-                    <div class="image-preview">
-                        {% for image in product.images %}
-                        <div class="image-preview-item">
-                            <img src="/uploads/{{ image }}" alt="Изображение {{ loop.index }}">
-                            <span class="image-number">{{ loop.index }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
             </div>
             
             <!-- Кнопки действий -->
             <div class="form-actions">
-                <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="btn btn-secondary">
-                    ← Назад к товару
-                </a>
+                <div>
+                    <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="btn btn-outline">
+                        👁️ Просмотреть
+                    </a>
+                </div>
                 <div class="action-buttons">
-                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Отмена</a>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                        Отмена
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        💾 Сохранить изменения
+                    </button>
                 </div>
             </div>
         </form>
@@ -169,6 +190,20 @@
 </div>
 
 <style>
+:root {
+    --avito-blue: #0057FF;
+    --avito-blue-light: #E6F0FF;
+    --avito-blue-hover: #0047D6;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --border: #E0E0E0;
+    --border-light: #F0F0F0;
+    --background-secondary: #F8F9FA;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --radius: 8px;
+}
+
 .edit-product-container {
     background: white;
     border-radius: 12px;
@@ -179,16 +214,48 @@
     margin: 0 auto;
 }
 
-.edit-product-form {
+.edit-product-header {
     display: flex;
-    flex-direction: column;
-    gap: 32px;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.edit-product-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.edit-product-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.btn-back {
+    color: var(--avito-blue);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    font-size: 14px;
+}
+
+.btn-back:hover {
+    background: var(--avito-blue-light);
+    color: var(--avito-blue);
 }
 
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 32px;
+    margin-bottom: 32px;
 }
 
 .form-section {
@@ -197,13 +264,22 @@
     gap: 20px;
 }
 
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.form-section-icon {
+    font-size: 20px;
+}
+
 .form-section h3 {
     color: var(--text-primary);
-    margin-bottom: 8px;
     font-size: 18px;
     font-weight: 600;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--avito-blue-light);
+    margin: 0;
 }
 
 .form-group {
@@ -212,10 +288,21 @@
     gap: 6px;
 }
 
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
 .form-label {
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.required {
+    color: #FF3B30;
 }
 
 .form-control, .form-select {
@@ -225,6 +312,8 @@
     font-size: 14px;
     transition: all 0.2s ease;
     background: white;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .form-control:focus, .form-select:focus {
@@ -233,28 +322,17 @@
     outline: none;
 }
 
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+.price-input-container {
+    position: relative;
 }
 
-.form-check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 0;
-}
-
-.form-check-input {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-}
-
-.form-check-label {
+.price-currency {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
     font-weight: 500;
-    color: var(--text-primary);
 }
 
 .form-text {
@@ -264,60 +342,163 @@
     margin-top: 4px;
 }
 
-.error-message {
-    color: #dc3545;
+/* Стили для загрузки файлов */
+.file-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--background-secondary);
+}
+
+.file-upload-area:hover {
+    border-color: var(--avito-blue);
+    background: rgba(0, 87, 255, 0.05);
+}
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.upload-icon {
+    font-size: 32px;
+    opacity: 0.7;
+}
+
+.upload-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.upload-text strong {
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.upload-text span {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.upload-hint {
+    color: var(--text-tertiary);
     font-size: 12px;
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
-.current-images {
+/* Стили для изображений */
+.new-images-preview {
     margin-top: 16px;
+    padding: 16px;
+    background: #F0F9FF;
+    border-radius: var(--radius);
+    border: 1px solid #E1F0FF;
 }
 
-.current-images h4 {
+.new-images-preview h4 {
     color: var(--text-primary);
     margin-bottom: 12px;
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 600;
 }
 
-.image-preview {
-    display: flex;
+.image-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.existing-images {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-light);
+}
+
+.existing-images h4 {
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.existing-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 12px;
-    flex-wrap: wrap;
 }
 
-.image-preview-item {
+.existing-image-item {
     position: relative;
-    width: 80px;
-    height: 80px;
+}
+
+.existing-image-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
     border-radius: 8px;
     overflow: hidden;
     border: 2px solid var(--border);
+    background: white;
 }
 
-.image-preview-item img {
+.existing-image-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.existing-image-wrapper:hover img {
+    transform: scale(1.05);
+}
+
+.btn-remove-existing {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.btn-remove-existing:hover {
+    background: #FF3B30;
+    transform: scale(1.1);
 }
 
 .image-number {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
 }
 
+/* Кнопки действий */
 .form-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding-top: 24px;
     border-top: 1px solid var(--border-light);
+    margin-top: 24px;
 }
 
 .action-buttons {
@@ -362,13 +543,13 @@
     color: var(--text-primary);
 }
 
-.btn-outline-secondary {
+.btn-outline {
     background: transparent;
     color: var(--text-secondary);
     border: 1px solid var(--border);
 }
 
-.btn-outline-secondary:hover {
+.btn-outline:hover {
     background: var(--background-secondary);
     color: var(--text-primary);
 }
@@ -378,6 +559,12 @@
     .edit-product-container {
         padding: 20px;
         margin: 0 16px;
+    }
+    
+    .edit-product-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
     }
     
     .form-grid {
@@ -397,11 +584,11 @@
     }
     
     .action-buttons {
-        justify-content: space-between;
+        flex-direction: column;
     }
     
     .btn {
-        flex: 1;
+        width: 100%;
         justify-content: center;
     }
 }
@@ -411,141 +598,113 @@
         padding: 16px;
     }
     
-    .image-preview-item {
-        width: 60px;
-        height: 60px;
+    .existing-image-wrapper {
+        width: 80px;
+        height: 80px;
     }
 }
 </style>
+
 <script>
-function removeImage(index) {
-    if (confirm('Удалить это изображение?')) {
-        // Создаем скрытое поле для отметки удаленных изображений
-        let hiddenInput = document.getElementById('removed_images');
-        if (!hiddenInput) {
-            hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'removed_images';
-            hiddenInput.id = 'removed_images';
-            document.querySelector('form').appendChild(hiddenInput);
+let removedExistingImages = [];
+let newImages = [];
+
+// Предпросмотр новых изображений
+function previewNewImages(input) {
+    const previewContainer = document.getElementById('new-images-container');
+    const previewMainContainer = document.getElementById('new-images-preview');
+    
+    if (input.files && input.files.length > 0) {
+        if (input.files.length > 4) {
+            alert('Можно выбрать не более 4 изображений!');
+            input.value = '';
+            return;
         }
         
-        // Добавляем индекс удаленного изображения
-        const currentValue = hiddenInput.value ? hiddenInput.value.split(',') : [];
-        currentValue.push(index.toString());
-        hiddenInput.value = currentValue.join(',');
+        newImages = Array.from(input.files);
+        previewContainer.innerHTML = '';
+        previewMainContainer.style.display = 'block';
         
-        // Скрываем изображение
-        const imageItem = document.querySelectorAll('.image-preview-item')[index];
-        if (imageItem) {
-            imageItem.style.opacity = '0.3';
-            imageItem.style.pointerEvents = 'none';
+        newImages.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'existing-image-item';
+                div.innerHTML = `
+                    <div class="existing-image-wrapper">
+                        <img src="${e.target.result}" alt="Новое изображение ${index + 1}">
+                    </div>
+                    <div class="image-number">Новое ${index + 1}</div>
+                `;
+                previewContainer.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+// Удаление существующих изображений
+function removeExistingImage(imageName, index) {
+    if (confirm('Удалить это изображение?')) {
+        removedExistingImages.push(imageName);
+        
+        const hiddenInput = document.getElementById('removed_images');
+        hiddenInput.value = removedExistingImages.join(',');
+        
+        // Показываем эффект удаления
+        const imageElement = document.getElementById(`image-${index}`);
+        if (imageElement) {
+            imageElement.style.opacity = '0.5';
+            imageElement.querySelector('.btn-remove-existing').style.display = 'none';
+            imageElement.querySelector('.existing-image-wrapper').style.border = '2px dashed #FF3B30';
         }
         
         alert('Изображение будет удалено после сохранения изменений');
     }
 }
 
-// Функция для предпросмотра загружаемых файлов
-function previewNewImages(input) {
-    if (input.files && input.files.length > 0) {
-        const previewContainer = document.getElementById('new-images-preview');
-        if (!previewContainer) {
-            const container = document.createElement('div');
-            container.id = 'new-images-preview';
-            container.className = 'new-images-preview';
-            container.innerHTML = '<h4>Новые изображения для загрузки:</h4><div class="image-preview"></div>';
-            input.parentNode.appendChild(container);
-        }
-        
-        const preview = document.querySelector('#new-images-preview .image-preview');
-        preview.innerHTML = '';
-        
-        for (let i = 0; i < input.files.length; i++) {
-            const file = input.files[i];
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'image-preview-item new-image';
-                div.innerHTML = `
-                    <img src="${e.target.result}" alt="Новое изображение ${i + 1}">
-                    <span class="image-number">Новое ${i + 1}</span>
-                `;
-                preview.appendChild(div);
-            };
-            
-            reader.readAsDataURL(file);
-        }
-    }
-}
+// Drag & drop для новых файлов
+const uploadArea = document.getElementById('file-upload-area');
+const fileInput = document.getElementById('image_files');
 
-// Инициализация при загрузке страницы
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = 'var(--avito-blue)';
+    uploadArea.style.background = 'rgba(0, 87, 255, 0.1)';
+});
+
+uploadArea.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = 'var(--border)';
+    uploadArea.style.background = 'var(--background-secondary)';
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = 'var(--border)';
+    uploadArea.style.background = 'var(--background-secondary)';
+    
+    if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        previewNewImages(fileInput);
+    }
+});
+
+// Инициализация
 document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('image_files');
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            previewNewImages(this);
-        });
+    fileInput.addEventListener('change', function() {
+        previewNewImages(this);
+    });
+    
+    // Инициализируем скрытое поле для удаленных изображений
+    if (!document.getElementById('removed_images')) {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'removed_images';
+        hiddenInput.id = 'removed_images';
+        hiddenInput.value = '';
+        document.querySelector('form').appendChild(hiddenInput);
     }
 });
 </script>
-
-<style>
-/* Добавьте эти стили к существующим */
-.btn-remove-image {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    background: rgba(255, 0, 0, 0.8);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
-
-.btn-remove-image:hover {
-    background: rgba(255, 0, 0, 1);
-    transform: scale(1.1);
-}
-
-.image-preview-item {
-    position: relative;
-    transition: opacity 0.3s ease;
-}
-
-.image-preview-item.removed {
-    opacity: 0.3;
-    pointer-events: none;
-}
-
-.new-images-preview {
-    margin-top: 16px;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px dashed #dee2e6;
-}
-
-.new-images-preview h4 {
-    color: var(--text-primary);
-    margin-bottom: 12px;
-    font-size: 16px;
-}
-
-.image-preview-item.new-image {
-    border: 2px dashed #28a745;
-}
-
-.image-preview-item.new-image .image-number {
-    background: #28a745;
-}
-</style>
 {% endblock %}

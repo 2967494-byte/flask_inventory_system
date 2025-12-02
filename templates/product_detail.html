@@ -2,599 +2,522 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="product-details-container">
-        <!-- Баннер статуса -->
-        {% if product.status != product.STATUS_PUBLISHED %}
-        <div class="status-banner {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}status-ready{% elif product.status == product.STATUS_UNPUBLISHED %}status-unpublished{% else %}status-review{% endif %}">
-            {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}
-            ⏰ Срок публикации истек. Товар виден только вам.
-            {% elif product.status == product.STATUS_UNPUBLISHED %}
-            🚫 Товар снят с публикации. Виден только вам.
-            {% else %}
-            🔍 Товар находится на проверке
-            {% endif %}
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1 class="page-title">Личный кабинет</h1>
+            <p class="profile-subtitle">Управление вашими данными</p>
         </div>
-        {% endif %}
-        
-        <div class="product-layout">
-            <!-- Галерея изображений -->
-            <div class="product-gallery">
-                {% if product.images and product.images|length > 0 %}
-                    <div class="main-image">
-                        <img src="/uploads/{{ product.images[0] }}" 
-                             alt="{{ product.title }}" 
-                             id="mainImage">
-                    </div>
-                    {% if product.images|length > 1 %}
-                    <div class="image-thumbnails">
-                        {% for image in product.images %}
-                        <img src="/uploads/{{ image }}" 
-                             alt="{{ product.title }}" 
-                             class="thumbnail {% if loop.first %}active{% endif %}"
-                             onclick="changeImage(this)">
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                {% else %}
-                    <div class="main-image no-image">
-                        <div class="no-image-placeholder">
-                            <i>📷</i>
-                            <span>Нет изображения</span>
+
+        <!-- Вкладки -->
+        <div class="profile-tabs">
+            <button class="tab-btn active" data-tab="basic">Основная информация</button>
+            <button class="tab-btn" data-tab="additional">Дополнительная информация</button>
+        </div>
+
+        <div class="profile-content">
+            <!-- Основная информация -->
+            <form method="POST" class="profile-form" id="basic-form">
+                <div class="form-section tab-content active" id="basic-tab">
+                    <h3 class="section-title">Основная информация</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Имя пользователя *</label>
+                            <input type="text" 
+                                   name="username" 
+                                   value="{{ current_user.username }}" 
+                                   class="form-control" 
+                                   required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email *</label>
+                            <input type="email" 
+                                   value="{{ current_user.email }}" 
+                                   class="form-control" 
+                                   disabled
+                                   title="Email нельзя изменить">
+                            <small class="form-text">Email нельзя изменить</small>
                         </div>
                     </div>
-                {% endif %}
-            </div>
-            
-            <!-- Информация о товаре -->
-            <div class="product-info">
-                <div class="product-details-header">
-                    <h1 class="product-title">{{ product.title }}</h1>
-                    <div class="product-price-large">{{ "%.2f"|format(product.price) }} ₽</div>
-                </div>
-                
-                <div class="product-meta-info">
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">Статус:</span>
-                        <span class="product-meta-value status-badge status-{{ product.status }}">
-                            {{ product.status_text }}
-                            {% if product.status == product.STATUS_PUBLISHED and product.days_remaining > 0 %}
-                            (осталось {{ product.days_remaining }} дн.)
-                            {% endif %}
-                        </span>
+
+                    <div class="form-group">
+                        <label class="form-label">Название компании *</label>
+                        <input type="text" 
+                               name="company_name" 
+                               value="{{ current_user.company_name or '' }}" 
+                               class="form-control" 
+                               required>
                     </div>
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">Категория:</span>
-                        <span class="product-meta-value">{{ product.category.name if product.category else 'Без категории' }}</span>
-                    </div>
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">Дата публикации:</span>
-                        <span class="product-meta-value">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
-                    </div>
-                    {% if product.status == product.STATUS_PUBLISHED %}
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">Действует до:</span>
-                        <span class="product-meta-value">{{ product.expires_at.strftime('%d.%m.%Y') }}</span>
-                    </div>
-                    {% endif %}
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">Продавец:</span>
-                        <span class="product-meta-value">{{ product.user.username }}</span>
-                    </div>
-                </div>
-                
-                <div class="product-description-section">
-                    <h3>Описание</h3>
-                    <div class="product-description-text">
-                        {{ product.description or 'Описание отсутствует' }}
-                    </div>
-                </div>
-                
-                {% if product.status == product.STATUS_PUBLISHED or current_user.id == product.user_id %}
-                <div class="contact-section">
-                    <h3>📞 Связаться с продавцом</h3>
-                    <div class="contact-info">
-                        <div class="contact-item">
-                            <span class="contact-icon">👤</span>
-                            <span>{{ product.user.contact_person or product.user.company_name }}</span>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">ИНН *</label>
+                            <input type="text" 
+                                   name="inn" 
+                                   value="{{ current_user.inn or '' }}" 
+                                   class="form-control" 
+                                   required 
+                                   maxlength="12">
                         </div>
-                        {% if product.user.phone %}
-                        <div class="contact-item">
-                            <span class="contact-icon">📱</span>
-                            <span>{{ product.user.phone }}</span>
-                        </div>
-                        {% endif %}
-                        <div class="contact-item">
-                            <span class="contact-icon">✉️</span>
-                            <span>{{ product.user.email }}</span>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Отрасль</label>
+                            <select name="industry" class="form-control">
+                                <option value="">Выберите отрасль</option>
+                                <option value="it" {% if current_user.industry == 'it' %}selected{% endif %}>IT</option>
+                                <option value="production" {% if current_user.industry == 'production' %}selected{% endif %}>Производство</option>
+                                <option value="trade" {% if current_user.industry == 'trade' %}selected{% endif %}>Торговля</option>
+                                <option value="services" {% if current_user.industry == 'services' %}selected{% endif %}>Услуги</option>
+                                <option value="construction" {% if current_user.industry == 'construction' %}selected{% endif %}>Строительство</option>
+                                <option value="other" {% if current_user.industry == 'other' %}selected{% endif %}>Другое</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-                {% endif %}
-                
-                {% if current_user.id == product.user_id or current_user.role == 'admin' %}
-                <div class="product-actions">
-                    {% if current_user.id == product.user_id %}
-                    <a href="{{ url_for('main.edit_product', product_id=product.id) }}" 
-                       class="btn-edit">
-                        ✏️ Редактировать
-                    </a>
-                    {% endif %}
+
+                <div class="form-section tab-content active" id="basic-tab">
+                    <h3 class="section-title">Контактная информация</h3>
                     
-                    <!-- Кнопка снять с публикации -->
-                    {% if product.status == product.STATUS_PUBLISHED and current_user.id == product.user_id %}
-                    <form action="{{ url_for('main.unpublish_product', product_id=product.id) }}" 
-                          method="POST" 
-                          style="display: inline;"
-                          onsubmit="return confirm('Снять товар с публикации? Он станет виден только вам.')">
-                        <button type="submit" class="btn-unpublish">
-                            🚫 Снять с публикации
-                        </button>
-                    </form>
-                    {% endif %}
-                    
-                    <!-- Кнопка опубликовать для архивных товаров -->
-                    {% if product.status == product.STATUS_READY_FOR_PUBLICATION and current_user.id == product.user_id %}
-                    <form action="{{ url_for('main.renew_product', product_id=product.id) }}" 
-                          method="POST" 
-                          style="display: inline;">
-                        <button type="submit" class="btn-publish">
-                            📢 Опубликовать
-                        </button>
-                    </form>
-                    {% endif %}
-                    
-                    <!-- Кнопка опубликовать для снятых товаров -->
-                    {% if product.status == product.STATUS_UNPUBLISHED and current_user.id == product.user_id %}
-                    <form action="{{ url_for('main.renew_product', product_id=product.id) }}" 
-                          method="POST" 
-                          style="display: inline;">
-                        <button type="submit" class="btn-publish">
-                            📢 Опубликовать
-                        </button>
-                    </form>
-                    {% endif %}
-                    
-                    <form action="{{ url_for('main.delete_product', product_id=product.id) }}" 
-                          method="POST" 
-                          style="display: inline;"
-                          onsubmit="return confirm('Вы уверены, что хотите удалить этот товар? Это действие нельзя отменить.')">
-                        <button type="submit" class="btn-delete">
-                            🗑️ Удалить
-                        </button>
-                    </form>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Контактное лицо *</label>
+                            <input type="text" 
+                                   name="contact_person" 
+                                   value="{{ current_user.contact_person or '' }}" 
+                                   class="form-control" 
+                                   required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Должность</label>
+                            <input type="text" 
+                                   name="position" 
+                                   value="{{ current_user.position or '' }}" 
+                                   class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Телефон *</label>
+                            <input type="tel" 
+                                   name="phone" 
+                                   value="{{ current_user.phone or '' }}" 
+                                   class="form-control" 
+                                   required 
+                                   placeholder="+7 (999) 999-99-99">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Юридический адрес</label>
+                        <textarea name="legal_address" 
+                                  class="form-control" 
+                                  rows="3">{{ current_user.legal_address or '' }}</textarea>
+                    </div>
                 </div>
-                {% endif %}
-            </div>
+
+                <div class="form-section tab-content active" id="basic-tab">
+                    <h3 class="section-title">Безопасность</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Новый пароль</label>
+                        <input type="password" 
+                               name="new_password" 
+                               class="form-control" 
+                               placeholder="Оставьте пустым, если не хотите менять пароль">
+                        <small class="form-text">Минимум 6 символов</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Подтверждение пароля</label>
+                        <input type="password" 
+                               name="confirm_password" 
+                               class="form-control" 
+                               placeholder="Повторите новый пароль">
+                    </div>
+                </div>
+
+                <div class="form-actions tab-content active" id="basic-tab">
+                    <button type="submit" class="btn-primary">Сохранить изменения</button>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn-secondary">Отмена</a>
+                </div>
+            </form>
+
+            <!-- Дополнительная информация -->
+            <form method="POST" class="profile-form hidden" id="additional-form">
+                <div class="form-section" id="additional-tab">
+                    <h3 class="section-title">Реквизиты организации</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">ИНН</label>
+                            <input type="text" 
+                                   name="additional_inn" 
+                                   value="{{ current_user.inn or '' }}" 
+                                   class="form-control" 
+                                   maxlength="12"
+                                   readonly>
+                            <small class="form-text">Взято из основной информации</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">КПП</label>
+                            <input type="text" 
+                                   name="kpp" 
+                                   value="{{ current_user.kpp or '' }}" 
+                                   class="form-control" 
+                                   maxlength="9">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">ОГРН</label>
+                            <input type="text" 
+                                   name="ogrn" 
+                                   value="{{ current_user.ogrn or '' }}" 
+                                   class="form-control" 
+                                   maxlength="13">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">ОКВЭД</label>
+                            <input type="text" 
+                                   name="okved" 
+                                   value="{{ current_user.okved or '' }}" 
+                                   class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">ОКПО</label>
+                        <input type="text" 
+                               name="okpo" 
+                               value="{{ current_user.okpo or '' }}" 
+                               class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-section" id="additional-tab">
+                    <h3 class="section-title">Банковские реквизиты</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Расчетный счет</label>
+                        <input type="text" 
+                               name="bank_account" 
+                               value="{{ current_user.bank_account or '' }}" 
+                               class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Наименование банка</label>
+                        <input type="text" 
+                               name="bank_name" 
+                               value="{{ current_user.bank_name or '' }}" 
+                               class="form-control">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Корреспондентский счет</label>
+                            <input type="text" 
+                                   name="correspondent_account" 
+                                   value="{{ current_user.correspondent_account or '' }}" 
+                                   class="form-control">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">БИК Банка</label>
+                            <input type="text" 
+                                   name="bik" 
+                                   value="{{ current_user.bik or '' }}" 
+                                   class="form-control" 
+                                   maxlength="9">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">ФИО руководителя</label>
+                        <input type="text" 
+                               name="director_name" 
+                               value="{{ current_user.director_name or '' }}" 
+                               class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-actions" id="additional-tab">
+                    <button type="submit" class="btn-primary">Сохранить изменения</button>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn-secondary">Отмена</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <style>
-.status-banner {
-    padding: 12px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-weight: 500;
-    text-align: center;
-}
-
-.status-banner.status-ready {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-}
-
-.status-banner.status-unpublished {
-    background: #ffebee;
-    border: 1px solid #ffcdd2;
-    color: #c62828;
-}
-
-.status-banner.status-review {
-    background: #cce7ff;
-    border: 1px solid #99ceff;
-    color: #0066cc;
-}
-
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.status-1 { background: #d4edda; color: #155724; }
-.status-2 { background: #fff3cd; color: #856404; }
-.status-3 { background: #f8d7da; color: #721c24; }
-.status-4 { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-
-.product-details-container {
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
     background: white;
     border-radius: 12px;
-    padding: 32px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
-}
-
-.product-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
-    align-items: start;
-}
-
-.product-gallery {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.main-image {
-    width: 100%;
-    height: 400px;
-    border-radius: 12px;
     overflow: hidden;
-    background: var(--background-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
 }
 
-.main-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-}
-
-.main-image:hover img {
-    transform: scale(1.02);
-}
-
-.image-thumbnails {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.thumbnail {
-    width: 80px;
-    height: 80px;
-    border-radius: 8px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    object-fit: cover;
-    transition: all 0.2s ease;
-}
-
-.thumbnail.active,
-.thumbnail:hover {
-    border-color: var(--avito-blue);
-    transform: scale(1.05);
-}
-
-.no-image-placeholder {
+.profile-header {
+    background: linear-gradient(135deg, var(--avito-blue) 0%, var(--avito-blue-hover) 100%);
+    color: white;
+    padding: 32px;
     text-align: center;
-    color: var(--text-secondary);
 }
 
-.no-image-placeholder i {
-    font-size: 48px;
-    display: block;
+.profile-header .page-title {
+    color: white;
     margin-bottom: 8px;
+    font-size: 32px;
 }
 
-.product-info {
+.profile-subtitle {
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+/* Стили для вкладок */
+.profile-tabs {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    background: var(--background-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
 }
 
-.product-details-header {
-    padding-bottom: 20px;
+.tab-btn {
+    padding: 16px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.tab-btn:hover {
+    color: var(--avito-blue);
+    background: rgba(0, 87, 255, 0.05);
+}
+
+.tab-btn.active {
+    color: var(--avito-blue);
+    border-bottom-color: var(--avito-blue);
+    background: white;
+}
+
+.profile-content {
+    padding: 32px;
+}
+
+/* Скрытие/показ форм */
+.hidden {
+    display: none !important;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.form-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
     border-bottom: 1px solid var(--border-light);
 }
 
-.product-title {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 12px;
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
     color: var(--text-primary);
-    line-height: 1.2;
-}
-
-.product-price-large {
-    font-size: 36px;
-    font-weight: 700;
-    color: var(--avito-blue);
-}
-
-.product-meta-info {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 20px;
-    background: var(--background-secondary);
-    border-radius: var(--radius);
-    border: 1px solid var(--border-light);
-}
-
-.product-meta-item {
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 8px;
-    line-height: 1.4;
-    padding: 4px 0;
 }
 
-.product-meta-label {
-    font-weight: 600;
-    color: var(--text-primary);
-    min-width: 140px;
-}
-
-.product-meta-value {
-    color: var(--text-secondary);
-    flex: 1;
-}
-
-.product-description-section {
-    padding: 24px;
-    background: var(--background-secondary);
-    border-radius: var(--radius);
-    border: 1px solid var(--border-light);
-}
-
-.product-description-section h3 {
-    color: var(--text-primary);
-    margin-bottom: 16px;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.product-description-text {
-    color: var(--text-secondary);
-    line-height: 1.6;
-    font-size: 15px;
-    max-height: 200px;
-    overflow-y: auto;
-    padding-right: 8px;
-}
-
-.product-description-text::-webkit-scrollbar {
+.section-title::before {
+    content: '';
     width: 4px;
-}
-
-.product-description-text::-webkit-scrollbar-track {
-    background: var(--border-light);
+    height: 20px;
+    background: var(--avito-blue);
     border-radius: 2px;
 }
 
-.product-description-text::-webkit-scrollbar-thumb {
-    background: var(--text-tertiary);
-    border-radius: 2px;
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
 }
 
-.contact-section {
-    padding: 24px;
-    background: var(--avito-blue-light);
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    border: 1px solid var(--avito-blue);
-}
-
-.contact-section h3 {
-    color: var(--avito-blue);
-    margin-bottom: 16px;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.contact-info {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.contact-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 16px;
+    transition: all 0.2s;
+    background: var(--background);
     color: var(--text-primary);
 }
 
-.contact-icon {
-    color: var(--avito-blue);
-    font-weight: bold;
-    min-width: 20px;
+.form-control:focus {
+    outline: none;
+    border-color: var(--avito-blue);
+    box-shadow: 0 0 0 3px rgba(0, 87, 255, 0.1);
 }
 
-.product-actions {
+.form-control:disabled,
+.form-control[readonly] {
+    background: var(--background-secondary);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+}
+
+.form-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.form-actions {
     display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.btn-edit {
-    background: linear-gradient(135deg, var(--avito-blue) 0%, var(--avito-blue-hover) 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: var(--radius);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 87, 255, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.btn-edit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 87, 255, 0.4);
-    color: white;
-    text-decoration: none;
-}
-
-.btn-unpublish {
-    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: var(--radius);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.btn-unpublish:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(255, 152, 0, 0.4);
-    color: white;
-}
-
-.btn-publish {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: var(--radius);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.btn-publish:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(40, 167, 69, 0.4);
-    color: white;
-}
-
-.btn-delete {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: var(--radius);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.btn-delete:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(245, 87, 108, 0.4);
-    color: white;
-    text-decoration: none;
+    gap: 12px;
+    justify-content: flex-start;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-light);
 }
 
 @media (max-width: 768px) {
-    .product-details-container {
-        padding: 20px;
+    .profile-container {
         margin: 0 16px;
     }
     
-    .product-layout {
+    .profile-content {
+        padding: 20px;
+    }
+    
+    .profile-header {
+        padding: 24px 20px;
+    }
+    
+    .profile-tabs {
+        padding: 0 20px;
+    }
+    
+    .tab-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .form-row {
         grid-template-columns: 1fr;
-        gap: 24px;
+        gap: 0;
     }
     
-    .product-title {
-        font-size: 24px;
-    }
-    
-    .product-price-large {
-        font-size: 28px;
-    }
-    
-    .main-image {
-        height: 300px;
-    }
-    
-    .product-meta-item {
+    .form-actions {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
-    
-    .product-meta-label {
-        min-width: auto;
-    }
-    
-    .product-actions {
-        flex-direction: column;
-    }
-    
-    .btn-edit,
-    .btn-unpublish,
-    .btn-publish,
-    .btn-delete {
-        width: 100%;
-        justify-content: center;
-        text-align: center;
-    }
-    
-    .product-description-text {
-        max-height: none;
-        overflow-y: visible;
-    }
-}
-
-@media (max-width: 480px) {
-    .product-details-container {
-        padding: 16px;
-    }
-    
-    .product-title {
-        font-size: 20px;
-    }
-    
-    .product-price-large {
-        font-size: 24px;
-    }
-    
-    .main-image {
-        height: 250px;
-    }
-    
-    .thumbnail {
-        width: 60px;
-        height: 60px;
     }
 }
 </style>
 
 <script>
-function changeImage(thumb) {
-    const mainImage = document.getElementById('mainImage');
-    if (mainImage) {
-        mainImage.src = thumb.src;
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    // Управление вкладками
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const forms = {
+        'basic': document.getElementById('basic-form'),
+        'additional': document.getElementById('additional-form')
+    };
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Убираем активный класс у всех кнопок и форм
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            Object.values(forms).forEach(form => form.classList.add('hidden'));
+            
+            // Добавляем активный класс текущей кнопке и показываем соответствующую форму
+            this.classList.add('active');
+            if (forms[tabName]) {
+                forms[tabName].classList.remove('hidden');
+            }
+        });
+    });
+
+    // Валидация пароля для обеих форм
+    const formsToValidate = [document.getElementById('basic-form'), document.getElementById('additional-form')];
     
-    // Update active thumbnail
-    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-    thumb.classList.add('active');
-}
+    formsToValidate.forEach(form => {
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const newPassword = form.querySelector('input[name="new_password"]');
+                const confirmPassword = form.querySelector('input[name="confirm_password"]');
+                
+                if (newPassword && confirmPassword) {
+                    if (newPassword.value && newPassword.value.length < 6) {
+                        e.preventDefault();
+                        alert('Пароль должен содержать минимум 6 символов');
+                        newPassword.focus();
+                        return;
+                    }
+                    
+                    if (newPassword.value !== confirmPassword.value) {
+                        e.preventDefault();
+                        alert('Пароли не совпадают');
+                        confirmPassword.focus();
+                        return;
+                    }
+                }
+                
+                // Валидация для дополнительной формы удалена, так как все поля необязательные
+                // Никаких обязательных проверок для дополнительной формы
+            });
+        }
+    });
+
+    // Автозаполнение ИНН в дополнительной информации
+    const basicInn = document.querySelector('#basic-form input[name="inn"]');
+    const additionalInn = document.querySelector('#additional-form input[name="additional_inn"]');
+    
+    if (basicInn && additionalInn) {
+        basicInn.addEventListener('input', function() {
+            additionalInn.value = this.value;
+        });
+        
+        // Инициализация значения при загрузке
+        additionalInn.value = basicInn.value;
+    }
+});
 </script>
 {% endblock %}

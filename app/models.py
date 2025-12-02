@@ -1,4 +1,5 @@
-from app import db
+# models.py
+from app import db  # Импортируем db из __init__.py
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
@@ -30,6 +31,9 @@ class User(UserMixin, db.Model):
     
     def get_id(self):
         return str(self.id)
+    
+    def __repr__(self):
+        return f'<User {self.email}>'
 
 class Category(db.Model):
     __tablename__ = 'category'
@@ -40,6 +44,9 @@ class Category(db.Model):
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     
     parent = db.relationship('Category', remote_side=[id], backref='children')
+    
+    def __repr__(self):
+        return f'<Category {self.name}>'
 
 class Product(db.Model):
     __tablename__ = 'product'
@@ -54,6 +61,11 @@ class Product(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
+    
+    # НОВЫЕ ПОЛЯ:
+    quantity = db.Column(db.Integer, default=1)  # Количество товара
+    manufacturer = db.Column(db.String(200))      # Производитель
+    
     images = db.Column(db.JSON)  # Список имен файлов изображений
     status = db.Column(db.Integer, default=STATUS_PUBLISHED)  # Статус товара
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -133,3 +145,6 @@ class Product(db.Model):
     def can_be_viewed_by_public(self):
         """Может ли товар быть просмотрен другими пользователями"""
         return self.status == self.STATUS_PUBLISHED
+    
+    def __repr__(self):
+        return f'<Product {self.title}>'

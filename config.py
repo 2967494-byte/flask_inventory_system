@@ -3,22 +3,20 @@ import os
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-123'
     
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url:
-        # ЯВНО УКАЗЫВАЕМ PSYCOPG3 ДРАЙВЕР ДЛЯ SQLALCHEMY
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
-        elif database_url.startswith('postgresql://'):
-            database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
-        
-        SQLALCHEMY_DATABASE_URI = database_url
+    # Для продакшена на Render
+    if os.environ.get('RENDER'):
+        DATABASE_URL = os.environ.get('DATABASE_URL')
+        if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+            DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL
         DEBUG = False
-        print(f"🚀 ПРОДАКШЕН: Используется PostgreSQL с psycopg3")
-        print(f"🔗 DATABASE_URL: {database_url}")
+        print(f"🚀 ПРОДАКШЕН: Используется PostgreSQL с Render")
+        print(f"🔗 DATABASE_URL: {DATABASE_URL}")
     else:
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
+        # Для локальной разработки - наш новый PostgreSQL
+        SQLALCHEMY_DATABASE_URI = 'postgresql://dev_user:dev_password@localhost:5432/nelikvidy_dev'
         DEBUG = True
-        print("💻 РАЗРАБОТКА: Используется SQLite")
+        print("💻 РАЗРАБОТКА: Используется локальный PostgreSQL")
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')

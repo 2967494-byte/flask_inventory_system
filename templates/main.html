@@ -25,11 +25,12 @@
     }
 
     .listings-section {
-        background: var(--background);
-        border-radius: var(--radius-lg);
+        background: white;
+        border-radius: 12px;
         padding: 24px;
         box-shadow: var(--shadow);
         border: 1px solid var(--border);
+        margin-bottom: 40px;
     }
 
     /* Custom layout without Bootstrap */
@@ -98,6 +99,306 @@
         padding-top: 48px;
         padding-bottom: 48px;
     }
+
+    /* Стили для переключения видов */
+    .view-controls {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 30px !important;
+        padding-bottom: 20px !important;
+        border-bottom: 2px solid #F0F0F0 !important;
+    }
+
+    .view-toggle {
+        display: flex !important;
+        gap: 5px !important;
+        background: #F8F9FA !important;
+        border-radius: 8px !important;
+        padding: 4px !important;
+        border: 1px solid #E0E0E0 !important;
+    }
+
+    .view-btn {
+        background: none !important;
+        border: none !important;
+        padding: 8px 12px !important;
+        border-radius: 6px !important;
+        cursor: pointer !important;
+        font-size: 16px !important;
+        transition: all 0.2s ease !important;
+        color: #666666 !important;
+    }
+
+    .view-btn:hover {
+        background: #F0F0F0 !important;
+        color: #1A1A1A !important;
+    }
+
+    .view-btn.active {
+        background: #0057FF !important;
+        color: white !important;
+    }
+
+    /* ОЧЕНЬ ВАЖНО: Переопределяем стили из style.css для products-grid */
+    #productsView {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+        gap: 20px !important;
+        margin-bottom: 20px !important;
+        transition: all 0.3s ease !important;
+    }
+
+    /* Стили для карточки товара в плитке */
+    #productsView .product-card {
+        background: white !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid #E0E0E0 !important;
+        transition: all 0.3s ease !important;
+        position: relative !important;
+        cursor: pointer !important;
+        display: block !important;
+    }
+
+    #productsView .product-card:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    #productsView .product-image {
+        position: relative !important;
+        height: 200px !important;
+        overflow: hidden !important;
+        background: #F8F9FA !important;
+        display: block !important;
+    }
+
+    #productsView .product-image img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        transition: transform 0.3s ease !important;
+        display: block !important;
+    }
+
+    #productsView .product-card:hover .product-image img {
+        transform: scale(1.05) !important;
+    }
+
+    #productsView .product-image i {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 100% !important;
+        font-size: 48px !important;
+        color: #999999 !important;
+        background: #F8F9FA !important;
+    }
+
+    #productsView .product-info {
+        padding: 20px !important;
+        display: block !important;
+    }
+
+    #productsView .product-category {
+        font-size: 12px !important;
+        color: #999999 !important;
+        margin-bottom: 8px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        display: block !important;
+    }
+
+    #productsView .product-name {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        margin: 0 0 10px 0 !important;
+        color: #1A1A1A !important;
+        line-height: 1.3 !important;
+        display: block !important;
+    }
+
+    #productsView .product-price {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        color: #0057FF !important;
+        margin: 0 0 10px 0 !important;
+        display: block !important;
+    }
+
+    #productsView .product-views {
+        margin-bottom: 10px !important;
+        font-size: 12px !important;
+        color: #666666 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+    }
+
+    #productsView .product-meta {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        font-size: 12px !important;
+        color: #999999 !important;
+    }
+
+    /* Стили для представления списком - ИСПРАВЛЕНО */
+    #productsView.list-view {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    #productsView.list-view .product-card {
+        display: flex !important;
+        flex-direction: row !important;
+        min-height: 150px !important;
+        align-items: stretch !important;
+    }
+
+    #productsView.list-view .product-image {
+        width: 150px !important;
+        height: 150px !important;
+        flex-shrink: 0 !important;
+        min-width: 150px !important;
+    }
+
+    #productsView.list-view .product-info {
+        flex: 1 !important;
+        padding: 15px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        min-width: 0 !important;
+    }
+
+    #productsView.list-view .product-name {
+        -webkit-line-clamp: 2 !important;
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        margin-bottom: 8px !important;
+    }
+
+    #productsView.list-view .product-price {
+        margin-bottom: 8px !important;
+    }
+
+    #productsView.list-view .product-views {
+        margin-bottom: 8px !important;
+    }
+
+    /* Стили для представления таблицей - ИСПРАВЛЕНО */
+    #productsView.table-view {
+        display: table !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        background: white !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid #E0E0E0 !important;
+        table-layout: fixed !important;
+    }
+
+    #productsView.table-view .product-card {
+        display: table-row !important;
+        cursor: pointer !important;
+        transition: background-color 0.2s ease !important;
+        border-bottom: 1px solid #F0F0F0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        transform: none !important;
+        background: white !important;
+    }
+
+    #productsView.table-view .product-card:last-child {
+        border-bottom: none !important;
+    }
+
+    #productsView.table-view .product-card:hover {
+        background-color: #F8F9FA !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    #productsView.table-view .product-image,
+    #productsView.table-view .product-info {
+        display: table-cell !important;
+        vertical-align: middle !important;
+        padding: 15px !important;
+        border-right: 1px solid #F0F0F0 !important;
+    }
+
+    #productsView.table-view .product-image {
+        width: 100px !important;
+        height: 100px !important;
+        padding: 10px !important;
+        min-width: 100px !important;
+        max-width: 100px !important;
+    }
+
+    #productsView.table-view .product-image img {
+        width: 80px !important;
+        height: 80px !important;
+        object-fit: cover !important;
+        transform: none !important;
+        display: block !important;
+    }
+
+    #productsView.table-view .product-image i {
+        width: 80px !important;
+        height: 80px !important;
+        font-size: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #productsView.table-view .product-category {
+        display: none !important;
+    }
+
+    #productsView.table-view .product-name {
+        font-size: 16px !important;
+        margin-bottom: 5px !important;
+        -webkit-line-clamp: 1 !important;
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    #productsView.table-view .product-views {
+        font-size: 11px !important;
+        margin-bottom: 5px !important;
+        display: flex !important;
+    }
+
+    #productsView.table-view .product-price {
+        font-size: 18px !important;
+        margin-bottom: 5px !important;
+        display: block !important;
+    }
+
+    #productsView.table-view .product-meta {
+        font-size: 11px !important;
+        display: flex !important;
+    }
+
+    /* Отладочный стиль - чтобы видеть, что стили применяются */
+    #productsView.list-view::before,
+    #productsView.table-view::before {
+        content: "Стиль применен: " attr(class);
+        display: none;
+        font-size: 10px;
+        color: red;
+        position: absolute;
+        top: -20px;
+        left: 0;
+    }
 </style>
 {% endblock %}
 
@@ -151,7 +452,6 @@
             <div class="sidebar">
                 <h3 class="sidebar-title">Категории</h3>
                 <ul class="categories-list">
-                    <!-- УДАЛЕНА СТРОКА "ВСЕ КАТЕГОРИИ" -->
                     {% for category in categories %}
                         {% if not category.parent_id %}
                         <li class="category-item has-children {% if request.args.get('category_id') == category.id|string %}active{% endif %}" 
@@ -181,14 +481,25 @@
         
         <div class="content-container">
             <div class="listings-section">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Товары</h2>
-                    <span class="text-muted">Найдено: {{ products|length }}</span>
+                <!-- Кнопки переключения видов с инлайн-стилями -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #F0F0F0;">
+                    <div style="display: flex; gap: 5px; background: #F8F9FA; border-radius: 8px; padding: 4px; border: 1px solid #E0E0E0;">
+                        <button class="view-btn active" data-view="grid" title="Плитка" style="background: #0057FF; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.2s ease;">
+                            ⬜⬜
+                        </button>
+                        <button class="view-btn" data-view="list" title="Список" style="background: none; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.2s ease; color: #666666;">
+                            ☰
+                        </button>
+                        <button class="view-btn" data-view="table" title="Таблица" style="background: none; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.2s ease; color: #666666;">
+                            ══
+                        </button>
+                    </div>
+                    <span style="color: #999999;">Найдено: {{ products|length }}</span>
                 </div>
                 
                 {% if products %}
                     <!-- Grid View -->
-                    <div class="products-grid">
+                    <div class="products-grid" id="productsView">
                         {% for product in products %}
                         <div class="product-card" onclick="location.href='{{ url_for('main.product_detail', product_id=product.id) }}'">
                             <div class="product-image">
@@ -205,11 +516,16 @@
                                     {{ product.category.name if product.category else 'Без категории' }}
                                 </div>
                                 <div class="product-name">{{ product.title }}</div>
+                                <!-- Добавлено количество просмотров -->
+                                <div class="product-views">
+                                    <span class="views-count">👁️ {{ product.view_count if product.view_count else 0 }}</span>
+                                </div>
                                 <div class="product-price">
                                     <span class="current-price">{{ "%.2f"|format(product.price) }} ₽</span>
                                 </div>
                                 <div class="product-meta">
-                                    <span>{{ product.created_at.strftime('%d.%m.%Y') }}</span>
+                                    <span class="category">{{ product.category.name if product.category else 'Без категории' }}</span>
+                                    <span class="date">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -230,33 +546,38 @@
 </div>
 
 <script>
-// JavaScript для фильтрации по категориям и управления меню
+// JavaScript для фильтрации по категориям
 document.addEventListener('DOMContentLoaded', function() {
+    // Функции для фильтрации
     const categoryItems = document.querySelectorAll('.category-item:not(.has-children), .subcategory-item');
     const parentCategories = document.querySelectorAll('.category-item.has-children');
     const categorySelect = document.getElementById('categoryFilter');
     const searchInput = document.getElementById('searchInput');
     
     // Обработчик для клика по категориям в сайдбаре
-    categoryItems.forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const categoryId = this.getAttribute('data-category-id');
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            applyFilters(categoryId, searchTerm);
+    if (categoryItems.length > 0) {
+        categoryItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const categoryId = this.getAttribute('data-category-id');
+                const searchTerm = searchInput ? searchInput.value.trim() : '';
+                applyFilters(categoryId, searchTerm);
+            });
         });
-    });
+    }
     
     // Обработчик для родительских категорий (только для открытия/закрытия)
-    parentCategories.forEach(item => {
-        const categoryMain = item.querySelector('.category-main');
-        if (categoryMain) {
-            categoryMain.addEventListener('click', function(e) {
-                e.stopPropagation();
-                // Не применяем фильтры для родительских категорий, только для подкатегорий
-            });
-        }
-    });
+    if (parentCategories.length > 0) {
+        parentCategories.forEach(item => {
+            const categoryMain = item.querySelector('.category-main');
+            if (categoryMain) {
+                categoryMain.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    // Не применяем фильтры для родительских категорий, только для подкатегорий
+                });
+            }
+        });
+    }
     
     // Обработчик для селекта категорий
     if (categorySelect) {
@@ -276,6 +597,153 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Управление видами представления
+    const viewButtons = document.querySelectorAll('.view-btn');
+    const productsView = document.getElementById('productsView');
+    
+    console.log('Кнопки найдены:', viewButtons.length);
+    console.log('Контейнер товаров найден:', !!productsView);
+    
+    // Функция для очистки всех инлайн-стилей
+    function clearInlineStyles() {
+        if (!productsView) return;
+        
+        // Очищаем стили контейнера
+        productsView.style.display = '';
+        productsView.style.gridTemplateColumns = '';
+        productsView.style.width = '';
+        productsView.style.borderCollapse = '';
+        
+        // Очищаем стили всех карточек
+        const cards = productsView.querySelectorAll('.product-card');
+        cards.forEach(card => {
+            card.style.display = '';
+            card.style.flexDirection = '';
+            card.style.minHeight = '';
+            card.style.alignItems = '';
+        });
+        
+        // Очищаем стили всех изображений
+        const images = productsView.querySelectorAll('.product-image');
+        images.forEach(img => {
+            img.style.width = '';
+            img.style.height = '';
+            img.style.flexShrink = '';
+            img.style.minWidth = '';
+        });
+        
+        // Очищаем стили всей информации
+        const infos = productsView.querySelectorAll('.product-info');
+        infos.forEach(info => {
+            info.style.flex = '';
+            info.style.padding = '';
+            info.style.display = '';
+            info.style.flexDirection = '';
+            info.style.justifyContent = '';
+            info.style.minWidth = '';
+        });
+    }
+    
+    // Функция для установки активного вида
+    function setActiveView(viewType) {
+        console.log('Установка вида:', viewType);
+        
+        // Обновляем активную кнопку
+        viewButtons.forEach(btn => {
+            // Сбрасываем все инлайн-стили
+            btn.style.background = 'none';
+            btn.style.color = '#666666';
+            
+            // Сбрасываем классы
+            btn.classList.remove('active');
+            
+            if (btn.getAttribute('data-view') === viewType) {
+                // Устанавливаем инлайн-стили для активной кнопки
+                btn.style.background = '#0057FF';
+                btn.style.color = 'white';
+                btn.classList.add('active');
+            }
+        });
+        
+        // Обновляем вид контейнера
+        if (productsView) {
+            // Сначала очищаем все инлайн-стили
+            clearInlineStyles();
+            
+            // Удаляем все классы вида
+            productsView.classList.remove('list-view', 'table-view');
+            
+            // Добавляем нужный класс
+            if (viewType === 'list') {
+                productsView.classList.add('list-view');
+                console.log('Добавлен класс list-view');
+                
+                // Принудительно применяем стили для списка
+                productsView.style.display = 'grid';
+                productsView.style.gridTemplateColumns = '1fr';
+                
+                // Применяем стили к каждой карточке
+                const cards = productsView.querySelectorAll('.product-card');
+                cards.forEach(card => {
+                    card.style.display = 'flex';
+                    card.style.flexDirection = 'row';
+                    card.style.minHeight = '150px';
+                    card.style.alignItems = 'stretch';
+                });
+                
+                const images = productsView.querySelectorAll('.product-image');
+                images.forEach(img => {
+                    img.style.width = '150px';
+                    img.style.height = '150px';
+                    img.style.flexShrink = '0';
+                    img.style.minWidth = '150px';
+                });
+                
+                const infos = productsView.querySelectorAll('.product-info');
+                infos.forEach(info => {
+                    info.style.flex = '1';
+                    info.style.padding = '15px';
+                    info.style.display = 'flex';
+                    info.style.flexDirection = 'column';
+                    info.style.justifyContent = 'center';
+                    info.style.minWidth = '0';
+                });
+                
+            } else if (viewType === 'table') {
+                productsView.classList.add('table-view');
+                console.log('Добавлен класс table-view');
+                
+                // Принудительно применяем стили для таблицы
+                productsView.style.display = 'table';
+                productsView.style.width = '100%';
+                productsView.style.borderCollapse = 'collapse';
+                
+            } else {
+                // Grid view - не применяем инлайн-стили, полагаемся на CSS
+                console.log('Grid view - используем CSS стили');
+            }
+            
+            // Сохраняем в localStorage
+            localStorage.setItem('mainView', viewType);
+        }
+    }
+    
+    // Проверяем сохраненный вид из localStorage
+    const savedView = localStorage.getItem('mainView') || 'grid';
+    console.log('Сохраненный вид:', savedView);
+    setActiveView(savedView);
+    
+    // Добавляем обработчики для кнопок
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const viewType = this.getAttribute('data-view');
+            console.log('Клик по кнопке:', viewType);
+            setActiveView(viewType);
+        });
+    });
 });
 
 function applyFilters(categoryId = '', searchTerm = '') {
