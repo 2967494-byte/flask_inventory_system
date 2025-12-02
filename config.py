@@ -1,25 +1,41 @@
-# config.py
+# config.py - ОБНОВЛЕННАЯ ВЕРСИЯ
 import os
+import tempfile
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-123'
     
-    # Для продакшена на Render
-    if os.environ.get('RENDER'):
-        DATABASE_URL = os.environ.get('DATABASE_URL')
-        if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-            DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-        SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    # Определяем среду
+    is_render = os.environ.get('RENDER') or os.environ.get('DATABASE_URL')
+    
+    if is_render:
+        # Для Render с psycopg3
+        database_url = os.environ.get('DATABASE_URL', '')
+        
+        # Исправляем URL и добавляем диалект для psycopg3
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif database_url.startswith("postgresql://"):
+            # Меняем диалект на psycopg3
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        
+        SQLALCHEMY_DATABASE_URI = database_url
         DEBUG = False
-        print(f"🚀 ПРОДАКШЕН: Используется PostgreSQL с Render")
+        print(f"🚀 ПРОДАКШЕН: Используется PostgreSQL с psycopg3")
+        
+        # На Render используем временную папку
+        UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'uploads')
+        print(f"⚠️ Render: файлы хранятся временно")
+        
     else:
-        # Для локальной разработки - с указанием client_encoding
-        SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/flask_inventory?client_encoding=utf8'
+        # Локальная разработка с psycopg2
+        SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/flask_inventory'
         DEBUG = True
-        print("💻 РАЗРАБОТКА: Используется локальный PostgreSQL с UTF-8")
-        print(f"🔗 База: flask_inventory")
+        print("💻 РАЗРАБОТКА: Локальный PostgreSQL")
+        
+        # Локальная папка
+        UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
