@@ -40,6 +40,8 @@
                     {{ product.status_text }}
                     {% if product.status == product.STATUS_PUBLISHED and product.days_remaining > 0 %}
                     <span class="days-remaining">({{ product.days_remaining }} дн.)</span>
+                    {% elif product.status == product.STATUS_PUBLISHED and product.days_remaining == 0 %}
+                    <span class="days-remaining">(сегодня)</span>
                     {% endif %}
                 </div>
             </div>

@@ -3,12 +3,12 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from flask_login import login_required, current_user
 from app import db
 from app.models import Product, Category, User
-from app.utils import save_uploaded_files
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import uuid
 from werkzeug.utils import secure_filename
 
+# Создаем Blueprint ДО определения маршрутов
 main = Blueprint('main', __name__, template_folder='../templates')
 
 @main.route('/')
@@ -38,10 +38,11 @@ def index():
                          products=products, 
                          categories=categories,
                          search_term=search_term)
-                         
+
 @main.route('/dashboard')
 @login_required
 def dashboard():
+    """Личный кабинет пользователя с его товарами"""
     # Показываем все товары пользователя (включая неопубликованные)
     user_products = Product.query.filter_by(user_id=current_user.id).order_by(Product.created_at.desc()).all()
     
@@ -50,7 +51,10 @@ def dashboard():
         if product.update_status():
             db.session.commit()
     
-    return render_template('dashboard.html', products=user_products)
+    # Передаем текущее время в шаблон для вычисления дней
+    return render_template('dashboard.html', 
+                         products=user_products,
+                         now=datetime.utcnow())
 
 @main.route('/product/<int:product_id>')
 def product_detail(product_id):
@@ -90,8 +94,21 @@ def add_product():
             quantity = request.form.get('quantity', 1)
             manufacturer = request.form.get('manufacturer')
             
-            if not title or not price:
-                flash('Название и цена обязательны для заполнения', 'error')
+            # ВАЛИДАЦИЯ: проверяем все обязательные поля
+            if not title:
+                flash('Название товара обязательно для заполнения', 'error')
+                return redirect(url_for('main.add_product'))
+            if not price:
+                flash('Цена товара обязательна для заполнения', 'error')
+                return redirect(url_for('main.add_product'))
+            if not category_id:
+                flash('Категория товара обязательна для выбора', 'error')
+                return redirect(url_for('main.add_product'))
+            
+            # Проверяем, что категория существует
+            category = Category.query.get(int(category_id))
+            if not category:
+                flash('Выбранная категория не существует', 'error')
                 return redirect(url_for('main.add_product'))
             
             # Обработка загруженных файлов
@@ -116,14 +133,14 @@ def add_product():
                 url_list = [url.strip() for url in image_urls.split(',') if url.strip()]
                 saved_images = url_list[:4]
             
-            # Создаем новый товар с новыми полями
+            # Создаем новый товар
             new_product = Product(
                 title=title,
                 description=description,
                 price=float(price),
                 quantity=int(quantity),
                 manufacturer=manufacturer,
-                category_id=category_id if category_id else None,
+                category_id=int(category_id),  # Теперь категория обязательна
                 user_id=current_user.id,
                 images=saved_images if saved_images else None,
                 status=Product.STATUS_PUBLISHED
@@ -135,15 +152,20 @@ def add_product():
             flash('Товар успешно добавлен! Срок размещения - 30 дней', 'success')
             return redirect(url_for('main.dashboard'))
             
-        except ValueError:
-            flash('Некорректное значение цены или количества', 'error')
+        except ValueError as e:
+            flash(f'Некорректное значение: {str(e)}', 'error')
             return redirect(url_for('main.add_product'))
         except Exception as e:
             db.session.rollback()
             flash(f'Ошибка при добавлении товара: {str(e)}', 'error')
             return redirect(url_for('main.add_product'))
     
+    # Проверяем, что есть хотя бы одна категория
     categories = Category.query.all()
+    if not categories:
+        flash('Прежде чем добавлять товары, создайте хотя бы одну категорию', 'warning')
+        return redirect(url_for('main.admin_categories'))
+    
     return render_template('add_product.html', categories=categories)
 
 @main.route('/product/<int:product_id>/renew', methods=['POST'])
@@ -209,16 +231,35 @@ def edit_product(product_id):
     
     if request.method == 'POST':
         try:
-            # Обработка основных данных
-            product.title = request.form.get('title')
-            product.description = request.form.get('description')
-            product.price = float(request.form.get('price'))
+            # ВАЛИДАЦИЯ: проверяем обязательные поля
+            title = request.form.get('title')
+            description = request.form.get('description')
+            price = request.form.get('price')
+            category_id = request.form.get('category_id')
             
-            # ОБНОВЛЯЕМ НОВЫЕ ПОЛЯ
+            if not title:
+                flash('Название товара обязательно для заполнения', 'error')
+                return redirect(url_for('main.edit_product', product_id=product_id))
+            if not price:
+                flash('Цена товара обязательна для заполнения', 'error')
+                return redirect(url_for('main.edit_product', product_id=product_id))
+            if not category_id:
+                flash('Категория товара обязательна для выбора', 'error')
+                return redirect(url_for('main.edit_product', product_id=product_id))
+            
+            # Проверяем, что категория существует
+            category = Category.query.get(int(category_id))
+            if not category:
+                flash('Выбранная категория не существует', 'error')
+                return redirect(url_for('main.edit_product', product_id=product_id))
+            
+            # Обновляем данные
+            product.title = title
+            product.description = description
+            product.price = float(price)
             product.quantity = int(request.form.get('quantity', 1))
             product.manufacturer = request.form.get('manufacturer')
-            
-            product.category_id = request.form.get('category_id') if request.form.get('category_id') else None
+            product.category_id = int(category_id)  # Теперь категория обязательна
             product.status = int(request.form.get('status'))
             
             # Обработка expires_at
@@ -226,7 +267,7 @@ def edit_product(product_id):
             if expires_at_str:
                 product.expires_at = datetime.strptime(expires_at_str, '%Y-%m-%dT%H:%M')
             
-            # Обработка изображений (остается без изменений)
+            # Обработка изображений
             current_images = product.images if product.images else []
             if isinstance(current_images, str):
                 current_images = [img.strip() for img in current_images.split(',') if img.strip()]
@@ -272,6 +313,10 @@ def edit_product(product_id):
             flash(f'Ошибка при обновлении товара: {str(e)}', 'error')
     
     categories = Category.query.all()
+    if not categories:
+        flash('Нет доступных категорий', 'error')
+        return redirect(url_for('main.index'))
+    
     return render_template('edit_product.html', product=product, categories=categories)
 
 @main.route('/product/<int:product_id>/delete', methods=['POST'])
@@ -304,7 +349,7 @@ def delete_product(product_id):
     except Exception as e:
         db.session.rollback()
         print(f"❌ Ошибка при удалении товара: {e}")
-        flash('Ошибка при удалении товара', 'error')
+        flash('Ошибка при удаления товара', 'error')
         return redirect(url_for('main.product_detail', product_id=product_id))
 
 @main.route('/test_upload', methods=['GET', 'POST'])
@@ -476,16 +521,102 @@ def profile():
     
     return render_template('profile.html')
 
-@main.route('/admin/categories')
+@main.route('/admin/categories', methods=['GET', 'POST'])
 @login_required
 def admin_categories():
     """Админка управления категориями"""
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'add_category':
+            # Добавить новую категорию
+            name = request.form.get('name')
+            parent_id = request.form.get('parent_id') or None
+            description = request.form.get('description')
+            
+            if not name:
+                flash('Название категории обязательно', 'error')
+                return redirect(url_for('main.admin_categories'))
+            
+            # Проверяем, не существует ли уже такая категория
+            existing_category = Category.query.filter_by(name=name, parent_id=parent_id).first()
+            if existing_category:
+                flash('Такая категория уже существует', 'error')
+                return redirect(url_for('main.admin_categories'))
+            
+            try:
+                new_category = Category(
+                    name=name,
+                    description=description,
+                    parent_id=parent_id if parent_id else None
+                )
+                db.session.add(new_category)
+                db.session.commit()
+                flash(f'Категория "{name}" успешно добавлена', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Ошибка при добавлении категории: {str(e)}', 'error')
+        
+        elif action == 'edit_category':
+            # Редактировать категорию (заглушка)
+            category_id = request.form.get('category_id')
+            flash('Редактирование категорий пока недоступно', 'info')
+        
+        elif action == 'delete_category':
+            # Удалить категорию
+            category_id = request.form.get('category_id')
+            if category_id:
+                category = Category.query.get(category_id)
+                if category:
+                    # Проверяем, есть ли дочерние категории
+                    children = Category.query.filter_by(parent_id=category_id).all()
+                    if children:
+                        flash(f'Нельзя удалить категорию "{category.name}" - у нее есть дочерние категории', 'error')
+                    else:
+                        # Проверяем, есть ли товары в этой категории
+                        products_in_category = Product.query.filter_by(category_id=category_id).count()
+                        if products_in_category > 0:
+                            flash(f'Нельзя удалить категорию "{category.name}" - в ней есть товары', 'error')
+                        else:
+                            db.session.delete(category)
+                            db.session.commit()
+                            flash(f'Категория "{category.name}" удалена', 'success')
+                else:
+                    flash('Категория не найдена', 'error')
+        
+        elif action == 'clear_empty':
+            # Удалить пустые категории
+            categories = Category.query.all()
+            deleted_count = 0
+            for cat in categories:
+                # Проверяем, нет ли товаров и дочерних категорий
+                products_count = Product.query.filter_by(category_id=cat.id).count()
+                children_count = Category.query.filter_by(parent_id=cat.id).count()
+                
+                if products_count == 0 and children_count == 0:
+                    db.session.delete(cat)
+                    deleted_count += 1
+            
+            if deleted_count > 0:
+                db.session.commit()
+                flash(f'Удалено {deleted_count} пустых категорий', 'success')
+            else:
+                flash('Пустых категорий не найдено', 'info')
+        
+        return redirect(url_for('main.admin_categories'))
+    
+    # GET запрос - показать страницу
     categories = Category.query.all()
     parent_categories = Category.query.filter_by(parent_id=None).all()
     
+    # Подсчитываем общее количество товаров
+    total_products = Product.query.count()
+    
     return render_template('admin_categories.html', 
                          categories=categories,
-                         parent_categories=parent_categories)
+                         parent_categories=parent_categories,
+                         total_products=total_products)
 
 @main.route('/admin/upload-categories', methods=['POST'])
 @login_required

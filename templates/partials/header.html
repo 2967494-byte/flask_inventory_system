@@ -1,11 +1,13 @@
 <header class="header">
     <div class="container">
         <div class="header-content">
+            <!-- Логотип -->
             <a href="{{ url_for('main.index') }}" class="logo">
                 <span>🛒</span>
                 <span>Неликвиды</span>
             </a>
             
+            <!-- Основная навигация -->
             <nav class="nav-links">
                 <a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">
                     Главная
@@ -18,14 +20,13 @@
                     <a href="{{ url_for('main.add_product') }}" class="nav-link {% if request.endpoint == 'main.add_product' %}active{% endif %}">
                         Добавить товар
                     </a>
-                    {% if current_user.is_authenticated %}
+                    
+                    <!-- Ссылка на админку (только для админов) -->
+                    {% if current_user.is_admin %}
                         <a href="{{ url_for('main.admin_categories') }}" class="nav-link">
                             📊 Админка
                         </a>
                     {% endif %}
-                    <a href="{{ url_for('auth.logout') }}" class="nav-link">
-                        Выйти
-                    </a>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="nav-link">
                         Войти
@@ -36,10 +37,29 @@
                 {% endif %}
             </nav>
             
+            <!-- Блок пользователя (только для авторизованных) -->
             {% if current_user.is_authenticated %}
                 <div class="user-menu">
-                    <a href="{{ url_for('main.profile') }}" class="user-name-link">
-                        <span class="user-name">{{ current_user.username }}</span>
+                    <!-- Ссылка на профиль пользователя -->
+                    <a href="{{ url_for('main.profile') }}" class="user-profile-link">
+                        <span class="user-icon">👤</span>
+                        <!-- ✅ ИСПРАВЛЕНО: Отображаем username или fallback -->
+                        <span class="user-name">
+                            {% if current_user.username %}
+                                {{ current_user.username }}
+                            {% elif current_user.company_name %}
+                                {{ current_user.company_name }}
+                            {% else %}
+                                {{ current_user.email.split('@')[0] }}
+                            {% endif %}
+                        </span>
+                    </a>
+                    
+                    <!-- Кнопка выхода с иконкой -->
+                    <a href="{{ url_for('auth.logout') }}" class="logout-button" title="Выйти">
+                        <span class="logout-icon">🚪</span>
+                        <!-- Альтернативные иконки: -->
+                        <!-- 🔒 🚶‍♂️ 👋 📤 -->
                     </a>
                 </div>
             {% endif %}

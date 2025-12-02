@@ -1,4 +1,3 @@
-
 /* Avito-specific styles */
 :root {
     --avito-blue: #0057FF;
@@ -15,6 +14,8 @@
     --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
     --radius: 8px;
     --radius-lg: 12px;
+    --danger: #FF3B30;
+    --danger-hover: #D32F2F;
 }
 
 /* Header Avito Style */
@@ -78,16 +79,93 @@
     background-color: var(--avito-blue-light);
 }
 
+/* User menu styles - UPDATED */
 .user-menu {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     white-space: nowrap;
+    margin-left: auto;
+}
+
+.user-profile-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s;
+    font-weight: 500;
+    font-size: 14px;
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.user-profile-link:hover {
+    background-color: var(--background-secondary);
+    border-color: var(--border);
 }
 
 .user-name {
     font-weight: 500;
     color: var(--text-primary);
+    /* УБИРАЕМ display: none на мобильных */
+}
+
+.user-icon {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+/* Logout button with icon - NEW */
+.logout-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.logout-button:hover {
+    background-color: rgba(255, 59, 48, 0.1);
+    color: var(--danger);
+    border-color: rgba(255, 59, 48, 0.2);
+    transform: translateY(-1px);
+}
+
+.logout-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-button[title] {
+    position: relative;
+}
+
+.logout-button[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
 }
 
 /* Hero Section Avito Style */
@@ -768,6 +846,28 @@
         font-size: 13px;
     }
     
+    .user-menu {
+        gap: 8px;
+        margin-left: 0;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .user-profile-link {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .logout-button {
+        width: 36px;
+        height: 36px;
+    }
+    
+    /* Имя пользователя ОСТАЕТСЯ видимым на мобильных */
+    .user-name {
+        font-size: 13px; /* Можно немного уменьшить размер шрифта */
+    }
+    
     .products-grid {
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 16px;
@@ -864,6 +964,20 @@
     .container {
         padding: 0 16px;
     }
+    
+    /* На очень маленьких экранах можно сократить отступы */
+    .user-profile-link {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .user-name {
+        font-size: 12px;
+    }
+    
+    .user-icon {
+        font-size: 14px;
+    }
 }
 
 /* Animation for better UX */
@@ -920,6 +1034,7 @@ select:focus-visible {
     background: var(--avito-blue-light);
     color: var(--text-primary);
 }
+
 .btn-unpublish {
     background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
     color: white;
@@ -962,18 +1077,4 @@ select:focus-visible {
 
 .btn-remove-image:hover {
     background: rgba(255, 0, 0, 1);
-}
-
-:root {
-    --avito-blue: #0057FF;
-    --avito-blue-light: #E6F0FF;
-    --avito-blue-hover: #0047D6;
-    --text-primary: #1A1A1A;
-    --text-secondary: #666666;
-    --text-tertiary: #999999;
-    --border: #E0E0E0;
-    --border-light: #F0F0F0;
-    --background-secondary: #F8F9FA;
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --radius: 8px;
 }

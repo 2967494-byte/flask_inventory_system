@@ -14,6 +14,7 @@ def register():
             email = request.form['email']
             password = request.form['password']
             confirm_password = request.form['confirm_password']
+            username = request.form.get('username') or email.split('@')[0]  # ✅ Получаем username
             
             # Проверяем пароли
             if password != confirm_password:
@@ -21,9 +22,15 @@ def register():
                 return redirect(url_for('auth.register'))
             
             # Проверяем, существует ли пользователь
-            existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
+            existing_user_by_email = User.query.filter_by(email=email).first()
+            if existing_user_by_email:
                 flash('Пользователь с таким email уже существует', 'error')
+                return redirect(url_for('auth.register'))
+            
+            # Проверяем, существует ли username
+            existing_user_by_username = User.query.filter_by(username=username).first()
+            if existing_user_by_username:
+                flash('Пользователь с таким именем пользователя уже существует', 'error')
                 return redirect(url_for('auth.register'))
             
             # Проверяем согласие с условиями
@@ -34,6 +41,7 @@ def register():
             # Создаем нового пользователя
             new_user = User(
                 email=email,
+                username=username,  # ✅ Сохраняем username
                 company_name=request.form['company_name'],
                 inn=request.form['inn'],
                 legal_address=request.form['legal_address'],
@@ -41,9 +49,7 @@ def register():
                 position=request.form['position'],
                 phone=request.form['phone'],
                 industry=request.form.get('industry', ''),
-                about=request.form.get('about', ''),
-                # Генерируем username из email
-                username=email.split('@')[0]
+                about=request.form.get('about', '')
             )
             new_user.set_password(password)
             
@@ -69,7 +75,7 @@ def login():
         
         user = User.query.filter_by(email=email).first()
         
-        if user and check_password_hash(user.password_hash, password):
+        if user and user.check_password(password):
             login_user(user)
             flash('Вы успешно вошли в систему!', 'success')
             return redirect(url_for('main.dashboard'))

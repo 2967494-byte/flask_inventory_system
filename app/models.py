@@ -1,18 +1,19 @@
-# models.py
-from app import db  # Импортируем db из __init__.py
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+from app import db, login_manager
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
 
 class User(UserMixin, db.Model):
-    __tablename__ = 'user'
-    
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=True)
+    username = db.Column(db.String(80), unique=True, nullable=True)  # ✅ ДОБАВЛЕНО
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256))
-    company_name = db.Column(db.String(200), nullable=False)
-    inn = db.Column(db.String(12))
+    password_hash = db.Column(db.String(256), nullable=False)
+    company_name = db.Column(db.String(100))
+    inn = db.Column(db.String(20))
     legal_address = db.Column(db.Text)
     contact_person = db.Column(db.String(100))
     position = db.Column(db.String(100))
@@ -23,148 +24,109 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Связь с товарами
+    products = db.relationship('Product', backref='owner', lazy=True)
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    def get_id(self):
-        return str(self.id)
+    # ✅ ДОБАВЛЕНО: свойства для обратной совместимости
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
     
     def __repr__(self):
         return f'<User {self.email}>'
 
 class Category(db.Model):
-    __tablename__ = 'category'
-    
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    parent_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
     
-    parent = db.relationship('Category', remote_side=[id], backref='children')
+    # Измените имя обратной ссылки, чтобы избежать конфликта
+    category_products = db.relationship('Product', backref='product_category', lazy=True)
+    
+    children = db.relationship(
+        'Category', 
+        backref=db.backref('parent', remote_side=[id]),
+        lazy=True
+    )
     
     def __repr__(self):
         return f'<Category {self.name}>'
 
 class Product(db.Model):
-    __tablename__ = 'product'
-    
-    # Статусы товара
-    STATUS_PUBLISHED = 1  # Опубликован
-    STATUS_UNDER_REVIEW = 2  # На проверке (временно не используется)
-    STATUS_READY_FOR_PUBLICATION = 3  # Готов к публикации
-    STATUS_UNPUBLISHED = 4  # Снят с публикации
+    # Константы статусов
+    STATUS_PUBLISHED = 1
+    STATUS_UNPUBLISHED = 2
+    STATUS_READY_FOR_PUBLICATION = 3
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+    manufacturer = db.Column(db.String(100))
     
-    # НОВЫЕ ПОЛЯ:
-    quantity = db.Column(db.Integer, default=1)  # Количество товара
-    manufacturer = db.Column(db.String(200))      # Производитель
+    # Внешний ключ для категории
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     
-    images = db.Column(db.JSON)  # Список имен файлов изображений
-    status = db.Column(db.Integer, default=STATUS_PUBLISHED)  # Статус товара
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    images = db.Column(db.JSON)  # Список путей к изображениям
+    status = db.Column(db.Integer, default=STATUS_PUBLISHED)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    expires_at = db.Column(db.DateTime)  # Дата истечения срока публикации
-    
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
-    
-    user = db.relationship('User', backref=db.backref('products', lazy=True))
-    category = db.relationship('Category', backref=db.backref('products', lazy=True))
+    expires_at = db.Column(db.DateTime)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Устанавливаем срок истечения публикации (30 дней от создания)
-        if not self.expires_at:
+        if self.status == self.STATUS_PUBLISHED:
             self.expires_at = datetime.utcnow() + timedelta(days=30)
     
     def update_status(self):
-        """Обновляет статус товара на основе даты истечения"""
-        if self.status == self.STATUS_PUBLISHED and datetime.utcnow() > self.expires_at:
-            self.status = self.STATUS_READY_FOR_PUBLICATION
-            return True
+        """Обновление статуса товара на основе даты истечения"""
+        if self.status == self.STATUS_PUBLISHED and self.expires_at:
+            if datetime.utcnow() > self.expires_at:
+                self.status = self.STATUS_READY_FOR_PUBLICATION
+                return True
         return False
     
-    def renew_publication(self):
-        """Продлевает публикацию товара на 30 дней"""
-        self.expires_at = datetime.utcnow() + timedelta(days=30)
+    def publish(self):
+        """Публикация товара"""
         self.status = self.STATUS_PUBLISHED
-        return True
+        self.expires_at = datetime.utcnow() + timedelta(days=30)
     
     def unpublish(self):
-        """Снимает товар с публикации"""
+        """Снятие товара с публикации"""
         self.status = self.STATUS_UNPUBLISHED
-        return True
     
-    def publish(self):
-        """Публикует товар"""
-        self.expires_at = datetime.utcnow() + timedelta(days=30)
-        self.status = self.STATUS_PUBLISHED
-        return True
+    @property
+    def days_remaining(self):
+        """Количество оставшихся дней публикации"""
+        if self.status == self.STATUS_PUBLISHED and self.expires_at:
+            remaining = self.expires_at - datetime.utcnow()
+            return max(0, remaining.days)
+        return 0
+    
+    @property
+    def is_expired(self):
+        """Проверка, истек ли срок публикации"""
+        if self.status == self.STATUS_PUBLISHED and self.expires_at:
+            return datetime.utcnow() > self.expires_at
+        return False
     
     @property
     def status_text(self):
         """Текстовое представление статуса"""
         status_map = {
             self.STATUS_PUBLISHED: 'Опубликован',
-            self.STATUS_UNDER_REVIEW: 'На проверке',
-            self.STATUS_READY_FOR_PUBLICATION: 'Готов к публикации',
-            self.STATUS_UNPUBLISHED: 'Снят с публикации'
+            self.STATUS_UNPUBLISHED: 'Снят с публикации',
+            self.STATUS_READY_FOR_PUBLICATION: 'Готов к публикации'
         }
         return status_map.get(self.status, 'Неизвестно')
     
-    @property
-    def is_published(self):
-        """Проверяет, опубликован ли товар"""
-        return self.status == self.STATUS_PUBLISHED
-    
-    @property
-    def is_unpublished(self):
-        """Проверяет, снят ли товар с публикации"""
-        return self.status == self.STATUS_UNPUBLISHED
-    
-    @property
-    def is_expired(self):
-        """Проверяет, истек ли срок публикации"""
-        return datetime.utcnow() > self.expires_at
-    
-    @property
-    def days_remaining(self):
-        """Оставшееся количество дней публикации"""
-        if self.status == self.STATUS_PUBLISHED:
-            remaining = self.expires_at - datetime.utcnow()
-            return max(0, remaining.days)
-        return 0
-    
-    @property
-    def can_be_viewed_by_public(self):
-        """Может ли товар быть просмотрен другими пользователями"""
-        return self.status == self.STATUS_PUBLISHED
-    
     def __repr__(self):
         return f'<Product {self.title}>'
-
-    def is_visible_to(self, user):
-        """Проверяет, может ли пользователь видеть товар"""
-        # Опубликованные товары видны всем
-        if self.status == self.STATUS_PUBLISHED:
-            return True
-        
-        # Если пользователь не авторизован
-        if not user or not user.is_authenticated:
-            return False
-        
-        # Владелец и администраторы могут видеть все свои товары
-        if user.id == self.user_id or user.role == 'admin':
-            return True
-        
-        return False
-    
-    def can_be_viewed_by_public(self):
-        """Может ли товар быть просмотрен другими пользователями"""
-        return self.status == self.STATUS_PUBLISHED
