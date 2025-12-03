@@ -1,4 +1,4 @@
-<!-- add_product.html - исправленная версия -->
+<!-- add_product.html - версия с интерактивной обрезкой изображений -->
 {% extends "base.html" %}
 
 {% block title %}Добавить товар - Система продажи неликвидов{% endblock %}
@@ -138,10 +138,26 @@
                             </div>
                         </div>
                     </div>
-                    
+
+                    <!-- Croppie Modal -->
+                    <div id="cropper-modal" class="cropper-modal" style="display: none;">
+                        <div class="cropper-content">
+                            <h3>Обрежьте изображение</h3>
+                            <p class="cropper-hint">Подгоните изображение под карточку (соотношение 3:2)</p>
+                            <div id="cropper-container" style="width: 100%; max-width: 400px; margin: 0 auto;"></div>
+                            <div class="cropper-actions">
+                                <button type="button" class="btn btn-secondary" onclick="closeCropper()">Отмена</button>
+                                <button type="button" class="btn btn-primary" onclick="applyCrop()">Применить</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Предпросмотр изображений -->
                     <div id="image-preview-container" class="image-preview-container" style="display: none;">
                         <h4>Выбранные изображения:</h4>
+                        <p class="preview-hint">
+                            Кликните на изображение, чтобы обрезать его под карточку (соотношение 3:2).
+                        </p>
                         <div id="image-preview" class="image-preview-grid"></div>
                         <div class="preview-info">
                             <span id="image-count">0</span> изображений выбрано
@@ -162,7 +178,7 @@
                                   class="form-control" 
                                   rows="2" 
                                   placeholder="Введите URL изображений через запятую
-Пример: https://example.com/image1.jpg, https://example.com/image2.jpg"></textarea>
+Пример: https://example.com/image1.jpg  , https://example.com/image2.jpg  "></textarea>
                         <div class="form-text">
                             Укажите URL изображений через запятую, если нет файлов для загрузки.
                             Ссылки должны быть доступны публично.
@@ -342,7 +358,7 @@
     gap: 12px;
     padding: 10px;
     width: 100%;
-    pointer-events: none; /* Важно: предотвращает конфликт с кликами */
+    pointer-events: none;
 }
 
 .upload-icon {
@@ -463,9 +479,16 @@
 
 .image-preview-container h4 {
     color: var(--text-primary);
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     font-size: 16px;
     font-weight: 600;
+}
+
+.preview-hint, .cropper-hint {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin: 0 0 15px 0;
+    text-align: center;
 }
 
 .image-preview-grid {
@@ -475,44 +498,69 @@
     margin-bottom: 20px;
 }
 
+.preview-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .preview-image {
     position: relative;
     width: 100%;
-    height: 120px;
+    aspect-ratio: 3 / 2;
     border-radius: 8px;
     overflow: hidden;
     border: 2px solid var(--border);
     background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    cursor: pointer;
 }
 
 .preview-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
-.remove-image {
+.remove-image-small {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: -8px;
+    right: -8px;
     background: rgba(255, 0, 0, 0.8);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    transition: all 0.2s ease;
+    z-index: 10;
 }
 
-.remove-image:hover {
+.preview-wrapper:hover .remove-image-small {
     background: rgba(255, 0, 0, 1);
-    transform: scale(1.1);
+}
+
+.preview-image:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.preview-wrapper small {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .preview-info {
@@ -540,6 +588,37 @@
     background: var(--background-secondary);
     color: var(--text-primary);
     border-color: var(--text-tertiary);
+}
+
+/* Croppie Modal */
+.cropper-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.cropper-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.cropper-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
 }
 
 /* Кнопки */
@@ -627,97 +706,156 @@
     }
     
     .preview-image {
-        height: 100px;
+        aspect-ratio: 3 / 2;
     }
 }
 </style>
 
+<!-- Подключаем Croppie -->
+<link rel="stylesheet" href="https://unpkg.com/croppie@2.6.5/croppie.css">
+<script src="https://unpkg.com/croppie@2.6.5/croppie.min.js"></script>
+
 <script>
 let selectedFiles = [];
+let croppieInstance = null;
+let currentFileIndex = null;
 
-function previewImages(input) {
-    const previewContainer = document.getElementById('image-preview');
-    const previewMainContainer = document.getElementById('image-preview-container');
-    const countElement = document.getElementById('image-count');
-    const uploadText = document.querySelector('.upload-text strong');
+document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('image_files');
+    const uploadArea = document.getElementById('file-upload-area');
+
+    fileInput.addEventListener('change', handleFileSelect);
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect({ target: fileInput });
+        }
+    });
+
+    uploadArea.addEventListener('click', function(e) {
+        if (e.target === uploadArea || e.target.closest('.upload-placeholder')) {
+            fileInput.click();
+        }
+    });
+});
+
+function handleFileSelect(event) {
+    const files = Array.from(event.target.files);
     
-    if (input.files && input.files.length > 0) {
-        if (input.files.length > 4) {
-            alert('Можно выбрать не более 4 изображений!');
-            input.value = '';
-            selectedFiles = [];
-            return;
-        }
-        
-        // Проверка размера файлов
-        let hasOversizedFile = false;
-        Array.from(input.files).forEach(file => {
-            if (file.size > 5 * 1024 * 1024) { // 5 МБ
-                hasOversizedFile = true;
-            }
-        });
-        
-        if (hasOversizedFile) {
-            alert('Один или несколько файлов превышают размер 5 МБ!');
-            input.value = '';
-            selectedFiles = [];
-            return;
-        }
-        
-        selectedFiles = Array.from(input.files);
-        previewContainer.innerHTML = '';
-        
-        // Показываем контейнер превью
-        previewMainContainer.style.display = 'block';
-        
-        // Обновляем счетчик
-        countElement.textContent = selectedFiles.length;
-        
-        // Обновляем текст в зоне загрузки
-        if (uploadText) {
-            uploadText.textContent = `Выбрано ${selectedFiles.length} файл(ов)`;
-            uploadText.style.color = 'var(--avito-blue)';
-        }
-        
-        // Создаем превью для каждого файла
-        selectedFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'preview-image';
-                div.innerHTML = `
-                    <img src="${e.target.result}" alt="Превью ${index + 1}">
-                    <button type="button" class="remove-image" onclick="removeImage(${index})">×</button>
-                `;
-                previewContainer.appendChild(div);
-            };
-            
-            reader.readAsDataURL(file);
-        });
-    } else {
-        // Если файлы были удалены
-        if (uploadText) {
-            uploadText.textContent = 'Нажмите для выбора файлов';
-            uploadText.style.color = '';
-        }
-        previewMainContainer.style.display = 'none';
+    if (files.length > 4) {
+        alert('Можно выбрать не более 4 изображений!');
+        event.target.value = '';
+        return;
     }
+
+    if (files.some(f => f.size > 5 * 1024 * 1024)) {
+        alert('Один или несколько файлов превышают 5 МБ!');
+        event.target.value = '';
+        return;
+    }
+
+    selectedFiles = files.map(file => ({
+        originalFile: file,
+        croppedBlob: null,
+        croppedFile: null,
+        url: URL.createObjectURL(file)
+    }));
+
+    renderPreview();
+    document.getElementById('image-preview-container').style.display = 'block';
+}
+
+function renderPreview() {
+    const container = document.getElementById('image-preview');
+    container.innerHTML = '';
+
+    selectedFiles.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'preview-wrapper';
+        div.innerHTML = `
+            <div class="preview-image" onclick="openCropper(${index})">
+                <img src="${item.croppedBlob ? URL.createObjectURL(item.croppedBlob) : item.url}" alt="Preview">
+            </div>
+            <small>${item.originalFile.name.length > 15 ? item.originalFile.name.substring(0,12) + '...' : item.originalFile.name}</small>
+            <button type="button" class="remove-image-small" onclick="event.stopPropagation(); removeImage(${index})">×</button>
+        `;
+        container.appendChild(div);
+    });
+
+    document.getElementById('image-count').textContent = selectedFiles.length;
+}
+
+function openCropper(index) {
+    currentFileIndex = index;
+    const imageUrl = selectedFiles[index].url;
+
+    const container = document.getElementById('cropper-container');
+    container.innerHTML = '';
+
+    croppieInstance = new Croppie(container, {
+        viewport: { width: 300, height: 200, type: 'rectangle' },
+        boundary: { width: 350, height: 250 },
+        enableOrientation: true,
+        enableZoom: true,
+        mouseWheelZoom: true
+    });
+
+    croppieInstance.bind({ url: imageUrl });
+    document.getElementById('cropper-modal').style.display = 'flex';
+}
+
+function closeCropper() {
+    if (croppieInstance) {
+        croppieInstance.destroy();
+        croppieInstance = null;
+    }
+    document.getElementById('cropper-modal').style.display = 'none';
+    currentFileIndex = null;
+}
+
+function applyCrop() {
+    if (!croppieInstance || currentFileIndex === null) return;
+
+    croppieInstance.result({
+        type: 'blob',
+        size: { width: 600, height: 400 },
+        format: 'jpeg',
+        quality: 0.92
+    }).then(blob => {
+        const originalFile = selectedFiles[currentFileIndex].originalFile;
+        const newFile = new File([blob], originalFile.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+        });
+
+        selectedFiles[currentFileIndex].croppedBlob = blob;
+        selectedFiles[currentFileIndex].croppedFile = newFile;
+
+        closeCropper();
+        renderPreview(); // обновим превью на обрезанное
+    });
 }
 
 function removeImage(index) {
     if (confirm('Удалить это изображение?')) {
-        // Удаляем файл из массива
         selectedFiles.splice(index, 1);
-        
-        // Обновляем input files
-        const dataTransfer = new DataTransfer();
-        selectedFiles.forEach(file => dataTransfer.items.add(file));
-        document.getElementById('image_files').files = dataTransfer.files;
-        
-        // Перерисовываем превью
-        const input = document.getElementById('image_files');
-        previewImages(input);
+        renderPreview();
+        if (selectedFiles.length === 0) {
+            document.getElementById('image-preview-container').style.display = 'none';
+        }
     }
 }
 
@@ -725,74 +863,28 @@ function clearImages() {
     if (confirm('Очистить все изображения?')) {
         selectedFiles = [];
         document.getElementById('image_files').value = '';
-        const input = document.getElementById('image_files');
-        previewImages(input);
+        document.getElementById('image-preview-container').style.display = 'none';
     }
 }
 
-// Drag & drop функциональность
-const uploadArea = document.getElementById('file-upload-area');
-const fileInput = document.getElementById('image_files');
+// Перед отправкой — подменяем файлы на обрезанные
+document.getElementById('addProductForm').addEventListener('submit', function(e) {
+    const dataTransfer = new DataTransfer();
+    let hasImages = false;
 
-uploadArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadArea.classList.add('drag-over');
-});
-
-uploadArea.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    uploadArea.classList.remove('drag-over');
-});
-
-uploadArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadArea.classList.remove('drag-over');
-    
-    if (e.dataTransfer.files.length) {
-        fileInput.files = e.dataTransfer.files;
-        previewImages(fileInput);
-    }
-});
-
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    fileInput.addEventListener('change', function() {
-        previewImages(this);
-    });
-    
-    // Альтернативный способ открытия проводника при клике на всю область
-    const fileUploadArea = document.getElementById('file-upload-area');
-    fileUploadArea.addEventListener('click', function(e) {
-        // Проверяем, что клик не на дочерних элементах с pointer-events: none
-        if (e.target === fileUploadArea || e.target.closest('.upload-placeholder')) {
-            fileInput.click();
+    selectedFiles.forEach(item => {
+        if (item.croppedFile) {
+            dataTransfer.items.add(item.croppedFile);
+            hasImages = true;
+        } else if (item.originalFile) {
+            dataTransfer.items.add(item.originalFile);
+            hasImages = true;
         }
     });
-});
 
-// Дополнительная функция для валидации формы
-document.getElementById('addProductForm').addEventListener('submit', function(e) {
-    const priceInput = document.getElementById('price');
-    const priceValue = parseFloat(priceInput.value);
-    
-    if (priceValue < 0) {
-        e.preventDefault();
-        alert('Цена не может быть отрицательной');
-        priceInput.focus();
-        return false;
+    if (hasImages) {
+        document.getElementById('image_files').files = dataTransfer.files;
     }
-    
-    const quantityInput = document.getElementById('quantity');
-    const quantityValue = parseInt(quantityInput.value);
-    
-    if (quantityValue < 1) {
-        e.preventDefault();
-        alert('Количество должно быть не менее 1');
-        quantityInput.focus();
-        return false;
-    }
-    
-    return true;
 });
 </script>
 {% endblock %}

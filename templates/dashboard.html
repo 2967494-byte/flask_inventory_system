@@ -49,7 +49,6 @@
             <div class="product-info">
                 <h3 class="product-title">{{ product.title }}</h3>
                 <p class="product-price">{{ "%.2f"|format(product.price) }} ₽</p>
-                <!-- Добавлено количество просмотров -->
                 <div class="product-views">
                     <span class="views-count">👁️ {{ product.view_count if product.view_count else 0 }}</span>
                 </div>
@@ -66,29 +65,25 @@
                     👁️ Посмотреть
                 </a>
                 
-                <!-- Кнопки управления статусом -->
                 {% if product.status == product.STATUS_PUBLISHED %}
                 <form action="{{ url_for('main.unpublish_product', product_id=product.id) }}" method="POST" class="action-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn-unpublish" 
                             onclick="event.stopPropagation(); return confirm('Снять товар с публикации? Он станет виден только вам.')">
-                        🚫 Снять
+                        🟡 Снять
                     </button>
                 </form>
                 {% elif product.status == product.STATUS_READY_FOR_PUBLICATION or product.status == product.STATUS_UNPUBLISHED %}
                 <form action="{{ url_for('main.renew_product', product_id=product.id) }}" method="POST" class="action-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn-publish" onclick="event.stopPropagation();">
-                        📢 Опубликовать
+                        🟢 Опубликовать
                     </button>
                 </form>
                 {% endif %}
                 
                 <form action="{{ url_for('main.delete_product', product_id=product.id) }}" method="POST" class="action-form"
-                    onsubmit="event.stopPropagation(); return confirm('Удалить товар? Это действие нельзя отменить.')">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      onsubmit="event.stopPropagation(); return confirm('Удалить товар? Это действие нельзя отменить.')">
                     <button type="submit" class="btn-delete" onclick="event.stopPropagation();">
-                        🗑️ Удалить
+                        🚫 Удалить
                     </button>
                 </form>
             </div>
@@ -186,7 +181,6 @@
     color: white;
 }
 
-/* Стили для представления плиткой (по умолчанию) */
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -195,7 +189,6 @@
     transition: all 0.3s ease;
 }
 
-/* Стили для представления списком */
 .products-grid.list-view {
     grid-template-columns: 1fr;
     gap: 15px;
@@ -230,7 +223,6 @@
     -webkit-line-clamp: 3;
 }
 
-/* Стили для представления таблицей */
 .products-grid.table-view {
     display: table;
     width: 100%;
@@ -474,7 +466,7 @@
 }
 
 .btn-unpublish {
-    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
     color: white;
     border: none;
     padding: 8px 12px;
@@ -492,7 +484,7 @@
 }
 
 .btn-publish {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(135deg, #4caf50 0%, #8bc34a 100%);
     color: white;
     border: none;
     padding: 8px 12px;
@@ -506,11 +498,11 @@
 
 .btn-publish:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .btn-delete {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
     color: white;
     border: none;
     padding: 8px 12px;
@@ -524,7 +516,7 @@
 
 .btn-delete:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
 }
 
 .empty-state {
@@ -550,84 +542,6 @@
     color: var(--text-secondary);
     margin-bottom: 30px;
 }
-
-@media (max-width: 768px) {
-    .dashboard-controls {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .view-toggle {
-        align-self: flex-start;
-    }
-    
-    .products-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .products-grid.list-view .product-card {
-        flex-direction: column;
-    }
-    
-    .products-grid.list-view .product-image {
-        width: 100%;
-        height: 200px;
-    }
-    
-    .products-grid.list-view .product-actions {
-        width: 100%;
-        flex-direction: row;
-        padding: 15px;
-    }
-    
-    .products-grid.table-view {
-        display: block;
-    }
-    
-    .products-grid.table-view .product-card {
-        display: block;
-        margin-bottom: 15px;
-    }
-    
-    .products-grid.table-view .product-image,
-    .products-grid.table-view .product-info,
-    .products-grid.table-view .product-actions {
-        display: block;
-        border-right: none;
-        border-bottom: 1px solid var(--border-light);
-    }
-    
-    .products-grid.table-view .product-actions {
-        display: flex;
-        flex-direction: row;
-    }
-    
-    .product-actions {
-        flex-direction: column;
-    }
-    
-    .btn-view,
-    .btn-unpublish,
-    .btn-publish,
-    .btn-delete {
-        flex: none;
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .dashboard-container {
-        padding: 15px;
-    }
-    
-    .product-title {
-        font-size: 16px;
-    }
-    
-    .product-price {
-        font-size: 18px;
-    }
-}
 </style>
 
 <script>
@@ -635,7 +549,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const viewButtons = document.querySelectorAll('.view-btn');
     const productsView = document.getElementById('productsView');
     
-    // Проверяем сохраненный вид из localStorage
     const savedView = localStorage.getItem('dashboardView') || 'grid';
     setActiveView(savedView);
     
@@ -648,7 +561,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function setActiveView(viewType) {
-        // Обновляем активную кнопку
         viewButtons.forEach(btn => {
             btn.classList.remove('active');
             if (btn.getAttribute('data-view') === viewType) {
@@ -656,7 +568,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Обновляем вид контейнера
         productsView.className = 'products-grid';
         if (viewType === 'list') {
             productsView.classList.add('list-view');
