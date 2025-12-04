@@ -7,92 +7,129 @@
         <p class="admin-subtitle">Управление системой и контентом</p>
     </div>
 
-    <!-- Вкладки -->
+    <!-- Вкладки — НАСТОЯЩИЕ ССЫЛКИ -->
     <div class="admin-tabs mb-4">
         <div class="tabs">
-            <button class="tab-btn active" onclick="openAdminTab('categories')">📂 Категории</button>
-            <button class="tab-btn" onclick="openAdminTab('users')">👥 Пользователи</button>
-            <button class="tab-btn" onclick="openAdminTab('stats')">📊 Статистика</button>
+            <a href="{{ url_for('admin.admin_categories') }}" class="tab-btn active">📂 Категории</a>
+            <a href="{{ url_for('admin.admin_users') }}" class="tab-btn">👥 Пользователи</a>
+            <a href="#" class="tab-btn">📊 Статистика</a>
         </div>
     </div>
 
-    <!-- Вкладка категорий -->
-    <div id="categories-tab" class="tab-content active">
-        <div class="admin-content">
-            <!-- Статистика категорий -->
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <div class="stat-icon">📁</div>
-                    <div class="stat-number">{{ categories|length }}</div>
-                    <div class="stat-label">Всего категорий</div>
+    <!-- Статистика категорий -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">📁</div>
+            <div class="stat-number">{{ categories|length }}</div>
+            <div class="stat-label">Всего категорий</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📂</div>
+            <div class="stat-number">{{ parent_categories|length }}</div>
+            <div class="stat-label">Родительских</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📄</div>
+            <div class="stat-number">{{ categories|length - parent_categories|length }}</div>
+            <div class="stat-label">Дочерних</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-number">{{ total_products or 0 }}</div>
+            <div class="stat-label">Всего товаров</div>
+        </div>
+    </div>
+
+    <!-- Основной контент в 2 колонки -->
+    <div class="layout-container">
+        <!-- ЛЕВАЯ КОЛОНКА -->
+        <div class="content-container">
+            <!-- Поиск -->
+            <div class="admin-section compact-section">
+                <div class="section-header">
+                    <h3>🔍 Поиск категорий</h3>
+                    <span class="section-badge">Фильтр</span>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📂</div>
-                    <div class="stat-number">{{ parent_categories|length }}</div>
-                    <div class="stat-label">Родительских</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📄</div>
-                    <div class="stat-number">{{ categories|length - parent_categories|length }}</div>
-                    <div class="stat-label">Дочерних</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-number">{{ total_products or 0 }}</div>
-                    <div class="stat-label">Всего товаров</div>
+                <div class="section-card compact-card">
+                    <div class="form-group">
+                        <input type="text" 
+                               id="categorySearch" 
+                               class="form-control form-control-sm" 
+                               placeholder="Введите название категории...">
+                        <small class="form-text">Начните вводить название для поиска</small>
+                    </div>
                 </div>
             </div>
 
-            <!-- Основной контент в 2 колонки -->
-            <div class="layout-container">
-                <!-- ЛЕВАЯ КОЛОНКА: дерево, поиск, формы -->
-                <div class="content-container">
-                    <!-- Поиск -->
-                    <div class="admin-section compact-section">
-                        <div class="section-header">
-                            <h3>🔍 Поиск категорий</h3>
-                            <span class="section-badge">Фильтр</span>
-                        </div>
-                        <div class="section-card compact-card">
-                            <div class="form-group">
-                                <input type="text" 
-                                       id="categorySearch" 
-                                       class="form-control form-control-sm" 
-                                       placeholder="Введите название категории...">
-                                <small class="form-text">Начните вводить название для поиска</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Дерево -->
-                    <div class="admin-section">
-                        <div class="section-header">
-                            <h3>🌳 Дерево категорий</h3>
-                            <span class="section-badge">Просмотр</span>
-                        </div>
-                        <div class="section-card">
-                            {% if categories %}
-                                <div class="categories-tree" id="categoriesTree">
-                                    {% for parent in parent_categories %}
-                                    <div class="category-node" data-name="{{ parent.name|lower }}">
+            <!-- Дерево категорий -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h3>🌳 Дерево категорий</h3>
+                    <span class="section-badge">Просмотр</span>
+                </div>
+                <div class="section-card">
+                    {% if categories %}
+                        <div class="categories-tree" id="categoriesTree">
+                            {% for parent in parent_categories %}
+                            <div class="category-node" data-name="{{ parent.name|lower }}">
+                                <div class="node-header">
+                                    {% set children = categories|selectattr('parent_id', 'equalto', parent.id)|list %}
+                                    {% if children %}
+                                        <span class="toggle-icon" onclick="toggleCategory(this)">➕</span>
+                                    {% else %}
+                                        <span class="toggle-icon">├─</span>
+                                    {% endif %}
+                                    <span class="node-icon">📁</span>
+                                    <span class="node-name">{{ parent.name }}</span>
+                                    {% if parent.description %}
+                                    <span class="node-description text-muted">({{ parent.description }})</span>
+                                    {% endif %}
+                                    <span class="node-badge">{{ parent.products|length if parent.products else 0 }} тов.</span>
+                                    <div class="node-actions">
+                                        <form method="POST" action="{{ url_for('main.admin_categories') }}" class="inline-form">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="action" value="edit_category">
+                                            <input type="hidden" name="category_id" value="{{ parent.id }}">
+                                            <button type="submit" class="node-action-btn" title="Редактировать">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M11 4H4v7h7V4z"></path>
+                                                    <path d="M17.7 4L15.9 5.8 12.3 2.2 10.5 4l3.6 3.6 1.8-1.8 3.6 3.6 1.8-1.8L17.7 4z"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                        
+                                        <form method="POST" action="{{ url_for('main.admin_categories') }}" 
+                                              onsubmit="return confirm('Удалить категорию и все подкатегории?')" class="inline-form">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="action" value="delete_category">
+                                            <input type="hidden" name="category_id" value="{{ parent.id }}">
+                                            <button type="submit" class="node-action-btn" title="Удалить">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 6h18v2H3V6z"></path>
+                                                    <path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                
+                                {% if children %}
+                                <div class="node-children" style="display: none;">
+                                    {% for child in children %}
+                                    <div class="category-node child-node" data-name="{{ child.name|lower }}">
                                         <div class="node-header">
-                                            {% set children = categories|selectattr('parent_id', 'equalto', parent.id)|list %}
-                                            {% if children %}
-                                                <span class="toggle-icon" onclick="toggleCategory(this)">➕</span>
-                                            {% else %}
-                                                <span class="toggle-icon">├─</span>
+                                            <span class="toggle-icon">└─</span>
+                                            <span class="node-icon">📄</span>
+                                            <span class="node-name">{{ child.name }}</span>
+                                            {% if child.description %}
+                                            <span class="node-description text-muted">({{ child.description }})</span>
                                             {% endif %}
-                                            <span class="node-icon">📁</span>
-                                            <span class="node-name">{{ parent.name }}</span>
-                                            {% if parent.description %}
-                                            <span class="node-description text-muted">({{ parent.description }})</span>
-                                            {% endif %}
-                                            <span class="node-badge">{{ parent.products|length if parent.products else 0 }} тов.</span>
+                                            <span class="node-badge">{{ child.products|length if child.products else 0 }} тов.</span>
                                             <div class="node-actions">
                                                 <form method="POST" action="{{ url_for('main.admin_categories') }}" class="inline-form">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <input type="hidden" name="action" value="edit_category">
-                                                    <input type="hidden" name="category_id" value="{{ parent.id }}">
+                                                    <input type="hidden" name="category_id" value="{{ child.id }}">
                                                     <button type="submit" class="node-action-btn" title="Редактировать">
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                             <path d="M11 4H4v7h7V4z"></path>
@@ -102,10 +139,10 @@
                                                 </form>
                                                 
                                                 <form method="POST" action="{{ url_for('main.admin_categories') }}" 
-                                                      onsubmit="return confirm('Удалить категорию и все подкатегории?')" class="inline-form">
+                                                      onsubmit="return confirm('Удалить подкатегорию?')" class="inline-form">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <input type="hidden" name="action" value="delete_category">
-                                                    <input type="hidden" name="category_id" value="{{ parent.id }}">
+                                                    <input type="hidden" name="category_id" value="{{ child.id }}">
                                                     <button type="submit" class="node-action-btn" title="Удалить">
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                             <path d="M3 6h18v2H3V6z"></path>
@@ -115,206 +152,143 @@
                                                 </form>
                                             </div>
                                         </div>
-                                        
-                                        {% if children %}
-                                        <div class="node-children" style="display: none;">
-                                            {% for child in children %}
-                                            <div class="category-node child-node" data-name="{{ child.name|lower }}">
-                                                <div class="node-header">
-                                                    <span class="toggle-icon">└─</span>
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-name">{{ child.name }}</span>
-                                                    {% if child.description %}
-                                                    <span class="node-description text-muted">({{ child.description }})</span>
-                                                    {% endif %}
-                                                    <span class="node-badge">{{ child.products|length if child.products else 0 }} тов.</span>
-                                                    <div class="node-actions">
-                                                        <form method="POST" action="{{ url_for('main.admin_categories') }}" class="inline-form">
-                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                            <input type="hidden" name="action" value="edit_category">
-                                                            <input type="hidden" name="category_id" value="{{ child.id }}">
-                                                            <button type="submit" class="node-action-btn" title="Редактировать">
-                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                                    <path d="M11 4H4v7h7V4z"></path>
-                                                                    <path d="M17.7 4L15.9 5.8 12.3 2.2 10.5 4l3.6 3.6 1.8-1.8 3.6 3.6 1.8-1.8L17.7 4z"></path>
-                                                                </svg>
-                                                            </button>
-                                                        </form>
-                                                        
-                                                        <form method="POST" action="{{ url_for('main.admin_categories') }}" 
-                                                              onsubmit="return confirm('Удалить подкатегорию?')" class="inline-form">
-                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                            <input type="hidden" name="action" value="delete_category">
-                                                            <input type="hidden" name="category_id" value="{{ child.id }}">
-                                                            <button type="submit" class="node-action-btn" title="Удалить">
-                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                                    <path d="M3 6h18v2H3V6z"></path>
-                                                                    <path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2"></path>
-                                                                </svg>
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                     {% endfor %}
                                 </div>
-                            {% else %}
-                                <div class="empty-state">
-                                    <div class="empty-icon">📭</div>
-                                    <p>Категории еще не загружены</p>
-                                </div>
-                            {% endif %}
+                                {% endif %}
+                            </div>
+                            {% endfor %}
                         </div>
-                    </div>
-
-                    <!-- Компактный блок: Добавить категорию -->
-                    <div class="admin-section compact-section">
-                        <div class="section-header">
-                            <h3>➕ Добавить категорию</h3>
-                            <span class="section-badge">Ручное</span>
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <p>Категории еще не загружены</p>
                         </div>
-                        <div class="section-card compact-card">
-                            <form method="POST" action="{{ url_for('main.admin_categories') }}" class="category-form">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="action" value="add_category">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <input type="text" name="name" class="form-control form-control-sm" required placeholder="Название *">
-                                    </div>
-                                    <div class="form-group">
-                                        <select name="parent_id" class="form-select form-select-sm">
-                                            <option value="">-- Без родительской --</option>
-                                            {% for cat in categories %}
-                                                <option value="{{ cat.id }}">{{ cat.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Описание"></textarea>
-                                </div>
-                                <div class="form-actions compact-actions">
-                                    <button type="submit" class="btn-primary btn-sm">➕ Добавить</button>
-                                    <button type="reset" class="btn-secondary btn-sm">Очистить</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Загрузка из JSON — в самом низу ЛЕВОЙ колонки -->
-                    <div class="admin-section compact-section">
-                        <div class="section-header">
-                            <h3>📁 Загрузка категорий</h3>
-                            <span class="section-badge">Импорт</span>
-                        </div>
-                        <div class="section-card compact-card">
-                            <form method="POST" action="{{ url_for('main.upload_categories') }}" enctype="multipart/form-data" class="upload-form">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <div class="file-input-wrapper">
-                                    <input type="file" name="categories_file" accept=".json" class="form-control form-control-sm" required id="jsonFile">
-                                    <label for="jsonFile" class="file-input-label">
-                                        <span class="file-input-text">Выберите файл...</span>
-                                        <span class="btn-secondary btn-sm">📁</span>
-                                    </label>
-                                </div>
-                                <button type="submit" class="btn-primary btn-sm mt-2">📤 Загрузить</button>
-                            </form>
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
+            </div>
 
-                <!-- ПРАВАЯ КОЛОНКА (sidebar) -->
-                <div class="sidebar-container">
-                    <div class="sidebar">
-                        <!-- Быстрые действия -->
-                        <div class="sidebar-section">
-                            <h4 class="sidebar-title">⚡ Быстрые действия</h4>
-                            <div class="quick-actions">
-                                <a href="#" class="quick-action">
-                                    <span class="action-icon">📥</span>
-                                    <span class="action-text">Экспорт категорий</span>
-                                </a>
-                                <a href="#" class="quick-action">
-                                    <span class="action-icon">💾</span>
-                                    <span class="action-text">Создать бэкап</span>
-                                </a>
-                                <a href="#" class="quick-action">
-                                    <span class="action-icon">🔀</span>
-                                    <span class="action-text">Порядок категорий</span>
-                                </a>
+            <!-- Добавить категорию -->
+            <div class="admin-section compact-section">
+                <div class="section-header">
+                    <h3>➕ Добавить категорию</h3>
+                    <span class="section-badge">Ручное</span>
+                </div>
+                <div class="section-card compact-card">
+                    <form method="POST" action="{{ url_for('main.admin_categories') }}" class="category-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="add_category">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="text" name="name" class="form-control form-control-sm" required placeholder="Название *">
+                            </div>
+                            <div class="form-group">
+                                <select name="parent_id" class="form-select form-select-sm">
+                                    <option value="">-- Без родительской --</option>
+                                    {% for cat in categories %}
+                                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
-
-                        <!-- Опасная зона -->
-                        <div class="sidebar-section danger-zone">
-                            <h4 class="sidebar-title">⚠️ Опасная зона</h4>
-                            <div class="danger-actions">
-                                <form method="POST" action="{{ url_for('main.clear_categories') }}" 
-                                      onsubmit="return confirmDanger('Вы уверены? Все категории и связанные товары будут удалены!')">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn-danger btn-full">
-                                        <span class="btn-icon">🗑️</span>
-                                        Удалить все категории
-                                    </button>
-                                </form>
-                                
-                                <form method="POST" action="{{ url_for('main.admin_categories') }}" 
-                                      onsubmit="return confirmDanger('Удалить все пустые категории без товаров?')">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="action" value="clear_empty">
-                                    <button type="submit" class="btn-warning btn-full">
-                                        <span class="btn-icon">🧹</span>
-                                        Очистить пустые
-                                    </button>
-                                </form>
-                            </div>
+                        <div class="form-group">
+                            <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Описание"></textarea>
                         </div>
-
-                        <!-- Статус системы -->
-                        <div class="sidebar-section">
-                            <h4 class="sidebar-title">📈 Статус системы</h4>
-                            <div class="system-status">
-                                <div class="status-item">
-                                    <span class="status-label">Последнее обновление:</span>
-                                    <span class="status-value">Сегодня</span>
-                                </div>
-                                <div class="status-item">
-                                    <span class="status-label">Всего операций:</span>
-                                    <span class="status-value">0</span>
-                                </div>
-                                <div class="status-item">
-                                    <span class="status-label">Размер базы:</span>
-                                    <span class="status-value">0.5 MB</span>
-                                </div>
-                            </div>
+                        <div class="form-actions compact-actions">
+                            <button type="submit" class="btn-primary btn-sm">➕ Добавить</button>
+                            <button type="reset" class="btn-secondary btn-sm">Очистить</button>
                         </div>
-                    </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Загрузка категорий — В САМОМ НИЗУ -->
+            <div class="admin-section compact-section">
+                <div class="section-header">
+                    <h3>📁 Загрузка категорий</h3>
+                    <span class="section-badge">Импорт</span>
+                </div>
+                <div class="section-card compact-card">
+                    <form method="POST" action="{{ url_for('main.upload_categories') }}" enctype="multipart/form-data" class="upload-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="file-input-wrapper">
+                            <input type="file" name="categories_file" accept=".json" class="form-control form-control-sm" required id="jsonFile">
+                            <label for="jsonFile" class="file-input-label">
+                                <span class="file-input-text">Выберите файл...</span>
+                                <span class="btn-secondary btn-sm">📁</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-primary btn-sm mt-2">📤 Загрузить</button>
+                    </form>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Вкладки пользователей и статистики -->
-    <div id="users-tab" class="tab-content">
-        <div class="admin-content">
-            <div class="empty-state">
-                <div class="empty-icon">👥</div>
-                <h3>Управление пользователями</h3>
-                <p>Функционал находится в разработке</p>
-            </div>
-        </div>
-    </div>
+        <!-- ПРАВАЯ КОЛОНКА (sidebar) -->
+        <div class="sidebar-container">
+            <div class="sidebar">
+                <!-- Быстрые действия -->
+                <div class="sidebar-section">
+                    <h4 class="sidebar-title">⚡ Быстрые действия</h4>
+                    <div class="quick-actions">
+                        <a href="#" class="quick-action">
+                            <span class="action-icon">📥</span>
+                            <span class="action-text">Экспорт категорий</span>
+                        </a>
+                        <a href="#" class="quick-action">
+                            <span class="action-icon">💾</span>
+                            <span class="action-text">Создать бэкап</span>
+                        </a>
+                        <a href="#" class="quick-action">
+                            <span class="action-icon">🔀</span>
+                            <span class="action-text">Порядок категорий</span>
+                        </a>
+                    </div>
+                </div>
 
-    <div id="stats-tab" class="tab-content">
-        <div class="admin-content">
-            <div class="empty-state">
-                <div class="empty-icon">📊</div>
-                <h3>Статистика системы</h3>
-                <p>Функционал находится в разработке</p>
+                <!-- Опасная зона -->
+                <div class="sidebar-section danger-zone">
+                    <h4 class="sidebar-title">⚠️ Опасная зона</h4>
+                    <div class="danger-actions">
+                        <form method="POST" action="{{ url_for('main.clear_categories') }}" 
+                              onsubmit="return confirmDanger('Вы уверены? Все категории и связанные товары будут удалены!')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-danger btn-full">
+                                <span class="btn-icon">🗑️</span>
+                                Удалить все категории
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="{{ url_for('main.admin_categories') }}" 
+                              onsubmit="return confirmDanger('Удалить все пустые категории без товаров?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="action" value="clear_empty">
+                            <button type="submit" class="btn-warning btn-full">
+                                <span class="btn-icon">🧹</span>
+                                Очистить пустые
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Статус системы -->
+                <div class="sidebar-section">
+                    <h4 class="sidebar-title">📈 Статус системы</h4>
+                    <div class="system-status">
+                        <div class="status-item">
+                            <span class="status-label">Последнее обновление:</span>
+                            <span class="status-value">Сегодня</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Всего операций:</span>
+                            <span class="status-value">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Размер базы:</span>
+                            <span class="status-value">0.5 MB</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -322,42 +296,27 @@
 
 <style>
 /* Компактные стили */
-.compact-section {
-    margin-bottom: 16px;
-}
-
-.compact-card {
-    padding: 12px;
-}
-
+.compact-section { margin-bottom: 16px; }
+.compact-card { padding: 12px; }
 .form-control-sm, .form-select-sm {
     padding: 6px 10px;
     font-size: 14px;
 }
-
 .btn-sm {
     padding: 6px 12px;
     font-size: 13px;
 }
-
-.compact-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 10px;
-}
-
+.compact-actions { display: flex; gap: 6px; margin-top: 10px; }
 .file-input-wrapper {
     position: relative;
     margin-bottom: 8px;
 }
-
 .file-input-wrapper input[type="file"] {
     position: absolute;
     width: 1px;
     height: 1px;
     opacity: 0;
 }
-
 .file-input-label {
     display: flex;
     align-items: center;
@@ -369,10 +328,7 @@
     cursor: pointer;
     font-size: 13px;
 }
-
-.btn-full {
-    width: 100%;
-}
+.btn-full { width: 100%; }
 
 /* Стили дерева */
 .categories-tree {
@@ -382,16 +338,8 @@
     max-height: 500px;
     overflow-y: auto;
 }
-
-.category-node {
-    margin-bottom: 4px;
-    padding-left: 8px;
-}
-
-.category-node.child-node {
-    padding-left: 24px;
-}
-
+.category-node { margin-bottom: 4px; padding-left: 8px; }
+.category-node.child-node { padding-left: 24px; }
 .node-header {
     display: flex;
     align-items: center;
@@ -400,11 +348,7 @@
     font-size: 14px;
     border-radius: var(--radius);
 }
-
-.node-header:hover {
-    background: var(--background);
-}
-
+.node-header:hover { background: var(--background); }
 .toggle-icon {
     font-size: 12px;
     cursor: pointer;
@@ -412,25 +356,9 @@
     text-align: center;
     color: var(--text-tertiary);
 }
-
-.node-icon {
-    font-size: 14px;
-    opacity: 0.8;
-    color: var(--text-tertiary);
-}
-
-.node-name {
-    color: var(--text-primary);
-    font-weight: 500;
-    flex: 1;
-}
-
-.node-description {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    margin-left: 4px;
-}
-
+.node-icon { font-size: 14px; opacity: 0.8; color: var(--text-tertiary); }
+.node-name { color: var(--text-primary); font-weight: 500; flex: 1; }
+.node-description { font-size: 12px; color: var(--text-tertiary); margin-left: 4px; }
 .node-badge {
     background: rgba(0,0,0,0.1);
     color: var(--text-secondary);
@@ -438,12 +366,7 @@
     border-radius: 4px;
     font-size: 11px;
 }
-
-.node-actions {
-    display: flex;
-    gap: 4px;
-}
-
+.node-actions { display: flex; gap: 4px; }
 .node-action-btn {
     background: transparent;
     border: none;
@@ -452,29 +375,16 @@
     color: var(--text-secondary);
     cursor: pointer;
 }
-
 .node-action-btn:hover {
     background: var(--avito-blue-light);
     color: var(--avito-blue);
     transform: scale(1.1);
 }
+.node-action-btn svg { width: 14px; height: 14px; }
+.node-children { padding-left: 16px; margin-top: 4px; }
 
-.node-action-btn svg {
-    width: 14px;
-    height: 14px;
-}
-
-.node-children {
-    padding-left: 16px;
-    margin-top: 4px;
-}
-
-/* Sidebar */
-.sidebar-container {
-    width: 25%;
-    flex-shrink: 0;
-}
-
+/* Sidebar и layout */
+.sidebar-container { width: 25%; flex-shrink: 0; }
 .sidebar {
     background: var(--background);
     border-radius: var(--radius-lg);
@@ -483,20 +393,13 @@
     border: 1px solid var(--border);
     height: fit-content;
 }
-
 .sidebar-title {
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 12px;
     color: var(--text-primary);
 }
-
-.quick-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
+.quick-actions { display: flex; flex-direction: column; gap: 8px; }
 .quick-action {
     display: flex;
     align-items: center;
@@ -507,60 +410,84 @@
     text-decoration: none;
     color: var(--text-primary);
 }
-
 .danger-zone {
     border-left: 3px solid #f5576c;
     padding-left: 12px;
 }
-
-.danger-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
+.danger-actions { display: flex; flex-direction: column; gap: 10px; }
 .btn-danger, .btn-warning {
     padding: 8px;
     font-size: 13px;
     text-align: center;
 }
-
-/* Layout */
 .layout-container {
     display: flex;
     gap: 24px;
     align-items: flex-start;
 }
+.content-container { width: 75%; flex-grow: 1; }
 
-.content-container {
-    width: 75%;
-    flex-grow: 1;
+/* Вкладки */
+.admin-tabs { background: var(--background); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 24px; overflow: hidden; }
+.tabs { display: flex; gap: 2px; background: var(--background-secondary); padding: 4px; }
+.tab-btn {
+    flex: 1;
+    padding: 14px 20px;
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--radius) - 2px);
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
 }
+.tab-btn:hover { background: var(--background); color: var(--text-primary); }
+.tab-btn.active { background: var(--background); color: var(--avito-blue); box-shadow: var(--shadow-light); }
+
+/* Админ-заголовок */
+.admin-header {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    padding: 32px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+.admin-header .page-title { font-size: 32px; margin-bottom: 8px; }
+
+/* Статистика */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.stat-card {
+    background: var(--background);
+    padding: 20px;
+    border-radius: var(--radius);
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-light);
+}
+.stat-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.8; }
+.stat-number { font-size: 28px; font-weight: 700; color: var(--avito-blue); margin-bottom: 4px; }
+.stat-label { color: var(--text-secondary); font-size: 13px; font-weight: 500; }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .layout-container {
-        flex-direction: column;
-    }
-    .sidebar-container, .content-container {
-        width: 100%;
-    }
+    .layout-container { flex-direction: column; }
+    .sidebar-container, .content-container { width: 100%; }
+    .tabs .tab-btn { font-size: 12px; padding: 10px 12px; }
 }
 </style>
 
 <script>
-// Переключение вкладок
-function openAdminTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.getElementById(tabName + '-tab').classList.add('active');
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.currentTarget.classList.add('active');
-}
-
 function confirmDanger(message) {
     return confirm(`⚠️ ВНИМАНИЕ: ${message}\n\nЭто действие нельзя отменить!`);
 }
@@ -610,12 +537,5 @@ function toggleCategory(toggleElement) {
         }
     }
 }
-
-// Инициализация
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.querySelector('#categories-tab')) {
-        openAdminTab('categories');
-    }
-});
 </script>
 {% endblock %}

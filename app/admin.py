@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from app import db
-from app.models import Product, Category
+from app.models import Product, Category, User
 import json
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
@@ -94,6 +94,75 @@ def admin_categories():
                          parent_categories=parent_categories,
                          total_products=total_products)
 
+# === НОВЫЙ РОУТ: УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ===
+@admin.route('/users')
+@login_required
+def admin_users():
+    if not current_user.is_admin:
+        flash('У вас нет прав доступа к админке', 'error')
+        return redirect(url_for('main.index'))
+    
+    search = request.args.get('search', '').strip()
+    query = User.query
+    
+    if search:
+        query = query.filter(
+            User.username.ilike(f'%{search}%') |
+            User.email.ilike(f'%{search}%') |
+            User.company_name.ilike(f'%{search}%') |
+            User.contact_person.ilike(f'%{search}%')
+        )
+    
+    users = query.order_by(User.created_at.desc()).all()
+    return render_template('admin_users.html', users=users, search=search)
+
+@admin.route('/users/<int:user_id>/impersonate')
+@login_required
+def impersonate_user(user_id):
+    if not current_user.is_admin:
+        flash('Недостаточно прав', 'error')
+        return redirect(url_for('admin.admin_users'))
+    
+    from flask_login import login_user
+    user = User.query.get_or_404(user_id)
+    login_user(user)
+    flash(f'Вы вошли как {user.email}', 'success')
+    return redirect(url_for('main.dashboard'))
+
+@admin.route('/users/<int:user_id>/toggle_active', methods=['POST'])
+@login_required
+def toggle_user_active(user_id):
+    if not current_user.is_admin:
+        flash('Недостаточно прав', 'error')
+        return redirect(url_for('admin.admin_users'))
+    
+    user = User.query.get_or_404(user_id)
+    user.is_active = not user.is_active
+    db.session.commit()
+    status = 'активирован' if user.is_active else 'заблокирован'
+    flash(f'Пользователь {status}', 'success')
+    return redirect(url_for('admin.admin_users'))
+
+@admin.route('/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if not current_user.is_admin:
+        flash('Недостаточно прав', 'error')
+        return redirect(url_for('admin.admin_users'))
+    
+    if user_id == current_user.id:
+        flash('Нельзя удалить себя', 'error')
+        return redirect(url_for('admin.admin_users'))
+    
+    user = User.query.get_or_404(user_id)
+    # Удаляем связанные товары
+    Product.query.filter_by(user_id=user_id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    flash('Пользователь удалён', 'success')
+    return redirect(url_for('admin.admin_users'))
+
+# === ЗАГРУЗКА И ОЧИСТКА КАТЕГОРИЙ ===
 @admin.route('/upload-categories', methods=['POST'])
 @login_required
 def upload_categories():
@@ -121,7 +190,7 @@ def upload_categories():
         parent_count = 0
         child_count = 0
         
-        for parent_data in categories_data:  # ← ИСПРАВЛЕНО: было categories_
+        for parent_data in categories_data:
             parent_category = Category(
                 name=parent_data['name'],
                 description=parent_data.get('description', '')
