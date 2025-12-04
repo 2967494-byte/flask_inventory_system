@@ -75,7 +75,23 @@ def product_detail(product_id):
         if current_user.id != product.user_id and current_user.role != 'admin':
             flash('Этот товар недоступен для просмотра', 'error')
             return redirect(url_for('main.index'))
+            
+     # Проверяем, что товар можно показывать
+    can_view = False
+    if product.status == Product.STATUS_PUBLISHED:
+        can_view = True
+    elif current_user.is_authenticated and (current_user.id == product.user_id or current_user.role == 'admin'):
+        can_view = True
     
+    if not can_view:
+        flash('Этот товар недоступен для просмотра', 'error')
+        return redirect(url_for('main.index'))
+    
+    # ← УВЕЛИЧИВАЕМ СЧЁТЧИК ПРОСМОТРОВ
+    if product.status == Product.STATUS_PUBLISHED:
+        product.view_count = (product.view_count or 0) + 1
+        db.session.commit()
+
     return render_template('product_detail.html', product=product)
 
 @main.route('/add_product', methods=['GET', 'POST'])

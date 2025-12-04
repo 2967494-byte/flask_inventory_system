@@ -48,7 +48,14 @@
             
             <div class="product-info">
                 <h3 class="product-title">{{ product.title }}</h3>
-                <p class="product-price">{{ "%.2f"|format(product.price) }} ₽</p>
+                <p class="product-price">
+                    {{ "%.2f"|format(product.price) }} ₽
+                    {% if product.vat_included %}
+                        <span class="vat-label vat-included">С НДС</span>
+                    {% else %}
+                        <span class="vat-label vat-excluded">Без НДС</span>
+                    {% endif %}
+                </p>
                 <div class="product-views">
                     <span class="views-count">👁️ {{ product.view_count if product.view_count else 0 }}</span>
                 </div>
