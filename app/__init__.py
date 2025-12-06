@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from time import time
 import os
 
 db = SQLAlchemy()
@@ -20,6 +21,17 @@ def create_app():
     login_manager.init_app(app)
     csrf.init_app(app)
     
+    @app.before_request
+    def before_request():
+        g.start_time = time()
+
+    @app.context_processor
+    def inject_generation_time():
+        if hasattr(g, 'start_time'):
+            elapsed = (time() - g.start_time) * 1000  # мс
+            return {'generation_time_ms': f"{elapsed:.2f}"}
+        return {'generation_time_ms': '0.00'}
+
     # Настройки login_manager
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Пожалуйста, войдите в систему для доступа к этой странице.'

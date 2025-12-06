@@ -29,6 +29,17 @@
     {% endif %}
     
     <div class="product-details-container">
+        <!-- Заголовок товара -->
+        <div class="product-title-section mb-4">
+            <h1 class="product-title">{{ product.title }}</h1>
+            {% if product.manufacturer %}
+            <div class="product-manufacturer text-muted">
+                <span class="manufacturer-label">Производитель:</span>
+                <span class="manufacturer-value">{{ product.manufacturer }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
         <div class="product-layout">
             <!-- Левая колонка: Галерея и информация -->
             <div class="product-left-column">
@@ -105,143 +116,200 @@
                 </div>
             </div>
             
-            <!-- Правая колонка: Цена, контакты, управление -->
+            <!-- Правая колонка: Липкий блок -->
             <div class="product-right-column">
-                <!-- Заголовок -->
-                <div class="product-title-section mb-4">
-                    <h1 class="product-title">{{ product.title }}</h1>
-                    {% if product.manufacturer %}
-                    <div class="product-manufacturer text-muted">
-                        <span class="manufacturer-label">Производитель:</span>
-                        <span class="manufacturer-value">{{ product.manufacturer }}</span>
+                <!-- Липкий блок: Цена, действия, контакты -->
+                <div class="sticky-sidebar">
+                    <!-- Цена и избранное -->
+                    <div class="price-favorite-section mb-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="product-price-large">{{ "%.2f"|format(product.price) }} ₽</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <!-- Выпадающий список "..." для владельца/админа -->
+                                {% if current_user.id == product.user_id or current_user.role == 'admin' %}
+                                <div class="dropdown product-actions-dropdown">
+                                    <button class="btn-actions-dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="5" r="1"></circle>
+                                            <circle cx="12" cy="12" r="1"></circle>
+                                            <circle cx="12" cy="19" r="1"></circle>
+                                        </svg>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% if current_user.id == product.user_id %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.edit_product', product_id=product.id) }}">
+                                                <i class="action-modern-icon">✏️</i> Редактировать
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% if product.status == product.STATUS_PUBLISHED and current_user.id == product.user_id %}
+                                        <li>
+                                            <form method="POST" action="{{ url_for('main.unpublish_product', product_id=product.id) }}" 
+                                                  onsubmit="return confirm('Снять товар с публикации? Он станет виден только вам.')"
+                                                  class="dropdown-form">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="action-modern-icon">⏸️</i> Снять с публикации
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% if product.status in [product.STATUS_READY_FOR_PUBLICATION, product.STATUS_UNPUBLISHED] and current_user.id == product.user_id %}
+                                        <li>
+                                            <form method="POST" action="{{ url_for('main.renew_product', product_id=product.id) }}"
+                                                  class="dropdown-form">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="action-modern-icon">📤</i> Опубликовать
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form method="POST" action="{{ url_for('main.delete_product', product_id=product.id) }}" 
+                                                  onsubmit="return confirm('Вы уверены, что хотите удалить этот товар?')"
+                                                  class="dropdown-form">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="action-modern-icon">🗑️</i> Удалить товар
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Избранное -->
+                                {% if current_user.is_authenticated %}
+                                <form method="POST" action="{{ url_for('main.toggle_favorite', product_id=product.id) }}" 
+                                      class="favorite-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="favorite-icon-btn {% if product in current_user.favorited_products %}active{% endif %}"
+                                            title="{% if product in current_user.favorited_products %}Удалить из избранного{% else %}Добавить в избранное{% endif %}">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="{% if product in current_user.favorited_products %}red{% else %}none{% endif %}" 
+                                             stroke="{% if product in current_user.favorited_products %}red{% else %}gray{% endif %}" 
+                                             stroke-width="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- НДС -->
+                        <div class="vat-status mt-2">
+                            {% if product.vat_included %}
+                                <span class="vat-label vat-included">С НДС</span>
+                            {% else %}
+                                <span class="vat-label vat-excluded">Без НДС</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% endif %}
-                </div>
-                
-                <!-- Блок цены -->
-                <div class="price-section mb-4 p-4 bg-white border rounded shadow-sm">
-                    <div class="product-price-large mb-2">{{ "%.2f"|format(product.price) }} ₽</div>
                     
                     {% if product.quantity > 1 %}
-                    <div class="product-quantity text-muted mb-2">
+                    <div class="product-quantity text-muted mb-3 py-2 border-top border-bottom">
                         <i class="quantity-icon">📦</i>
                         <span>В наличии: {{ product.quantity }} шт.</span>
                     </div>
                     {% endif %}
                     
-                    <!-- НДС -->
-                    <div class="vat-status">
-                        {% if product.vat_included %}
-                            <span class="vat-label vat-included">С НДС</span>
-                        {% else %}
-                            <span class="vat-label vat-excluded">Без НДС</span>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- Контактная информация -->
-                {% if product.status == product.STATUS_PUBLISHED or current_user.id == product.user_id %}
-                <div class="contact-section-modern mb-4 p-4 bg-white border rounded shadow-sm">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="seller-avatar me-3">
-                            <i class="avatar-icon">👤</i>
-                        </div>
-                        <div class="seller-details">
-                            <div class="seller-name fw-bold">
-                                {% if product.owner.username %}
-                                    {{ product.owner.username }}
-                                {% elif product.owner.company_name %}
-                                    {{ product.owner.company_name }}
-                                {% else %}
-                                    {{ product.owner.email.split('@')[0] }}
+                    <!-- Контактная информация (только для опубликованных или владельца) -->
+                    {% if product.status == product.STATUS_PUBLISHED or current_user.id == product.user_id %}
+                    <div class="contact-section mb-4">
+                        <!-- Информация о продавце -->
+                        <div class="seller-info-card mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="seller-avatar me-3">
+                                    <i class="avatar-icon">👤</i>
+                                </div>
+                                <div class="seller-details">
+                                    <div class="seller-name fw-bold">
+                                        {% if product.owner.username %}
+                                            {{ product.owner.username }}
+                                        {% elif product.owner.company_name %}
+                                            {{ product.owner.company_name }}
+                                        {% else %}
+                                            {{ product.owner.email.split('@')[0] }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="seller-rating">
+                                        <span class="stars text-warning">★★★★★</span>
+                                        <span class="rating-text text-muted ms-1">5.0 • 1 отзыв</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="seller-response-time text-muted mb-3">
+                                <i class="bi bi-clock me-1"></i>
+                                Отвечает около 30 минут
+                            </div>
+                            
+                            <!-- Кнопки контактов в одну строку -->
+                            <div class="contact-buttons-row mb-3">
+                                {% if product.owner.phone and current_user.is_authenticated %}
+                                <button class="btn-contact btn-phone" onclick="showFullPhone()">
+                                    Показать телефон
+                                </button>
+                                {% endif %}
+                                
+                                {% if current_user.is_authenticated %}
+                                <a href="{{ url_for('main.messages', user_id=product.user_id, product_id=product.id) }}" 
+                                   class="btn-contact btn-write">
+                                    Написать
+                                </a>
                                 {% endif %}
                             </div>
-                            <div class="seller-rating">
-                                <span class="stars text-warning">★★★★★</span>
-                                <span class="rating-text text-muted ms-1">5.0 • 1 отзыв</span>
-                            </div>
                         </div>
                     </div>
+                    {% endif %}
                     
-                    <div class="contact-actions">
-                        {% if product.owner.phone and current_user.is_authenticated %}
-                        <button class="btn btn-outline-primary w-100 mb-2" onclick="showFullPhone()">
-                            <i class="button-icon">📱</i>
-                            Показать телефон
-                            <span class="phone-number ms-1 opacity-75">{{ product.owner.phone[:5] }} XXX-XX-XX</span>
-                        </button>
-                        {% endif %}
-                        
-                        {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('main.messages', user_id=product.user_id, product_id=product.id) }}" 
-                           class="btn btn-outline-primary w-100 mb-2">
-                            <i class="button-icon">✉️</i>
-                            Написать сообщение
-                        </a>
-                        {% endif %}
-                        
-                        {% if current_user.is_authenticated %}
-                        <form method="POST" action="{{ url_for('main.toggle_favorite', product_id=product.id) }}" class="mb-2">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn {% if product in current_user.favorited_products %}btn-outline-danger{% else %}btn-outline-primary{% endif %} w-100">
-                                <i class="button-icon">{% if product in current_user.favorited_products %}💔{% else %}❤️{% endif %}</i>
-                                {% if product in current_user.favorited_products %}
-                                    Удалить из избранного
-                                {% else %}
-                                    Добавить в избранное
-                                {% endif %}
-                            </button>
-                        </form>
-                        {% endif %}
-                        
-                        <button class="btn btn-outline-warning w-100" onclick="reportProduct()">
-                            <i class="button-icon">🚨</i>
-                            Пожаловаться на объявление
+                    <!-- Информация о продавце -->
+                    {% if product.status == product.STATUS_PUBLISHED or current_user.id == product.user_id %}
+                    <div class="seller-info-section mb-4">
+                        <div class="section-header mb-3">
+                            <h4 class="section-title mb-0">Продавец</h4>
+                        </div>
+                        <div class="seller-stats">
+                            <div class="stat-item d-flex justify-content-between mb-2">
+                                <span class="text-muted">На платформе с:</span>
+                                <span class="fw-medium">{{ product.owner.created_at.strftime('%d.%m.%Y') }}</span>
+                            </div>
+                            {% if product.owner.company_name %}
+                            <div class="stat-item d-flex justify-content-between mb-2">
+                                <span class="text-muted">Компания:</span>
+                                <span class="fw-medium">{{ product.owner.company_name }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="stat-item d-flex justify-content-between mb-2">
+                                <span class="text-muted">Отзывы:</span>
+                                <span class="fw-medium text-success">★★★★★ (5.0)</span>
+                            </div>
+                            <div class="stat-item d-flex justify-content-between">
+                                <span class="text-muted">Доставка:</span>
+                                <span class="fw-medium text-success">Доступна</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Жалоба -->
+                    <div class="report-section mt-4 pt-3 border-top">
+                        <button class="btn-report" onclick="reportProduct()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <span class="ms-1">Пожаловаться</span>
                         </button>
                     </div>
                 </div>
-                {% endif %}
-                
-                <!-- Действия с товаром (для владельца/админа) -->
-                {% if current_user.id == product.user_id or current_user.role == 'admin' %}
-                <div class="product-actions-modern p-4 bg-white border rounded shadow-sm">
-                    <h3 class="mb-3"><i class="actions-icon">⚙️</i> Управление товаром</h3>
-                    <div class="d-grid gap-2">
-                        {% if current_user.id == product.user_id %}
-                        <a href="{{ url_for('main.edit_product', product_id=product.id) }}" class="btn btn-outline-primary">
-                            <i class="action-modern-icon">✏️</i> Редактировать
-                        </a>
-                        {% endif %}
-                        
-                        {% if product.status == product.STATUS_PUBLISHED and current_user.id == product.user_id %}
-                        <form method="POST" action="{{ url_for('main.unpublish_product', product_id=product.id) }}" 
-                              onsubmit="return confirm('Снять товар с публикации? Он станет виден только вам.')">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-outline-warning w-100">
-                                <i class="action-modern-icon">⏸️</i> Снять с публикации
-                            </button>
-                        </form>
-                        {% endif %}
-                        
-                        {% if product.status in [product.STATUS_READY_FOR_PUBLICATION, product.STATUS_UNPUBLISHED] and current_user.id == product.user_id %}
-                        <form method="POST" action="{{ url_for('main.renew_product', product_id=product.id) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-outline-success w-100">
-                                <i class="action-modern-icon">📤</i> Опубликовать
-                            </button>
-                        </form>
-                        {% endif %}
-                        
-                        <form method="POST" action="{{ url_for('main.delete_product', product_id=product.id) }}" 
-                              onsubmit="return confirm('Вы уверены, что хотите удалить этот товар?')">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="action-modern-icon">🗑️</i> Удалить товар
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -280,6 +348,409 @@
         </form>
     </div>
 </div>
+
+<style>
+/* Липкий боковой блок */
+.sticky-sidebar {
+    position: sticky;
+    top: 100px; /* Отступ от header */
+    background: white;
+    border: 1px solid #E6E6E6;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    z-index: 10;
+}
+
+/* Цена и избранное */
+.price-favorite-section {
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.product-price-large {
+    font-size: 32px;
+    font-weight: 800;
+    color: #1F1F1F;
+    line-height: 1;
+}
+
+/* Избранное */
+.favorite-form {
+    margin: 0;
+    padding: 0;
+}
+
+.favorite-icon-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.favorite-icon-btn:hover {
+    background: #f5f5f5;
+}
+
+.favorite-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.favorite-icon-btn svg {
+    width: 24px;
+    height: 24px;
+    transition: all 0.2s ease;
+}
+
+.favorite-icon-btn.active svg {
+    animation: heartbeat 0.3s ease;
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Выпадающий список "..." */
+.product-actions-dropdown {
+    position: relative;
+}
+
+.btn-actions-dropdown {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease;
+    color: #666;
+}
+
+.btn-actions-dropdown:hover {
+    background: #f5f5f5;
+}
+
+.btn-actions-dropdown:active {
+    transform: scale(0.95);
+}
+
+.btn-actions-dropdown svg {
+    width: 24px;
+    height: 24px;
+}
+
+.dropdown-menu {
+    border: 1px solid #E6E6E6;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    min-width: 200px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    color: #1F1F1F;
+    text-decoration: none;
+}
+
+.dropdown-item:hover {
+    background: #f8f9fa;
+}
+
+.dropdown-item i {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.dropdown-form {
+    margin: 0;
+    padding: 0;
+}
+
+.dropdown-form .dropdown-item {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* НДС */
+.vat-label {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.vat-included {
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.vat-excluded {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+/* Количество */
+.product-quantity {
+    font-size: 14px;
+    color: #7F7F7F;
+}
+
+.quantity-icon {
+    margin-right: 8px;
+}
+
+/* Информация о продавце */
+.seller-info-card {
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.seller-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #0057FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.avatar-icon {
+    font-size: 24px;
+}
+
+.seller-name {
+    font-size: 16px;
+    color: #1F1F1F;
+    margin-bottom: 2px;
+}
+
+.seller-rating {
+    font-size: 13px;
+}
+
+.seller-response-time {
+    font-size: 13px;
+}
+
+/* Кнопки контактов в одну строку */
+.contact-buttons-row {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-contact {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    white-space: nowrap;
+}
+
+.btn-phone {
+    background: #0057FF;
+    color: white;
+    border-color: #0057FF;
+}
+
+.btn-phone:hover {
+    background: #0045CC;
+    border-color: #0045CC;
+}
+
+.btn-write {
+    background: white;
+    color: #0057FF;
+    border-color: #0057FF;
+}
+
+.btn-write:hover {
+    background: #f0f7ff;
+}
+
+/* Информация о продавце (раздел) */
+.seller-info-section {
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.section-header {
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1F1F1F;
+}
+
+.seller-stats {
+    font-size: 14px;
+}
+
+.seller-stats .stat-item {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.seller-stats .stat-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+/* Жалоба */
+.btn-report {
+    background: none;
+    border: none;
+    color: #666;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 14px;
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.btn-report:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* Заголовок товара */
+.product-title-section {
+    margin-bottom: 24px;
+}
+
+.product-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1F1F1F;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    word-break: break-word;
+}
+
+.product-manufacturer {
+    font-size: 14px;
+    color: #7F7F7F;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+}
+
+.close:hover {
+    color: #333;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sticky-sidebar {
+        position: static;
+        margin-top: 20px;
+    }
+    
+    .product-title {
+        font-size: 24px;
+    }
+    
+    .product-price-large {
+        font-size: 28px;
+    }
+    
+    .contact-buttons-row {
+        flex-direction: column;
+    }
+    
+    .favorite-icon-btn,
+    .btn-actions-dropdown {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .favorite-icon-btn svg,
+    .btn-actions-dropdown svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Плавная прокрутка для липкого блока */
+@media (min-width: 769px) {
+    .sticky-sidebar {
+        transition: top 0.3s ease;
+    }
+    
+    /* При скролле уменьшаем отступ */
+    .scrolled .sticky-sidebar {
+        top: 80px;
+    }
+}
+</style>
 
 <script>
 function changeImage(thumb) {
@@ -321,6 +792,42 @@ document.addEventListener('DOMContentLoaded', function() {
             this.src = '/static/images/no-image.png';
         });
     });
+    
+    // Обработчик клика на сердечко
+    const favoriteButtons = document.querySelectorAll('.favorite-icon-btn');
+    favoriteButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const svg = this.querySelector('svg');
+            if (svg.getAttribute('fill') === 'none') {
+                svg.setAttribute('fill', 'red');
+                svg.setAttribute('stroke', 'red');
+                this.classList.add('active');
+            } else {
+                svg.setAttribute('fill', 'none');
+                svg.setAttribute('stroke', 'gray');
+                this.classList.remove('active');
+            }
+        });
+    });
+    
+    // Обработчик скролла для липкого блока
+    if (window.innerWidth >= 769) {
+        const stickySidebar = document.querySelector('.sticky-sidebar');
+        
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 100) {
+                document.body.classList.add('scrolled');
+                if (stickySidebar) {
+                    stickySidebar.style.top = '80px';
+                }
+            } else {
+                document.body.classList.remove('scrolled');
+                if (stickySidebar) {
+                    stickySidebar.style.top = '100px';
+                }
+            }
+        });
+    }
 });
 </script>
 {% endblock %}
