@@ -7,6 +7,11 @@ from app import db, login_manager
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
+user_favorites = db.Table('user_favorites',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
+)
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=True)
@@ -23,6 +28,8 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default='user')
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    favorited_products = db.relationship('Product', secondary=user_favorites, lazy='dynamic', backref='favorited_by')
     
     products = db.relationship('Product', backref='owner', lazy=True)
     

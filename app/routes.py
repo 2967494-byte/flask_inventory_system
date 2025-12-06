@@ -571,3 +571,35 @@ def update_expired_products():
         db.session.commit()
     
     return f'Обновлено {updated_count} товаров с истекшим сроком публикации'
+
+@main.route('/product/<int:product_id>/favorite', methods=['POST'])
+@login_required
+def toggle_favorite(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product in current_user.favorited_products:
+        current_user.favorited_products.remove(product)
+    else:
+        current_user.favorited_products.append(product)
+    db.session.commit()
+    return redirect(url_for('main.product_detail', product_id=product_id))
+
+# Заглушка для сообщений
+@main.route('/messages/<int:user_id>/<int:product_id>')
+@login_required
+def messages(user_id, product_id):
+    # Позже здесь будет логика диалогов
+    flash('Система сообщений находится в разработке', 'info')
+    return redirect(url_for('main.product_detail', product_id=product_id))
+
+# Пожаловаться на товар
+@main.route('/product/<int:product_id>/report', methods=['POST'])
+@login_required
+def report_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    reason = request.form.get('reason')
+    if reason:
+        # Позже: сохранить в БД, отправить админу
+        flash('Жалоба отправлена. Спасибо за участие!', 'success')
+    else:
+        flash('Выберите причину жалобы', 'error')
+    return redirect(url_for('main.product_detail', product_id=product_id))
