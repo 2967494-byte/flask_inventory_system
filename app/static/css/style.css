@@ -917,7 +917,9 @@
 }
 
 .products-data-table tbody tr:hover {
-    background-color: var(--background-secondary);
+    background-color: #e6f7ff !important; /* Яркий голубой Avito */
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .products-data-table tbody tr:last-child {
@@ -1229,7 +1231,7 @@
 .avito-product-image {
     width: 100%;
     height: 200px;
-    background: var(--background-secondary);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1237,14 +1239,29 @@
     font-size: 48px;
     overflow: hidden;
     position: relative;
+    border-bottom: 1px solid var(--border);
 }
 
-.avito-product-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    transition: transform 0.3s ease;
+/* Стили для иконки заглушки в Avito-стиле */
+.avito-product-image .no-image-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.avito-product-image .no-image-icon svg {
+    width: 64px;
+    height: 64px;
+    stroke: #cbd5e1;
+    opacity: 0.7;
+}
+
+.avito-product-image .no-image-text {
+    font-size: 14px;
+    color: #94a3b8;
+    font-weight: 500;
+    text-align: center;
 }
 
 .avito-product-card:hover .avito-product-image img {
