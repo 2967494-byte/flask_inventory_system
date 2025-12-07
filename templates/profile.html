@@ -17,6 +17,8 @@
         <div class="profile-content">
             <!-- Основная информация -->
             <form method="POST" class="profile-form" id="basic-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
                 <div class="form-section tab-content active" id="basic-tab">
                     <h3 class="section-title">Основная информация</h3>
                     
@@ -147,6 +149,8 @@
 
             <!-- Дополнительная информация -->
             <form method="POST" class="profile-form hidden" id="additional-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
                 <div class="form-section" id="additional-tab">
                     <h3 class="section-title">Реквизиты организации</h3>
                     
