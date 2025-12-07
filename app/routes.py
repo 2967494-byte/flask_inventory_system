@@ -709,7 +709,7 @@ def add_review(product_id):
     
     if current_user.id == product.user_id:
         flash('Вы не можете оставить отзыв на свой товар', 'error')
-        return redirect(url_for('main.product_detail', product_id=product_id))
+        return redirect(request.referrer or url_for('main.index'))
     
     # Проверяем, не оставлял ли уже отзыв на этого продавца через этот товар
     existing_review = Review.query.filter_by(
@@ -774,7 +774,7 @@ def add_review_direct(user_id):
             db.session.commit()
             
             flash('Спасибо за ваш отзыв! Он будет опубликован после проверки.', 'success')
-            return redirect(url_for('main.user_reviews', user_id=user_id))
+            return redirect(request.referrer or url_for('main.product_detail', product_id=...))
             
         except Exception as e:
             db.session.rollback()
