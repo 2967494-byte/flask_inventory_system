@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-star-fill me-2"></i>Оставить отзыв пользователю
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Информация о продавце -->
+                    <div class="seller-info mb-4 p-3 bg-light rounded">
+                        <div class="d-flex align-items-center">
+                            <div class="seller-avatar me-3">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                                     style="width: 50px; height: 50px;">
+                                    <i class="bi bi-person fs-4"></i>
+                                </div>
+                            </div>
+                            <div class="seller-details">
+                                <h5 class="mb-1">
+                                    {% if seller.username %}
+                                        {{ seller.username }}
+                                    {% elif seller.company_name %}
+                                        {{ seller.company_name }}
+                                    {% else %}
+                                        {{ seller.email.split('@')[0] }}
+                                    {% endif %}
+                                </h5>
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    На платформе с {{ seller.created_at.strftime('%d.%m.%Y') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Форма отзыва -->
+                    <form method="POST" action="{{ url_for('main.add_review_direct', user_id=seller.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Оценка звездами -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Ваша оценка</label>
+                            <div class="rating-stars mb-3">
+                                {% for value in [5, 4, 3, 2, 1] %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" 
+                                           name="{{ form.rating.name }}" 
+                                           id="rating{{ value }}" 
+                                           value="{{ value }}"
+                                           {% if form.rating.data == value %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label rating-star-label" for="rating{{ value }}">
+                                        {% for i in range(1, 6) %}
+                                            {% if i <= value %}
+                                                <span class="star-filled">★</span>
+                                            {% else %}
+                                                <span class="star-empty">☆</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <span class="rating-text ms-2">
+                                            {% if value == 5 %}Отлично
+                                            {% elif value == 4 %}Хорошо
+                                            {% elif value == 3 %}Удовлетворительно
+                                            {% elif value == 2 %}Плохо
+                                            {% else %}Очень плохо
+                                            {% endif %}
+                                        </span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.rating.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.rating.errors %}
+                                <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Текст отзыва -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Текст отзыва</label>
+                            {{ form.text(class="form-control", rows="6", 
+                                       placeholder="Расскажите о вашем опыте взаимодействия с этим пользователем. Будьте конкретны и объективны...") }}
+                            <div class="form-text">
+                                Минимум 10 символов. Опишите ваш опыт: как прошла сделка, общение, выполнение обязательств.
+                            </div>
+                            {% if form.text.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.text.errors %}
+                                <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Кнопки -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('main.user_reviews', user_id=seller.id) }}" 
+                               class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i>Назад к отзывам
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                    
+                    <!-- Подсказки -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6><i class="bi bi-lightbulb me-2"></i>Советы по написанию отзыва:</h6>
+                        <ul class="mb-0">
+                            <li>Будьте конкретны - опишите что именно понравилось или не понравилось</li>
+                            <li>Оценивайте только ваш личный опыт</li>
+                            <li>Избегайте эмоциональных оценок, придерживайтесь фактов</li>
+                            <li>Не указывайте личную информацию (телефоны, адреса)</li>
+                            <li>Отзыв будет виден другим пользователям после проверки</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.rating-star-label {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.rating-star-label:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-color: rgba(13, 110, 253, 0.2);
+}
+
+.form-check-input:checked + .rating-star-label {
+    background-color: rgba(13, 110, 253, 0.15);
+    border-color: #0d6efd;
+}
+
+.star-filled {
+    color: #ffc107;
+    font-size: 1.2em;
+}
+
+.star-empty {
+    color: #dee2e6;
+    font-size: 1.2em;
+}
+
+.rating-text {
+    font-weight: 500;
+}
+
+.seller-avatar {
+    flex-shrink: 0;
+}
+</style>
+
+{% endblock %}

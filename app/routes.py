@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, send_from_directory, current_app
 from flask_login import login_required, current_user
 from app import db
-from app.models import Product, Category, User
+from app.models import Product, Category, User, Review
 from datetime import datetime
 import os
 import uuid
@@ -10,6 +10,18 @@ from sqlalchemy.orm import joinedload
 
 # Создаем Blueprint ДО определения маршрутов
 main = Blueprint('main', __name__, template_folder='../templates')
+
+# Попытка импорта формы отзыва
+try:
+    from app.forms import ReviewForm
+except ImportError:
+    # Временный заглушка если forms.py нет
+    class ReviewForm:
+        def __init__(self, *args, **kwargs):
+            pass
+        def validate_on_submit(self):
+            return False
+    print("Предупреждение: app.forms не найден, формы отзывов не будут работать")
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -643,3 +655,136 @@ def report_product(product_id):
     else:
         flash('Выберите причину жалобы', 'error')
     return redirect(url_for('main.product_detail', product_id=product_id))
+
+@main.route('/favorites')
+@login_required
+def favorites():
+    # Получаем избранные товары текущего пользователя
+    favorite_products = current_user.favorited_products.all()
+    return render_template('favorites.html', products=favorite_products)
+
+@main.route('/user/<int:user_id>/reviews')
+def user_reviews(user_id):
+    """Просмотр всех отзывов о пользователе"""
+    user = User.query.get_or_404(user_id)
+    
+    # Получаем отзывы
+    reviews = Review.query.filter(
+        Review.seller_id == user_id,
+        Review.is_published == True
+    ).order_by(Review.created_at.desc()).all()
+    
+    # Вручную считаем статистику
+    total_reviews = len(reviews)
+    
+    if total_reviews > 0:
+        # Средний рейтинг
+        average_rating = sum(r.rating for r in reviews) / total_reviews
+        average_rating = round(average_rating, 1)
+        
+        # Распределение оценок
+        rating_distribution = {1:0, 2:0, 3:0, 4:0, 5:0}
+        for review in reviews:
+            rating_distribution[review.rating] += 1
+    else:
+        average_rating = 0
+        rating_distribution = {1:0, 2:0, 3:0, 4:0, 5:0}
+    
+    return render_template('user_reviews.html',
+                         user=user,
+                         reviews=reviews,
+                         total_reviews=total_reviews,
+                         average_rating=average_rating,
+                         rating_distribution=rating_distribution)
+
+@main.route('/product/<int:product_id>/add_review', methods=['GET', 'POST'])
+@login_required
+def add_review(product_id):
+    """Добавление отзыва на товар"""
+    product = Product.query.get_or_404(product_id)
+    
+    # Проверяем, может ли пользователь оставить отзыв
+    # Обычно можно оставить только если пользователь покупал товар
+    # Для простоты пока разрешим всем авторизованным, кроме владельца
+    
+    if current_user.id == product.user_id:
+        flash('Вы не можете оставить отзыв на свой товар', 'error')
+        return redirect(url_for('main.product_detail', product_id=product_id))
+    
+    # Проверяем, не оставлял ли уже отзыв на этого продавца через этот товар
+    existing_review = Review.query.filter_by(
+        seller_id=product.user_id,
+        buyer_id=current_user.id,
+        product_id=product_id
+    ).first()
+    
+    if existing_review:
+        flash('Вы уже оставляли отзыв на этот товар', 'error')
+        return redirect(url_for('main.product_detail', product_id=product_id))
+    
+    # Создаем форму
+    form = ReviewForm()
+    
+    if form.validate_on_submit():
+        try:
+            review = Review(
+                seller_id=product.user_id,
+                buyer_id=current_user.id,
+                product_id=product_id,
+                rating=form.rating.data,
+                text=form.text.data
+            )
+            
+            db.session.add(review)
+            db.session.commit()
+            
+            flash('Спасибо за ваш отзыв! Он будет опубликован после проверки.', 'success')
+            return redirect(url_for('main.product_detail', product_id=product_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при сохранении отзыва: {str(e)}', 'error')
+    
+    return render_template('add_review.html', 
+                         form=form, 
+                         product=product)
+
+@main.route('/user/<int:user_id>/add_review_direct', methods=['GET', 'POST'])
+@login_required
+def add_review_direct(user_id):
+    """Добавление отзыва напрямую пользователю (не через товар)"""
+    seller = User.query.get_or_404(user_id)
+    
+    if current_user.id == seller.id:
+        flash('Вы не можете оставить отзыв самому себе', 'error')
+        return redirect(url_for('main.user_reviews', user_id=user_id))
+    
+    form = ReviewForm()
+    
+    if form.validate_on_submit():
+        try:
+            review = Review(
+                seller_id=seller.id,
+                buyer_id=current_user.id,
+                rating=form.rating.data,
+                text=form.text.data
+            )
+            
+            db.session.add(review)
+            db.session.commit()
+            
+            flash('Спасибо за ваш отзыв! Он будет опубликован после проверки.', 'success')
+            return redirect(url_for('main.user_reviews', user_id=user_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при сохранении отзыва: {str(e)}', 'error')
+    
+    return render_template('add_review_direct.html', 
+                         form=form, 
+                         seller=seller)
+
+@main.route('/user/<int:user_id>/profile')
+def user_profile_modal(user_id):
+    user = User.query.get_or_404(user_id)
+    return render_template('partials/user_profile_modal.html', user=user)

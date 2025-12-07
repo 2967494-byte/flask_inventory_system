@@ -3037,3 +3037,27 @@ select:focus-visible {
 .btn-remove-image:hover {
     background: rgba(255, 0, 0, 1);
 }
+/* Добавить в конец style.css после существующих стилей */
+
+/* Стили для правой части заголовка */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-left: auto;
+}
+
+/* Адаптивность для header-right */
+@media (max-width: 768px) {
+    .header-right {
+        margin-left: 0;
+        gap: 12px;
+    }
+    
+    .user-name {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

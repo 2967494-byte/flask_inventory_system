@@ -46,6 +46,53 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'<User {self.email}>'
 
+    @property
+    def average_rating(self):
+        """Средний рейтинг продавца"""
+        from sqlalchemy import func
+        avg_rating = db.session.query(func.avg(Review.rating)).filter(
+            Review.seller_id == self.id,
+            Review.is_published == True
+        ).scalar()
+        return round(avg_rating, 1) if avg_rating else 0
+    
+    @property
+    def reviews_count(self):
+        """Количество опубликованных отзывов"""
+        from app.models import Review
+        return Review.query.filter(
+            Review.seller_id == self.id,
+            Review.is_published == True
+        ).count()
+    
+    @property
+    def rating_distribution(self):
+        """Распределение оценок (сколько каждого рейтинга)"""
+        from app.models import Review
+        distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        
+        # Получаем все отзывы
+        reviews = Review.query.filter(
+            Review.seller_id == self.id,
+            Review.is_published == True
+        ).all()
+        
+        # Считаем распределение
+        for review in reviews:
+            if 1 <= review.rating <= 5:
+                distribution[review.rating] += 1
+        
+        return distribution
+    
+    @property
+    def recent_reviews(self, limit=5):
+        """Последние отзывы"""
+        from app.models import Review
+        return Review.query.filter(
+            Review.seller_id == self.id,
+            Review.is_published == True
+        ).order_by(Review.created_at.desc()).limit(limit).all()
+    
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -130,3 +177,33 @@ class Product(db.Model):
     
     def __repr__(self):
         return f'<Product {self.title}>'
+
+class Review(db.Model):
+    __tablename__ = 'review'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=True)
+    rating = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_published = db.Column(db.Boolean, default=True)
+    
+    # Связи
+    seller = db.relationship('User', foreign_keys=[seller_id], backref='reviews_received')
+    buyer = db.relationship('User', foreign_keys=[buyer_id], backref='reviews_given')
+    product = db.relationship('Product', foreign_keys=[product_id], backref='reviews')
+    
+    def __repr__(self):
+        return f'<Review {self.id} {self.rating}★>'
+    
+    @property
+    def rating_stars(self):
+        """Возвращает звездочки для отображения"""
+        return '★' * self.rating + '☆' * (5 - self.rating)
+    
+    @property
+    def created_at_formatted(self):
+        """Форматированная дата"""
+        return self.created_at.strftime('%d.%m.%Y')

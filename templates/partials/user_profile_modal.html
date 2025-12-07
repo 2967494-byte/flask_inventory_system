@@ -1,0 +1,36 @@
+<div class="seller-profile">
+    <div class="profile-avatar mb-3">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: #0057FF; display: flex; align-items: center; justify-content: center; color: white; margin: 0 auto; font-size: 32px;">
+            👤
+        </div>
+    </div>
+    <div class="profile-name fw-bold mb-2">
+        {% if user.username %}{{ user.username }}{% elif user.company_name %}{{ user.company_name }}{% else %}{{ user.email.split('@')[0] }}{% endif %}
+    </div>
+    <div class="profile-stats text-muted mb-3">
+        <div>На платформе с: {{ user.created_at.strftime('%d.%m.%Y') }}</div>
+        {% if user.company_name %}<div>Компания: {{ user.company_name }}</div>{% endif %}
+        <div>Отзывы: {% if user.average_rating %}{{ user.average_rating|round(1) }} ({{ user.reviews_count }}){% else %}нет{% endif %}</div>
+    </div>
+    <div class="profile-actions">
+        {% if current_user.is_authenticated and current_user.id != user.id %}
+        <a href="{{ url_for('main.messages', user_id=user.id, product_id=request.args.get('product_id', 1)) }}" class="btn btn-primary btn-sm">Написать сообщение</a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.seller-profile {
+    padding: 20px;
+    text-align: center;
+}
+
+.profile-stats div {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.profile-actions {
+    margin-top: 15px;
+}
+</style>
