@@ -1,0 +1,72 @@
+<!-- app/templates/partials/review_form.html -->
+<div class="p-3">
+    <h5>Оставить отзыв</h5>
+    <p class="text-muted small mb-3">
+        Отзыв о:
+        {% if seller.username %}
+            {{ seller.username }}
+        {% elif seller.company_name %}
+            {{ seller.company_name }}
+        {% else %}
+            {{ seller.email.split('@')[0] }}
+        {% endif %}
+    </p>
+
+    <form method="POST" action="{{ url_for('main.add_review_direct', user_id=seller.id) }}">
+        {{ form.hidden_tag() }}
+        
+        <!-- Оценка звёздами с наведением -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Ваша оценка</label>
+            <div class="star-rating d-flex" style="font-size: 1.4em; cursor: pointer;">
+                {% for i in range(1, 6) %}
+                <label class="star me-1" style="color: #dee2e6; transition: color 0.2s;" 
+                       data-rating="{{ i }}"
+                       onmouseover="highlightStars(this)"
+                       onmouseout="resetStars()"
+                       onclick="selectStar(this)">
+                    ★
+                    <input type="radio" name="{{ form.rating.name }}" value="{{ i }}" 
+                           class="visually-hidden">
+                </label>
+                {% endfor %}
+            </div>
+            <input type="hidden" id="selectedRating" name="{{ form.rating.name }}" value="">
+            <div class="form-text small text-muted mt-1">Наведите или кликните на звезду</div>
+            {% if form.rating.errors %}
+                <div class="text-danger small mt-1">{{ form.rating.errors[0] }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Текст отзыва -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Текст отзыва</label>
+            {{ form.text(class="form-control form-control-sm", rows="4", 
+                       placeholder="Расскажите о вашем опыте взаимодействия...") }}
+            {% if form.text.errors %}
+                <div class="text-danger small mt-1">{{ form.text.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">Минимум 10 символов.</div>
+        </div>
+
+        <!-- Кнопки -->
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="closeReviewFormModal()">Отмена</button>
+            <button type="submit" class="btn btn-sm btn-primary">Отправить отзыв</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+</style>

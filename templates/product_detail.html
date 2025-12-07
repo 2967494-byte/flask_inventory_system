@@ -1,7 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-2"> <!-- Уменьшен отступ сверху -->
+<div class="container mt-2">
+    <!-- Компактная навигация -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Назад
+        </a>
+        <span class="text-muted small">ID: {{ product.id }}</span>
+    </div>
     
     <!-- Баннер статуса -->
     {% if product.status != product.STATUS_PUBLISHED %}
@@ -256,7 +263,7 @@
                                         </span>
                                         <span class="rating-text text-muted ms-1">
                                             {% if avg_rating > 0 %}
-                                                {{ "%.1f"|format(avg_rating) }} • {{ product.owner.reviews_count }} {{ product.owner.reviews_count|declension('отзыв', 'отзыва', 'отзывов') }}
+                                                {{ "%.1f"|format(avg_rating) }} • {{ product.owner.reviews_count }} {{ 'отзыв' if product.owner.reviews_count == 1 else 'отзыва' if 2 <= product.owner.reviews_count <= 4 else 'отзывов' }}
                                             {% else %}
                                                 Нет отзывов
                                             {% endif %}
@@ -265,25 +272,26 @@
                                 </div>
                             </div>
                             
-                            <!-- Ссылка на отзывы -->
-                            <div class="seller-reviews-link mb-3">
-                                <a href="{{ url_for('main.user_reviews', user_id=product.user_id) }}" 
-                                class="btn btn-outline-primary btn-sm w-100">
-                                    <i class="bi bi-star-fill me-1"></i>
-                                    Посмотреть все отзывы 
-                                    {% if product.owner.reviews_count > 0 %}
-                                        ({{ product.owner.reviews_count }})
+                            <!-- Кнопка для модального окна с отзывами -->
+                                <div class="seller-reviews-link mb-3">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary btn-sm w-100"
+                                            onclick="openReviewsModal({{ product.user_id }})">
+                                        <i class="bi bi-star-fill me-1"></i>
+                                        Посмотреть все отзывы 
+                                        {% if product.owner.reviews_count > 0 %}
+                                            ({{ product.owner.reviews_count }})
+                                        {% endif %}
+                                    </button>
+                                    {% if current_user.is_authenticated and current_user.id != product.user_id %}
+                                    <button type="button" 
+                                            class="btn btn-outline-success btn-sm w-100 mt-2"
+                                            onclick="openReviewFormModal({{ product.user_id }})">
+                                        <i class="bi bi-chat-left-text me-1"></i>
+                                        Оставить отзыв
+                                    </button>
                                     {% endif %}
-                                </a>
-                                
-                                {% if current_user.is_authenticated and current_user.id != product.user_id %}
-                                <a href="{{ url_for('main.add_review_direct', user_id=product.user_id) }}" 
-                                class="btn btn-outline-success btn-sm w-100 mt-2">
-                                    <i class="bi bi-chat-left-text me-1"></i>
-                                    Оставить отзыв
-                                </a>
-                                {% endif %}
-                            </div>
+                                </div>
 
                             <div class="seller-response-time text-muted mb-3">
                                 <i class="bi bi-clock me-1"></i>
@@ -414,7 +422,28 @@
     </div>
 </div>
 
+<!-- Модальное окно для отзывов -->
+<div id="reviewsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeReviewsModal()">&times;</span>
+        <div id="reviewsModalContent" class="py-3">
+            <div class="spinner">Загрузка...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно формы отзыва -->
+<div id="reviewFormModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeReviewFormModal()">&times;</span>
+        <div id="reviewFormContent" class="py-3">
+            <div class="spinner">Загрузка...</div>
+        </div>
+    </div>
+</div>
+
 <style>
+
 /* Уменьшаем отступ между header и контентом */
 .container {
     padding-top: 16px !important;
@@ -977,15 +1006,45 @@ function closeSellerProfileModal() {
     document.getElementById('sellerProfileModal').style.display = 'none';
 }
 
+// === МОДАЛЬНОЕ ОКНО ОТЗЫВОВ ===
+function openReviewsModal(userId) {
+    const modal = document.getElementById('reviewsModal');
+    const content = document.getElementById('reviewsModalContent');
+    content.innerHTML = '<div class="spinner">Загрузка...</div>';
+    modal.style.display = 'block';
+
+    fetch(`/user/${userId}/reviews_content`)
+        .then(response => {
+            if (!response.ok) throw new Error('Ошибка загрузки');
+            return response.text();
+        })
+        .then(html => {
+            content.innerHTML = html;
+        })
+        .catch(err => {
+            content.innerHTML = '<div class="text-danger p-3">Не удалось загрузить отзывы.</div>';
+            console.error(err);
+        });
+}
+
+function closeReviewsModal() {
+    document.getElementById('reviewsModal').style.display = 'none';
+}
+
+
 // Закрытие по клику вне окна
 window.onclick = function(event) {
     const phoneModal = document.getElementById('phoneModal');
     const reportModal = document.getElementById('reportModal');
     const sellerProfileModal = document.getElementById('sellerProfileModal');
+    const reviewsModal = document.getElementById('reviewsModal');
+    const reviewFormModal = document.getElementById('reviewFormModal');
     
     if (event.target === phoneModal) phoneModal.style.display = 'none';
     if (event.target === reportModal) reportModal.style.display = 'none';
     if (event.target === sellerProfileModal) sellerProfileModal.style.display = 'none';
+    if (event.target === reviewsModal) reviewsModal.style.display = 'none';
+    if (event.target === reviewFormModal) reviewFormModal.style.display = 'none';
 }
 
 // Функции для сворачиваемого описания
@@ -1134,6 +1193,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// === МОДАЛЬНОЕ ОКНО ФОРМЫ ОТЗЫВА ===
+function openReviewFormModal(userId) {
+    const modal = document.getElementById('reviewFormModal');
+    const content = document.getElementById('reviewFormContent');
+    content.innerHTML = '<div class="spinner">Загрузка...</div>';
+    modal.style.display = 'block';
+
+    fetch(`/user/${userId}/review_form`)
+        .then(response => {
+            if (!response.ok) throw new Error('Ошибка загрузки формы');
+            return response.text();
+        })
+        .then(html => {
+            content.innerHTML = html;
+            // Переназначаем обработчик для кнопки "Отмена", если нужно
+        })
+        .catch(err => {
+            content.innerHTML = '<div class="text-danger p-3">Не удалось загрузить форму отзыва.</div>';
+            console.error(err);
+        });
+}
+
+function closeReviewFormModal() {
+    document.getElementById('reviewFormModal').style.display = 'none';
+}
+
+  // === ИНТЕРАКТИВНЫЕ ЗВЁЗДЫ В ФОРМЕ ОТЗЫВА ===
+  let currentRating = 0;
+
+  function highlightStars(element) {
+      const rating = parseInt(element.getAttribute('data-rating'));
+      document.querySelectorAll('.star-rating .star').forEach((star, idx) => {
+          star.style.color = idx < rating ? '#ffc107' : '#dee2e6';
+      });
+  }
+
+  function resetStars() {
+      const selected = currentRating;
+      document.querySelectorAll('.star-rating .star').forEach((star, idx) => {
+          star.style.color = idx < selected ? '#ffc107' : '#dee2e6';
+      });
+  }
+
+  function selectStar(element) {
+      const rating = parseInt(element.getAttribute('data-rating'));
+      currentRating = rating;
+      const hiddenInput = document.getElementById('selectedRating');
+      if (hiddenInput) {
+          hiddenInput.value = rating;
+      }
+      resetStars();
+  }
+
 </script>
 
 {% endblock %}

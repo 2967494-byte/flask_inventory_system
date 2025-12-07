@@ -788,3 +788,20 @@ def add_review_direct(user_id):
 def user_profile_modal(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('partials/user_profile_modal.html', user=user)
+
+@main.route('/user/<int:user_id>/reviews_content')
+def user_reviews_content(user_id):
+    from app.models import User, Review
+    user = User.query.get_or_404(user_id)
+    reviews = Review.query.filter(
+        Review.seller_id == user.id,
+        Review.is_published == True
+    ).order_by(Review.created_at.desc()).all()
+    return render_template('partials/user_reviews_content.html', user=user, reviews=reviews)
+
+@main.route('/user/<int:user_id>/review_form')
+def review_form(user_id):
+    from app.models import User
+    seller = User.query.get_or_404(user_id)
+    form = ReviewForm()
+    return render_template('partials/review_form.html', seller=seller, form=form)
