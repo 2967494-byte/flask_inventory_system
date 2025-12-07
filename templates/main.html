@@ -622,6 +622,14 @@
                         <span class="search-btn-text">Найти</span>
                     </button>
                 </div>
+                <!-- Местоположение -->
+                <span id="locationDisplay" class="location-display" style="margin-left: 15px; font-size: 14px; color: #666;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span id="locationText">Казань</span> <!-- По умолчанию -->
+                </span>
             </div>
         </div>
     </div>
@@ -1392,5 +1400,50 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Table внутренний display:', document.getElementById('productsTableView')?.querySelector('.products-table-view')?.style.display);
     }, 500);
 });
+
+// === РАБОТА С МЕСТОПОЛОЖЕНИЕМ ===
+
+// Глобальная переменная для хранения текущего местоположения
+let currentLocation = localStorage.getItem('userLocation') || 'Казань'; // по умолчанию
+
+// Функция для установки местоположения
+function setLocation(location) {
+    currentLocation = location;
+    localStorage.setItem('userLocation', location);
+    document.getElementById('locationText').textContent = location;
+    // Можно также обновить поиск, если нужно
+    // applyFilters();
+}
+
+// Функция для запроса местоположения у пользователя
+function requestLocation() {
+    if (!localStorage.getItem('locationAsked')) {
+        const userConfirmed = confirm('Укажите ваш город для более точного поиска товаров?');
+        if (userConfirmed) {
+            const userLocation = prompt('Введите ваш город или регион:', 'Казань');
+            if (userLocation && userLocation.trim().length > 0) {
+                setLocation(userLocation.trim());
+            }
+        }
+        localStorage.setItem('locationAsked', 'true');
+    } else {
+        // Если уже спрашивали — просто загружаем из localStorage
+        document.getElementById('locationText').textContent = currentLocation;
+    }
+}
+
+// Обработчик клика по местоположению — можно расширить
+document.getElementById('locationDisplay').addEventListener('click', function() {
+    const newLocation = prompt('Изменить местоположение:', currentLocation);
+    if (newLocation && newLocation.trim().length > 0) {
+        setLocation(newLocation.trim());
+    }
+});
+
+// Запускаем при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    requestLocation(); // Запрашиваем местоположение при первом входе
+});
+
 </script>
 {% endblock %}

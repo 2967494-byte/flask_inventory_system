@@ -3077,3 +3077,22 @@ select:focus-visible {
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     z-index: 2;
 }
+
+/* Местоположение */
+.location-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+.location-display:hover {
+    background-color: #f0f0f0;
+}
+.location-display svg {
+    width: 16px;
+    height: 16px;
+    color: #666;
+}
