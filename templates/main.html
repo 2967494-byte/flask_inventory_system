@@ -467,68 +467,7 @@
         background: #0057FF;
         color: white;
     }
-    /* Адаптивность для мобильных устройств */
-    @media (max-width: 768px) {
-        .layout-container {
-            flex-direction: column;
-        }
-        .sidebar-container,
-        .content-container {
-            width: 100%;
-        }
-  
-        /* Адаптация таблицы для мобильных */
-        .products-data-table {
-            display: block;
-            overflow-x: auto;
-        }
-        .products-data-table th,
-        .products-data-table td {
-            white-space: nowrap;
-            min-width: 100px;
-        }
-        .table-pagination {
-            flex-direction: column;
-            gap: 10px;
-            align-items: stretch;
-        }
-        /* Адаптация плитки для мобильных */
-        .products-grid-view {
-            grid-template-columns: 1fr !important;
-        }
-        /* Адаптация списка для мобильных */
-        .products-list-view .product-card {
-            flex-direction: column;
-            min-height: auto;
-        }
-        .products-list-view .product-image {
-            width: 100%;
-            height: 200px;
-        }
-        /* Адаптация переключения видов на мобильных */
-        .view-controls {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-        }
-    }
-
-    /* === ЗНАЧОК ИЗБРАННОГО === */
-    .favorite-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: white;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        z-index: 2;
-    }
-
+    
     /* === Стили для модального окна локации === */
     .location-search {
         position: relative;
@@ -622,46 +561,7 @@
         80%, 100% { content: '...'; }
     }
 
-/* Адаптивность для мобильных */
-@media (max-width: 768px) {
-    #locationModal .modal-content {
-        margin: 20% auto;
-        width: 95%;
-        max-width: 95%;
-        border-radius: 12px;
-    }
-    
-    #locationModal .modal-header {
-        padding: 20px 20px 12px;
-    }
-    
-    #locationModal .modal-header h3 {
-        font-size: 18px;
-    }
-    
-    .location-search {
-        margin: 0 20px 16px;
-    }
-    
-    #locationInput {
-        padding: 12px 40px 12px 14px;
-        font-size: 15px;
-    }
-    
-    .location-suggestions {
-        margin: 0 20px 20px;
-        max-height: 300px;
-    }
-    
-    .suggestion-item {
-        padding: 14px 16px;
-        font-size: 14px;
-    }
-    
-    .suggestion-item:hover {
-        padding-left: 20px;
-    }
-
+    /* Стили для текущего местоположения */
     .suggestion-item.current-location {
         background-color: #e6f2ff;
         font-weight: 600;
@@ -693,7 +593,90 @@
         background-color: #e6f2ff;
     }
 
-}
+    /* Адаптивность для мобильных устройств */
+    @media (max-width: 768px) {
+        .layout-container {
+            flex-direction: column;
+        }
+        .sidebar-container,
+        .content-container {
+            width: 100%;
+        }
+  
+        /* Адаптация таблицы для мобильных */
+        .products-data-table {
+            display: block;
+            overflow-x: auto;
+        }
+        .products-data-table th,
+        .products-data-table td {
+            white-space: nowrap;
+            min-width: 100px;
+        }
+        .table-pagination {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+        /* Адаптация плитки для мобильных */
+        .products-grid-view {
+            grid-template-columns: 1fr !important;
+        }
+        /* Адаптация списка для мобильных */
+        .products-list-view .product-card {
+            flex-direction: column;
+            min-height: auto;
+        }
+        .products-list-view .product-image {
+            width: 100%;
+            height: 200px;
+        }
+        /* Адаптация переключения видов на мобильных */
+        .view-controls {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        /* Адаптивность модального окна локации для мобильных */
+        #locationModal .modal-content {
+            margin: 20% auto;
+            width: 95%;
+            max-width: 95%;
+            border-radius: 12px;
+        }
+        
+        #locationModal .modal-header {
+            padding: 20px 20px 12px;
+        }
+        
+        #locationModal .modal-header h3 {
+            font-size: 18px;
+        }
+        
+        .location-search {
+            margin: 0 20px 16px;
+        }
+        
+        #locationInput {
+            padding: 12px 40px 12px 14px;
+            font-size: 15px;
+        }
+        
+        .location-suggestions {
+            margin: 0 20px 20px;
+            max-height: 300px;
+        }
+        
+        .suggestion-item {
+            padding: 14px 16px;
+            font-size: 14px;
+        }
+        
+        .suggestion-item:hover {
+            padding-left: 20px;
+        }
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -1211,6 +1194,7 @@ async function searchLocations(searchTerm) {
     const suggestions = document.getElementById('locationSuggestions');
     
     if (!searchTerm || searchTerm.trim() === '') {
+        // Если поле пустое, показываем популярные
         loadPopularLocations();
         return;
     }
@@ -1229,7 +1213,7 @@ async function searchLocations(searchTerm) {
         
         suggestions.innerHTML = '';
         
-        // Всегда показываем "Все регионы"
+        // 1. Всегда показываем "Все регионы"
         const allRegionsDiv = document.createElement('div');
         allRegionsDiv.className = 'suggestion-item all-regions';
         allRegionsDiv.innerHTML = 'Все регионы';
@@ -1238,7 +1222,13 @@ async function searchLocations(searchTerm) {
         };
         suggestions.appendChild(allRegionsDiv);
         
-        // Добавляем найденные локации
+        // 2. Разделитель
+        const separator = document.createElement('div');
+        separator.className = 'suggestion-separator';
+        separator.innerHTML = 'Результаты поиска';
+        suggestions.appendChild(separator);
+        
+        // 3. Добавляем найденные локации
         let hasResults = false;
         for (let location of locations) {
             if (location.display_name === 'Все регионы') continue;
@@ -1253,64 +1243,8 @@ async function searchLocations(searchTerm) {
             hasResults = true;
         }
         
+        // 4. Если результатов нет (кроме "Все регионы")
         if (!hasResults) {
-            suggestions.innerHTML += '<div class="suggestion-item no-results">Ничего не найдено</div>';
-        }
-        
-    } catch (error) {
-        console.error('Ошибка поиска локаций:', error);
-        suggestions.innerHTML = `
-            <div class="suggestion-item" onclick="setLocation('Все регионы')">
-                Все регионы
-            </div>
-            <div class="suggestion-item no-results">Ошибка поиска</div>
-        `;
-    }
-}
-
-// Поиск локаций по введенному тексту
-async function searchLocations(searchTerm) {
-    const suggestions = document.getElementById('locationSuggestions');
-    
-    if (!searchTerm || searchTerm.trim() === '') {
-        // Если поле пустое, показываем популярные
-        loadPopularLocations();
-        return;
-    }
-    
-    // Показываем индикатор загрузки
-    suggestions.innerHTML = `
-        <div class="suggestion-item" onclick="setLocation('Все регионы')">
-            Все регионы
-        </div>
-        <div class="loading-indicator">Поиск</div>
-    `;
-    
-    try {
-        const response = await fetch(`/api/locations?search=${encodeURIComponent(searchTerm)}&limit=30`);
-        const locations = await response.json();
-        
-        // Очищаем и добавляем опцию "Все регионы"
-        suggestions.innerHTML = `
-            <div class="suggestion-item" onclick="setLocation('Все регионы')">
-                Все регионы
-            </div>
-        `;
-        
-        // Добавляем полученные локации
-        locations.forEach(location => {
-            // Пропускаем "Все регионы", так как уже добавили
-            if (location.id === 'all') return;
-            
-            suggestions.innerHTML += `
-                <div class="suggestion-item" onclick="setLocation('${location.display_name}')">
-                    ${location.display_name}
-                </div>
-            `;
-        });
-        
-        // Если кроме "Все регионы" ничего нет
-        if (suggestions.children.length === 1) {
             suggestions.innerHTML += '<div class="suggestion-item no-results">Ничего не найдено</div>';
         }
         

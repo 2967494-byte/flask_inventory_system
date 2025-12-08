@@ -938,6 +938,11 @@ def get_locations():
         search = request.args.get('search', '').strip()
         limit = int(request.args.get('limit', 30))
         
+        # Отладка
+        print(f"=== API /api/locations вызван ===")
+        print(f"Поисковой запрос: '{search}'")
+        print(f"Лимит: {limit}")
+        
         results = []
         
         # Всегда добавляем "Все регионы"
@@ -948,66 +953,223 @@ def get_locations():
             'display_name': 'Все регионы'
         })
         
-        # Если нет поиска - возвращаем регионы и города из базы
         if not search:
-            # Получаем ВСЕ регионы (не только родительские)
-            try:
-                regions = Region.query.order_by(Region.name).limit(20).all()
-                for region in regions:
-                    results.append({
-                        'id': f'region_{region.id}',
-                        'name': region.name,
-                        'type': 'region',
-                        'display_name': region.name
-                    })
-            except Exception as e:
-                print(f"Ошибка при получении регионов: {e}")
+            print("Без поиска - возвращаем популярные локации")
+            # Если нет поиска - возвращаем популярные локации
+            popular_locations = [
+                'Москва',
+                'Санкт-Петербург', 
+                'Казань',
+                'Екатеринбург',
+                'Новосибирск',
+                'Нижний Новгород',
+                'Ростов-на-Дону',
+                'Уфа',
+                'Красноярск',
+                'Воронеж',
+                'Пермь',
+                'Волгоград',
+                'Саратов',
+                'Омск',
+                'Челябинск',
+                'Самара'
+            ]
             
-            # Получаем ВСЕ города
-            try:
-                cities = City.query.join(Region).order_by(City.name).limit(50).all()
-                for city in cities:
+            # Ищем эти локации в базе или создаем их
+            for loc_name in popular_locations:
+                # Сначала ищем как город
+                city = City.query.filter_by(name=loc_name).first()
+                if city:
                     results.append({
                         'id': f'city_{city.id}',
                         'name': city.name,
                         'type': 'city',
-                        'display_name': f"{city.name} ({city.region.name})"
+                        'display_name': f"{city.name} ({city.region.name if city.region else 'Неизвестный регион'})"
                     })
-            except Exception as e:
-                print(f"Ошибка при получении городов: {e}")
-
-            
-            # Ищем регионы
-            try:
-                regions = Region.query.filter(
-                    Region.name.ilike(search_lower)
-                ).order_by(Region.name).limit(limit // 2).all()
+                    continue
                 
-                for region in regions:
+                # Если не нашли как город, ищем как регион
+                region = Region.query.filter_by(name=loc_name).first()
+                if region:
                     results.append({
                         'id': f'region_{region.id}',
                         'name': region.name,
                         'type': 'region',
                         'display_name': region.name
                     })
+        
+        else:
+            # ЕСТЬ ПОИСКОВЫЙ ЗАПРОС
+            search_lower = search.lower()
+            print(f"Поиск в нижнем регистре: '{search_lower}'")
+            
+            # Ищем регионы - поиск по НАЧАЛУ строки
+            try:
+                # Сначала ищем регионы, которые начинаются с поисковой строки
+                regions_start = Region.query.filter(
+                    Region.name.ilike(f'{search_lower}%')
+                ).order_by(Region.name).limit(limit // 2).all()
+                
+                # Затем ищем регионы, которые содержат поисковую строку в любом месте
+                regions_contains = Region.query.filter(
+                    Region.name.ilike(f'%{search_lower}%')
+                ).order_by(Region.name).limit(limit // 2).all()
+                
+                # Объединяем результаты, убирая дубликаты
+                all_regions = regions_start + [r for r in regions_contains if r not in regions_start]
+                all_regions = all_regions[:limit // 2]
+                
+                print(f"Найдено регионов: {len(all_regions)}")
+                for region in all_regions:
+                    results.append({
+                        'id': f'region_{region.id}',
+                        'name': region.name,
+                        'type': 'region',
+                        'display_name': region.name
+                    })
+                    print(f"  Регион: {region.name}")
             except Exception as e:
                 print(f"Ошибка при поиске регионов: {e}")
             
-            # Ищем города
+            # Ищем города - поиск по НАЧАЛУ строки
             try:
-                cities = City.query.join(Region).filter(
-                    City.name.ilike(search_lower)
+                # Сначала ищем города, которые начинаются с поисковой строки
+                cities_start = City.query.join(Region).filter(
+                    City.name.ilike(f'{search_lower}%')
                 ).order_by(City.name).limit(limit // 2).all()
                 
-                for city in cities:
+                # Затем ищем города, которые содержат поисковую строку в любом месте
+                cities_contains = City.query.join(Region).filter(
+                    City.name.ilike(f'%{search_lower}%')
+                ).order_by(City.name).limit(limit // 2).all()
+                
+                # Объединяем результаты, убирая дубликаты
+                all_cities = cities_start + [c for c in cities_contains if c not in cities_start]
+                all_cities = all_cities[:limit // 2]
+                
+                print(f"Найдено городов: {len(all_cities)}")
+                for city in all_cities:
                     results.append({
                         'id': f'city_{city.id}',
                         'name': city.name,
                         'type': 'city',
-                        'display_name': f"{city.name} ({city.region.name})"
+                        'display_name': f"{city.name} ({city.region.name if city.region else 'Неизвестный регион'})"
                     })
+                    print(f"  Город: {city.name} ({city.region.name if city.region else 'нет региона'})")
             except Exception as e:
                 print(f"Ошибка при поиске городов: {e}")
+        
+        # Если при поиске ничего не найдено (кроме "Все регионы"),
+        # добавляем популярные города, содержащие поисковую строку
+        if search and len(results) <= 1:  # только "Все регионы"
+            print("Ничего не найдено в БД, ищем в статичном списке популярных городов")
+            
+            # Улучшенный статичный список городов
+            popular_cities_extended = [
+                # Города на А
+                'Архангельск', 'Астрахань', 'Анапа', 'Альметьевск', 'Абакан',
+                # Города на Б
+                'Брянск', 'Белгород', 'Барнаул', 'Благовещенск', 'Бийск', 'Братск',
+                # Города на В
+                'Владивосток', 'Волгоград', 'Владимир', 'Вологда', 'Воронеж',
+                # Города на Г
+                'Грозный', 'Геленджик',
+                # Города на Д
+                'Донецк', 'Дзержинск', 'Димитровград',
+                # Города на Е
+                'Екатеринбург', 'Елец', 'Евпатория',
+                # Города на Ж
+                'Железногорск',
+                # Города на З
+                'Златоуст',
+                # Города на И
+                'Ижевск', 'Иркутск', 'Иваново',
+                # Города на Й
+                'Йошкар-Ола',
+                # Города на К
+                'Казань', 'Краснодар', 'Красноярск', 'Калининград', 'Кемерово',
+                'Киров', 'Кострома', 'Курск', 'Курган', 'Комсомольск-на-Амуре',
+                # Города на Л
+                'Липецк', 'Люберцы',
+                # Города на М
+                'Москва', 'Махачкала', 'Мурманск', 'Магнитогорск', 'Муром',
+                # Города на Н
+                'Нижний Новгород', 'Новосибирск', 'Новороссийск', 'Норильск',
+                'Набережные Челны', 'Нефтеюганск',
+                # Города на О
+                'Омск', 'Оренбург', 'Орёл', 'Обнинск',
+                # Города на П
+                'Пермь', 'Пенза', 'Псков', 'Петрозаводск', 'Подольск',
+                # Города на Р
+                'Ростов-на-Дону', 'Рязань', 'Рыбинск',
+                # Города на С
+                'Санкт-Петербург', 'Самара', 'Саратов', 'Смоленск', 'Сочи',
+                'Ставрополь', 'Стерлитамак', 'Сургут', 'Сыктывкар', 'Северодвинск',
+                # Города на Т
+                'Тверь', 'Тула', 'Тюмень', 'Таганрог', 'Тольятти', 'Томск',
+                # Города на У
+                'Уфа', 'Ульяновск', 'Улан-Удэ',
+                # Города на Ф
+                'Феодосия',
+                # Города на Х
+                'Хабаровск', 'Химки',
+                # Города на Ч
+                'Челябинск', 'Чебоксары', 'Чита',
+                # Города на Ш
+                'Шахты',
+                # Города на Щ
+                'Щёлково',
+                # Города на Э
+                'Элиста', 'Энгельс',
+                # Города на Ю
+                'Южно-Сахалинск',
+                # Города на Я
+                'Ярославль', 'Якутск'
+            ]
+            
+            search_lower = search.lower()
+            found_in_static = False
+            
+            for city_name in popular_cities_extended:
+                if search_lower in city_name.lower():
+                    # Проверяем, начинается ли город с поисковой строки (приоритет выше)
+                    city_lower = city_name.lower()
+                    if city_lower.startswith(search_lower):
+                        # Города, начинающиеся с поисковой строки, идут первыми
+                        results.insert(1, {
+                            'id': f'static_city_{city_name}',
+                            'name': city_name,
+                            'type': 'city',
+                            'display_name': city_name,
+                            'priority': 1  # Высокий приоритет
+                        })
+                    else:
+                        # Города, содержащие поисковую строку, идут после
+                        results.append({
+                            'id': f'static_city_{city_name}',
+                            'name': city_name,
+                            'type': 'city',
+                            'display_name': city_name,
+                            'priority': 0  # Низкий приоритет
+                        })
+                    found_in_static = True
+                    print(f"  Добавлен статичный город: {city_name}")
+            
+            if not found_in_static:
+                print("  Ничего не найдено даже в статичном списке")
+        
+        # Сортируем результаты: "Все регионы" всегда первый,
+        # затем города, начинающиеся с поисковой строки,
+        # затем остальные
+        def sort_key(item):
+            if item['display_name'] == 'Все регионы':
+                return (0, '')  # Всегда первый
+            elif item.get('priority') == 1:
+                return (1, item['display_name'])  # Начинающиеся с поиска
+            else:
+                return (2, item['display_name'])  # Остальные
+        
+        results.sort(key=sort_key)
         
         # Удаляем дубликаты по display_name
         seen = set()
@@ -1017,17 +1179,41 @@ def get_locations():
                 seen.add(item['display_name'])
                 unique_results.append(item)
         
+        print(f"Итоговый результат: {len(unique_results)} уникальных записей")
+        for item in unique_results[:min(10, len(unique_results))]:  # покажем первые 10 для отладки
+            print(f"  - {item['display_name']} ({item.get('priority', 'no priority')})")
+        print("=== Конец API вызова ===")
+        
         return jsonify(unique_results[:limit])
         
     except Exception as e:
         print(f"Критическая ошибка в /api/locations: {str(e)}")
-        # Запасной вариант - минимальный статичный список
-        return jsonify([
+        import traceback
+        traceback.print_exc()
+        
+        # Запасной вариант - статичный список с популярными городами
+        fallback_results = [
             {'id': 'all', 'name': 'Все регионы', 'type': 'all', 'display_name': 'Все регионы'},
             {'id': 'city_1', 'name': 'Москва', 'type': 'city', 'display_name': 'Москва'},
             {'id': 'city_2', 'name': 'Санкт-Петербург', 'type': 'city', 'display_name': 'Санкт-Петербург'},
             {'id': 'city_3', 'name': 'Казань', 'type': 'city', 'display_name': 'Казань'},
-        ])
+            {'id': 'city_4', 'name': 'Екатеринбург', 'type': 'city', 'display_name': 'Екатеринбург'},
+            {'id': 'city_5', 'name': 'Новосибирск', 'type': 'city', 'display_name': 'Новосибирск'},
+            {'id': 'city_6', 'name': 'Нижний Новгород', 'type': 'city', 'display_name': 'Нижний Новгород'},
+            {'id': 'city_7', 'name': 'Ростов-на-Дону', 'type': 'city', 'display_name': 'Ростов-на-Дону'},
+            {'id': 'city_8', 'name': 'Уфа', 'type': 'city', 'display_name': 'Уфа'},
+        ]
+        
+        # Если есть поиск, фильтруем статичный список
+        if search:
+            search_lower = search.lower()
+            filtered_results = [fallback_results[0]]  # всегда "Все регионы"
+            for item in fallback_results[1:]:
+                if search_lower in item['name'].lower():
+                    filtered_results.append(item)
+            return jsonify(filtered_results)
+        
+        return jsonify(fallback_results)
 
 @main.route('/api/regions')
 def get_regions():
