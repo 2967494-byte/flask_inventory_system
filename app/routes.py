@@ -786,11 +786,11 @@ def get_locations():
     """API для получения списка регионов и городов для автодополнения"""
     try:
         search = request.args.get('search', '').strip()
-        limit = int(request.args.get('limit', 20))
+        limit = int(request.args.get('limit', 30))
         
         results = []
         
-        # Добавляем опцию "Все регионы"
+        # Всегда добавляем "Все регионы"
         results.append({
             'id': 'all',
             'name': 'Все регионы',
@@ -798,78 +798,40 @@ def get_locations():
             'display_name': 'Все регионы'
         })
         
-        # Если нет поиска - возвращаем популярные города из товаров
+        # Если нет поиска - возвращаем регионы и города из базы
         if not search:
-            # Сначала попробуем получить города из товаров
+            # Получаем ВСЕ регионы (не только родительские)
             try:
-                cities_from_products = db.session.query(
-                    Product.city.distinct().label('city')
-                ).filter(
-                    Product.city.isnot(None),
-                    Product.city != ''
-                ).order_by(
-                    db.func.random()  # Случайный порядок для разнообразия
-                ).limit(10).all()
-                
-                for city_row in cities_from_products:
-                    city_name = city_row.city
-                    if city_name:
-                        results.append({
-                            'id': f'city_{city_name}',
-                            'name': city_name,
-                            'type': 'city',
-                            'display_name': city_name
-                        })
+                regions = Region.query.order_by(Region.name).limit(20).all()
+                for region in regions:
+                    results.append({
+                        'id': f'region_{region.id}',
+                        'name': region.name,
+                        'type': 'region',
+                        'display_name': region.name
+                    })
             except Exception as e:
-                print(f"Ошибка при получении городов из товаров: {e}")
+                print(f"Ошибка при получении регионов: {e}")
             
-            # Если городов мало, добавляем города из базы
-            if len(results) < 15:
-                try:
-                    cities = City.query.join(Region).order_by(
-                        db.func.random()
-                    ).limit(15 - len(results)).all()
-                    
-                    for city in cities:
-                        results.append({
-                            'id': f'city_{city.id}',
-                            'name': city.name,
-                            'type': 'city',
-                            'region_name': city.region.name,
-                            'display_name': f"{city.name} ({city.region.name})"
-                        })
-                except Exception as e:
-                    print(f"Ошибка при получении городов из базы: {e}")
-        
-        else:
-            # Есть поисковой запрос
-            search_lower = f"%{search.lower()}%"
-            
-            # Ищем города
+            # Получаем ВСЕ города
             try:
-                cities = City.query.join(Region).filter(
-                    db.or_(
-                        City.name.ilike(search_lower),
-                        Region.name.ilike(search_lower)
-                    )
-                ).limit(limit // 2).all()
-                
+                cities = City.query.join(Region).order_by(City.name).limit(50).all()
                 for city in cities:
                     results.append({
                         'id': f'city_{city.id}',
                         'name': city.name,
                         'type': 'city',
-                        'region_name': city.region.name,
                         'display_name': f"{city.name} ({city.region.name})"
                     })
             except Exception as e:
-                print(f"Ошибка при поиске городов: {e}")
+                print(f"Ошибка при получении городов: {e}")
+
             
             # Ищем регионы
             try:
                 regions = Region.query.filter(
                     Region.name.ilike(search_lower)
-                ).limit(limit // 2).all()
+                ).order_by(Region.name).limit(limit // 2).all()
                 
                 for region in regions:
                     results.append({
@@ -880,6 +842,22 @@ def get_locations():
                     })
             except Exception as e:
                 print(f"Ошибка при поиске регионов: {e}")
+            
+            # Ищем города
+            try:
+                cities = City.query.join(Region).filter(
+                    City.name.ilike(search_lower)
+                ).order_by(City.name).limit(limit // 2).all()
+                
+                for city in cities:
+                    results.append({
+                        'id': f'city_{city.id}',
+                        'name': city.name,
+                        'type': 'city',
+                        'display_name': f"{city.name} ({city.region.name})"
+                    })
+            except Exception as e:
+                print(f"Ошибка при поиске городов: {e}")
         
         # Удаляем дубликаты по display_name
         seen = set()
@@ -892,75 +870,13 @@ def get_locations():
         return jsonify(unique_results[:limit])
         
     except Exception as e:
-        print(f"Ошибка в /api/locations: {str(e)}")
-        # Запасной вариант - статичный список
+        print(f"Критическая ошибка в /api/locations: {str(e)}")
+        # Запасной вариант - минимальный статичный список
         return jsonify([
-            {
-                'id': 'all',
-                'name': 'Все регионы',
-                'type': 'all',
-                'display_name': 'Все регионы'
-            },
-            {
-                'id': 'city_1',
-                'name': 'Москва',
-                'type': 'city',
-                'display_name': 'Москва'
-            },
-            {
-                'id': 'city_2',
-                'name': 'Санкт-Петербург',
-                'type': 'city',
-                'display_name': 'Санкт-Петербург'
-            },
-            {
-                'id': 'city_3',
-                'name': 'Казань',
-                'type': 'city',
-                'display_name': 'Казань'
-            },
-            {
-                'id': 'city_4',
-                'name': 'Екатеринбург',
-                'type': 'city',
-                'display_name': 'Екатеринбург'
-            },
-            {
-                'id': 'city_5',
-                'name': 'Новосибирск',
-                'type': 'city',
-                'display_name': 'Новосибирск'
-            },
-            {
-                'id': 'city_6',
-                'name': 'Нижний Новгород',
-                'type': 'city',
-                'display_name': 'Нижний Новгород'
-            },
-            {
-                'id': 'city_7',
-                'name': 'Самара',
-                'type': 'city',
-                'display_name': 'Самара'
-            },
-            {
-                'id': 'city_8',
-                'name': 'Челябинск',
-                'type': 'city',
-                'display_name': 'Челябинск'
-            },
-            {
-                'id': 'city_9',
-                'name': 'Ростов-на-Дону',
-                'type': 'city',
-                'display_name': 'Ростов-на-Дону'
-            },
-            {
-                'id': 'city_10',
-                'name': 'Уфа',
-                'type': 'city',
-                'display_name': 'Уфа'
-            }
+            {'id': 'all', 'name': 'Все регионы', 'type': 'all', 'display_name': 'Все регионы'},
+            {'id': 'city_1', 'name': 'Москва', 'type': 'city', 'display_name': 'Москва'},
+            {'id': 'city_2', 'name': 'Санкт-Петербург', 'type': 'city', 'display_name': 'Санкт-Петербург'},
+            {'id': 'city_3', 'name': 'Казань', 'type': 'city', 'display_name': 'Казань'},
         ])
 
 @main.route('/api/regions')

@@ -1126,71 +1126,87 @@ function clearLocationInput() {
     loadPopularLocations();
 }
 
-// Упрощенная функция загрузки популярных локаций
+// Функция загрузки популярных локаций из API
 async function loadPopularLocations() {
     const suggestions = document.getElementById('locationSuggestions');
     
-    const popularLocations = [
-        'Москва',
-        'Санкт-Петербург',
-        'Казань',
-        'Екатеринбург',
-        'Новосибирск',
-        'Нижний Новгород',
-        'Краснодар',
-        'Уфа',
-        'Воронеж',
-        'Ростов-на-Дону',
-        'Самара',
-        'Омск',
-        'Челябинск',
-        'Красноярск'
-    ];
+    // Показываем индикатор загрузки
+    suggestions.innerHTML = `
+        <div class="suggestion-item" onclick="setLocation('Все регионы')">
+            Все регионы
+        </div>
+        <div class="loading-indicator">Загрузка</div>
+    `;
     
-    suggestions.innerHTML = '';
-    
-    // 1. Текущий выбранный город, если он есть и это не "Все регионы"
-    if (currentLocation && currentLocation !== 'Все регионы') {
-        const currentDiv = document.createElement('div');
-        currentDiv.className = 'suggestion-item current-location';
-        currentDiv.innerHTML = `<strong>${currentLocation}</strong> (текущий)`;
-        currentDiv.onclick = function() {
-            closeLocationModal();
-        };
-        suggestions.appendChild(currentDiv);
-    }
-    
-    // 2. "Все регионы" всегда на видном месте
-    const allRegionsDiv = document.createElement('div');
-    allRegionsDiv.className = 'suggestion-item all-regions';
-    allRegionsDiv.innerHTML = 'Все регионы';
-    allRegionsDiv.onclick = function() {
-        setLocation('Все регионы');
-    };
-    suggestions.appendChild(allRegionsDiv);
-    
-    // 3. Разделитель
-    const separator = document.createElement('div');
-    separator.className = 'suggestion-separator';
-    separator.innerHTML = 'Популярные города';
-    suggestions.appendChild(separator);
-    
-    // 4. Остальные города
-    for (let location of popularLocations) {
-        // Пропускаем, если этот город уже выбран как текущий
-        if (location === currentLocation) continue;
+    try {
+        const response = await fetch('/api/locations?limit=30');
+        const locations = await response.json();
         
-        const div = document.createElement('div');
-        div.className = 'suggestion-item';
-        div.textContent = location;
-        div.onclick = function() {
-            setLocation(location);
+        suggestions.innerHTML = '';
+        
+        // 1. Текущий выбранный город, если он есть и это не "Все регионы"
+        if (currentLocation && currentLocation !== 'Все регионы') {
+            const currentDiv = document.createElement('div');
+            currentDiv.className = 'suggestion-item current-location';
+            currentDiv.innerHTML = `<strong>${currentLocation}</strong> (текущий)`;
+            currentDiv.onclick = function() {
+                closeLocationModal();
+            };
+            suggestions.appendChild(currentDiv);
+        }
+        
+        // 2. "Все регионы" всегда на видном месте
+        const allRegionsDiv = document.createElement('div');
+        allRegionsDiv.className = 'suggestion-item all-regions';
+        allRegionsDiv.innerHTML = 'Все регионы';
+        allRegionsDiv.onclick = function() {
+            setLocation('Все регионы');
         };
-        suggestions.appendChild(div);
+        suggestions.appendChild(allRegionsDiv);
+        
+        // 3. Разделитель
+        const separator = document.createElement('div');
+        separator.className = 'suggestion-separator';
+        separator.innerHTML = 'Другие регионы и города';
+        suggestions.appendChild(separator);
+        
+        // 4. Остальные локации из API
+        for (let location of locations) {
+            // Пропускаем "Все регионы" (уже добавили) и текущий город (уже добавили)
+            if (location.display_name === 'Все регионы') continue;
+            if (location.display_name === currentLocation) continue;
+            
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = location.display_name;
+            div.onclick = function() {
+                setLocation(location.display_name);
+            };
+            suggestions.appendChild(div);
+        }
+        
+    } catch (error) {
+        console.error('Ошибка загрузки локаций:', error);
+        // Запасной статичный список
+        suggestions.innerHTML = `
+            <div class="suggestion-item" onclick="setLocation('Все регионы')">
+                Все регионы
+            </div>
+            <div class="suggestion-item" onclick="setLocation('Москва')">
+                Москва
+            </div>
+            <div class="suggestion-item" onclick="setLocation('Санкт-Петербург')">
+                Санкт-Петербург
+            </div>
+            <div class="suggestion-item" onclick="setLocation('Казань')">
+                Казань
+            </div>
+            <div class="suggestion-item no-results">Ошибка загрузки данных</div>
+        `;
     }
 }
 
-// Упрощенная функция поиска локаций
+// Функция поиска локаций через API
 async function searchLocations(searchTerm) {
     const suggestions = document.getElementById('locationSuggestions');
     
@@ -1199,47 +1215,56 @@ async function searchLocations(searchTerm) {
         return;
     }
     
-    const allLocations = [
-        'Все регионы',
-        'Москва', 'Московская область',
-        'Санкт-Петербург', 'Ленинградская область',
-        'Казань', 'Республика Татарстан',
-        'Екатеринбург', 'Свердловская область',
-        'Новосибирск', 'Новосибирская область',
-        'Нижний Новгород', 'Нижегородская область',
-        'Краснодар', 'Краснодарский край',
-        'Уфа', 'Республика Башкортостан',
-        'Воронеж', 'Воронежская область',
-        'Ростов-на-Дону', 'Ростовская область',
-        'Самара', 'Самарская область',
-        'Омск', 'Омская область',
-        'Челябинск', 'Челябинская область',
-        'Красноярск', 'Красноярский край',
-        'Волгоград', 'Волгоградская область',
-        'Пермь', 'Пермский край',
-        'Владивосток', 'Приморский край'
-    ];
+    // Показываем индикатор загрузки
+    suggestions.innerHTML = `
+        <div class="suggestion-item" onclick="setLocation('Все регионы')">
+            Все регионы
+        </div>
+        <div class="loading-indicator">Поиск</div>
+    `;
     
-    const searchLower = searchTerm.toLowerCase();
-    const filtered = allLocations.filter(loc => 
-        loc.toLowerCase().includes(searchLower)
-    ).slice(0, 30);
-    
-    suggestions.innerHTML = '';
-    
-    if (filtered.length === 0) {
-        suggestions.innerHTML = '<div class="suggestion-item no-results">Ничего не найдено</div>';
-        return;
-    }
-    
-    for (let location of filtered) {
-        const div = document.createElement('div');
-        div.className = 'suggestion-item';
-        div.textContent = location;
-        div.onclick = function() {
-            setLocation(location);
+    try {
+        const response = await fetch(`/api/locations?search=${encodeURIComponent(searchTerm)}&limit=30`);
+        const locations = await response.json();
+        
+        suggestions.innerHTML = '';
+        
+        // Всегда показываем "Все регионы"
+        const allRegionsDiv = document.createElement('div');
+        allRegionsDiv.className = 'suggestion-item all-regions';
+        allRegionsDiv.innerHTML = 'Все регионы';
+        allRegionsDiv.onclick = function() {
+            setLocation('Все регионы');
         };
-        suggestions.appendChild(div);
+        suggestions.appendChild(allRegionsDiv);
+        
+        // Добавляем найденные локации
+        let hasResults = false;
+        for (let location of locations) {
+            if (location.display_name === 'Все регионы') continue;
+            
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = location.display_name;
+            div.onclick = function() {
+                setLocation(location.display_name);
+            };
+            suggestions.appendChild(div);
+            hasResults = true;
+        }
+        
+        if (!hasResults) {
+            suggestions.innerHTML += '<div class="suggestion-item no-results">Ничего не найдено</div>';
+        }
+        
+    } catch (error) {
+        console.error('Ошибка поиска локаций:', error);
+        suggestions.innerHTML = `
+            <div class="suggestion-item" onclick="setLocation('Все регионы')">
+                Все регионы
+            </div>
+            <div class="suggestion-item no-results">Ошибка поиска</div>
+        `;
     }
 }
 
