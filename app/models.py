@@ -208,7 +208,7 @@ class Review(db.Model):
         """Форматированная дата"""
         return self.created_at.strftime('%d.%m.%Y')
 
-# === НОВАЯ МОДЕЛЬ: РЕГИОН ===
+# === МОДЕЛЬ: РЕГИОН ===
 class Region(db.Model):
     __tablename__ = 'region'
     
@@ -227,3 +227,27 @@ class Region(db.Model):
 
     def __repr__(self):
         return f'<Region {self.name}>'
+
+
+# === НОВАЯ МОДЕЛЬ: ГОРОД ===
+class City(db.Model):
+    __tablename__ = 'city'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    region_id = db.Column(db.Integer, db.ForeignKey('region.id'), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Связи
+    region = db.relationship('Region', backref='cities')
+    
+    def __repr__(self):
+        return f'<City {self.name}>'
+    
+    @property
+    def full_name(self):
+        """Полное название города с регионом"""
+        if self.region:
+            return f"{self.name} ({self.region.name})"
+        return self.name

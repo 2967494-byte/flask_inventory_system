@@ -529,6 +529,99 @@
         z-index: 2;
     }
 
+    /* === Стили для модального окна локации === */
+    .location-search {
+        position: relative;
+        margin: 20px;
+    }
+    
+    #locationInput {
+        width: 100%;
+        padding: 12px 40px 12px 14px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+    
+    #locationInput:focus {
+        border-color: var(--avito-blue);
+    }
+    
+    .clear-btn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #999;
+        cursor: pointer;
+        padding: 4px;
+        line-height: 1;
+    }
+    
+    .clear-btn:hover {
+        color: #666;
+    }
+    
+    .location-suggestions {
+        margin: 0 20px 20px;
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: white;
+    }
+    
+    .suggestion-item {
+        padding: 14px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+    
+    .suggestion-item:hover {
+        background: #f8f9fa;
+        padding-left: 20px;
+    }
+    
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+    
+    .suggestion-item.no-results {
+        color: #999;
+        text-align: center;
+        cursor: default;
+    }
+    
+    .suggestion-item.no-results:hover {
+        background: white;
+        padding-left: 16px;
+    }
+    
+    .loading-indicator {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+    
+    .loading-indicator::after {
+        content: '...';
+        animation: dots 1.5s steps(4, end) infinite;
+    }
+    
+    @keyframes dots {
+        0%, 20% { content: ''; }
+        40% { content: '.'; }
+        60% { content: '..'; }
+        80%, 100% { content: '...'; }
+    }
+
 /* Адаптивность для мобильных */
 @media (max-width: 768px) {
     #locationModal .modal-content {
@@ -568,6 +661,38 @@
     .suggestion-item:hover {
         padding-left: 20px;
     }
+
+    .suggestion-item.current-location {
+        background-color: #e6f2ff;
+        font-weight: 600;
+        border-left: 4px solid #0057FF;
+    }
+
+    .suggestion-item.current-location:hover {
+        background-color: #d1e6ff;
+    }
+
+    .suggestion-separator {
+        padding: 10px 16px;
+        font-size: 12px;
+        color: #666;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+        border-bottom: 1px solid #e0e0e0;
+        margin-top: 5px;
+    }
+
+    .suggestion-item.all-regions {
+        font-weight: 600;
+        color: #0057FF;
+        background-color: #f0f7ff;
+        border-left: 4px solid #0057FF;
+    }
+
+    .suggestion-item.all-regions:hover {
+        background-color: #e6f2ff;
+    }
+
 }
 </style>
 {% endblock %}
@@ -928,122 +1053,22 @@
             <input type="text" 
                    id="locationInput" 
                    placeholder="Введите город или регион..." 
-                   onkeyup="filterLocations()">
+                   autocomplete="off">
             <button class="clear-btn" onclick="clearLocationInput()">×</button>
         </div>
         <div id="locationSuggestions" class="location-suggestions">
-            <!-- Сюда будут подгружаться варианты -->
             <div class="suggestion-item" onclick="setLocation('Все регионы')">
                 Все регионы
             </div>
+            <!-- Сюда будут подгружаться варианты через API -->
         </div>
     </div>
 </div>
 
 <script>
-// === СПРАВОЧНИК ГОРОДОВ РФ (встроенный) ===
-const RU_CITIES = [
-  "Москва","Санкт-Петербург","Казань", "Саранск", "Екатеринбург","Новосибирск","Челябинск",
-  "Краснодар","Самара","Уфа","Нижний Новгород","Ростов-на-Дону","Омск","Красноярск",
-  "Воронеж","Пермь","Волгоград","Саратов","Тюмень","Иркутск","Барнаул","Ульяновск",
-  "Тольятти","Кемерово","Рязань","Астрахань","Пенза","Липецк","Тула","Киров","Чебоксары",
-  "Калининград","Брянск","Магнитогорск","Иваново","Тверь","Ставрополь","Белгород","Сочи",
-  "Владимир","Архангельск","Набережные Челны","Владивосток","Хабаровск","Махачкала",
-  "Томск","Оренбург","Курск","Новокузнецк","Сургут","Йошкар-Ола","Нальчик","Старый Оскол",
-  "Ангарск","Балашиха","Владикавказ","Вологда","Мурманск","Череповец","Абакан","Миасс",
-  "Ханты-Мансийск","Бийск","Смоленск","Якутск","Новороссийск","Кызыл","Нижневартовск"
-];
-// Список регионов РФ (можно расширить)
-const RU_REGIONS = [
-    "Республика Адыгея",
-    "Республика Алтай",
-    "Республика Башкортостан",
-    "Республика Бурятия",
-    "Республика Дагестан",
-    "Республика Ингушетия",
-    "Республика Кабардино-Балкарская",
-    "Республика Калмыкия",
-    "Республика Карачаево-Черкесская",
-    "Республика Коми",
-    "Республика Крым",
-    "Республика Марий Эл",
-    "Республика Мордовия",
-    "Республика Саха (Якутия)",
-    "Республика Северная Осетия — Алания",
-    "Республика Татарстан",
-    "Республика Тыва",
-    "Удмуртская Республика",
-    "Республика Хакасия",
-    "Чеченская Республика",
-    "Чувашская Республика",
-    "Алтайский край",
-    "Забайкальский край",
-    "Камчатский край",
-    "Краснодарский край",
-    "Красноярский край",
-    "Пермский край",
-    "Приморский край",
-    "Ставропольский край",
-    "Хабаровский край",
-    "Амурская область",
-    "Архангельская область",
-    "Астраханская область",
-    "Белгородская область",
-    "Брянская область",
-    "Владимирская область",
-    "Волгоградская область",
-    "Вологодская область",
-    "Воронежская область",
-    "Ивановская область",
-    "Иркутская область",
-    "Калининградская область",
-    "Калужская область",
-    "Кемеровская область — Кузбасс",
-    "Кировская область",
-    "Костромская область",
-    "Курганская область",
-    "Курская область",
-    "Ленинградская область",
-    "Липецкая область",
-    "Магаданская область",
-    "Московская область",
-    "Мурманская область",
-    "Нижегородская область",
-    "Новгородская область",
-    "Новосибирская область",
-    "Омская область",
-    "Оренбургская область",
-    "Орловская область",
-    "Пензенская область",
-    "Псковская область",
-    "Ростовская область",
-    "Рязанская область",
-    "Самарская область",
-    "Саратовская область",
-    "Сахалинская область",
-    "Свердловская область",
-    "Смоленская область",
-    "Тамбовская область",
-    "Тверская область",
-    "Томская область",
-    "Тульская область",
-    "Тюменская область",
-    "Ульяновская область",
-    "Челябинская область",
-    "Чукотский автономный округ",
-    "Ярославская область",
-    "Москва",
-    "Санкт-Петербург",
-    "Севастополь",
-    "Еврейская автономная область",
-    "Ненецкий автономный округ",
-    "Ханты-Мансийский автономный округ — Югра",
-    "Чукотский автономный округ",
-    "Ямало-Ненецкий автономный округ"
-];
-
 // === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
 let currentLocation = localStorage.getItem('userLocation') || 'Казань';
+let searchTimeout = null;
 
 // === ОСНОВНЫЕ ФУНКЦИИ ===
 function applyFilters(categoryId = '', searchTerm = '') {
@@ -1066,12 +1091,22 @@ function openLocationModal() {
     if (modal) {
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
-        document.getElementById('locationInput').value = '';
-        filterLocations();
+        
+        // Показываем текущую выбранную локацию в поле поиска
+        const locationInput = document.getElementById('locationInput');
+        if (locationInput) {
+            if (currentLocation === 'Все регионы') {
+                locationInput.value = '';
+            } else {
+                locationInput.value = currentLocation;
+            }
+        }
+        
+        // Показываем популярные города
+        loadPopularLocations();
         
         setTimeout(() => {
-            const input = document.getElementById('locationInput');
-            if (input) input.focus();
+            if (locationInput) locationInput.focus();
         }, 100);
     }
 }
@@ -1085,77 +1120,254 @@ function closeLocationModal() {
 }
 
 function clearLocationInput() {
-    document.getElementById('locationInput').value = '';
-    filterLocations();
+    const input = document.getElementById('locationInput');
+    input.value = '';
+    input.focus();
+    loadPopularLocations();
 }
 
-function filterLocations() {
-    const input = document.getElementById('locationInput');
-    const filter = input.value.toLowerCase();
+// Упрощенная функция загрузки популярных локаций
+async function loadPopularLocations() {
     const suggestions = document.getElementById('locationSuggestions');
+    
+    const popularLocations = [
+        'Москва',
+        'Санкт-Петербург',
+        'Казань',
+        'Екатеринбург',
+        'Новосибирск',
+        'Нижний Новгород',
+        'Краснодар',
+        'Уфа',
+        'Воронеж',
+        'Ростов-на-Дону',
+        'Самара',
+        'Омск',
+        'Челябинск',
+        'Красноярск'
+    ];
+    
+    suggestions.innerHTML = '';
+    
+    // 1. Текущий выбранный город, если он есть и это не "Все регионы"
+    if (currentLocation && currentLocation !== 'Все регионы') {
+        const currentDiv = document.createElement('div');
+        currentDiv.className = 'suggestion-item current-location';
+        currentDiv.innerHTML = `<strong>${currentLocation}</strong> (текущий)`;
+        currentDiv.onclick = function() {
+            closeLocationModal();
+        };
+        suggestions.appendChild(currentDiv);
+    }
+    
+    // 2. "Все регионы" всегда на видном месте
+    const allRegionsDiv = document.createElement('div');
+    allRegionsDiv.className = 'suggestion-item all-regions';
+    allRegionsDiv.innerHTML = 'Все регионы';
+    allRegionsDiv.onclick = function() {
+        setLocation('Все регионы');
+    };
+    suggestions.appendChild(allRegionsDiv);
+    
+    // 3. Разделитель
+    const separator = document.createElement('div');
+    separator.className = 'suggestion-separator';
+    separator.innerHTML = 'Популярные города';
+    suggestions.appendChild(separator);
+    
+    // 4. Остальные города
+    for (let location of popularLocations) {
+        // Пропускаем, если этот город уже выбран как текущий
+        if (location === currentLocation) continue;
+        
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.textContent = location;
+        div.onclick = function() {
+            setLocation(location);
+        };
+        suggestions.appendChild(div);
+    }
+}
 
+// Упрощенная функция поиска локаций
+async function searchLocations(searchTerm) {
+    const suggestions = document.getElementById('locationSuggestions');
+    
+    if (!searchTerm || searchTerm.trim() === '') {
+        loadPopularLocations();
+        return;
+    }
+    
+    const allLocations = [
+        'Все регионы',
+        'Москва', 'Московская область',
+        'Санкт-Петербург', 'Ленинградская область',
+        'Казань', 'Республика Татарстан',
+        'Екатеринбург', 'Свердловская область',
+        'Новосибирск', 'Новосибирская область',
+        'Нижний Новгород', 'Нижегородская область',
+        'Краснодар', 'Краснодарский край',
+        'Уфа', 'Республика Башкортостан',
+        'Воронеж', 'Воронежская область',
+        'Ростов-на-Дону', 'Ростовская область',
+        'Самара', 'Самарская область',
+        'Омск', 'Омская область',
+        'Челябинск', 'Челябинская область',
+        'Красноярск', 'Красноярский край',
+        'Волгоград', 'Волгоградская область',
+        'Пермь', 'Пермский край',
+        'Владивосток', 'Приморский край'
+    ];
+    
+    const searchLower = searchTerm.toLowerCase();
+    const filtered = allLocations.filter(loc => 
+        loc.toLowerCase().includes(searchLower)
+    ).slice(0, 30);
+    
+    suggestions.innerHTML = '';
+    
+    if (filtered.length === 0) {
+        suggestions.innerHTML = '<div class="suggestion-item no-results">Ничего не найдено</div>';
+        return;
+    }
+    
+    for (let location of filtered) {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.textContent = location;
+        div.onclick = function() {
+            setLocation(location);
+        };
+        suggestions.appendChild(div);
+    }
+}
+
+// Поиск локаций по введенному тексту
+async function searchLocations(searchTerm) {
+    const suggestions = document.getElementById('locationSuggestions');
+    
+    if (!searchTerm || searchTerm.trim() === '') {
+        // Если поле пустое, показываем популярные
+        loadPopularLocations();
+        return;
+    }
+    
+    // Показываем индикатор загрузки
     suggestions.innerHTML = `
         <div class="suggestion-item" onclick="setLocation('Все регионы')">
             Все регионы
         </div>
+        <div class="loading-indicator">Поиск</div>
     `;
-
-    RU_REGIONS.forEach(region => {
-        if (region.toLowerCase().includes(filter)) {
+    
+    try {
+        const response = await fetch(`/api/locations?search=${encodeURIComponent(searchTerm)}&limit=30`);
+        const locations = await response.json();
+        
+        // Очищаем и добавляем опцию "Все регионы"
+        suggestions.innerHTML = `
+            <div class="suggestion-item" onclick="setLocation('Все регионы')">
+                Все регионы
+            </div>
+        `;
+        
+        // Добавляем полученные локации
+        locations.forEach(location => {
+            // Пропускаем "Все регионы", так как уже добавили
+            if (location.id === 'all') return;
+            
             suggestions.innerHTML += `
-                <div class="suggestion-item" onclick="setLocation('${region}')">
-                    ${region}
+                <div class="suggestion-item" onclick="setLocation('${location.display_name}')">
+                    ${location.display_name}
                 </div>
             `;
+        });
+        
+        // Если кроме "Все регионы" ничего нет
+        if (suggestions.children.length === 1) {
+            suggestions.innerHTML += '<div class="suggestion-item no-results">Ничего не найдено</div>';
         }
-    });
-
-    RU_CITIES.forEach(city => {
-        if (city.toLowerCase().includes(filter)) {
-            suggestions.innerHTML += `
-                <div class="suggestion-item" onclick="setLocation('${city}')">
-                    ${city}
-                </div>
-            `;
-        }
-    });
-
-    if (suggestions.children.length === 1) {
-        suggestions.innerHTML += '<div class="suggestion-item">Ничего не найдено</div>';
+        
+    } catch (error) {
+        console.error('Ошибка поиска локаций:', error);
+        suggestions.innerHTML = `
+            <div class="suggestion-item" onclick="setLocation('Все регионы')">
+                Все регионы
+            </div>
+            <div class="suggestion-item no-results">Ошибка поиска</div>
+        `;
     }
 }
 
+// Функция для задержки поиска (debounce)
+function debounceSearch() {
+    const input = document.getElementById('locationInput');
+    const searchTerm = input.value.trim();
+    
+    // Очищаем предыдущий таймаут
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // Устанавливаем новый таймаут
+    searchTimeout = setTimeout(() => {
+        searchLocations(searchTerm);
+    }, 300); // 300ms задержка
+}
+
 function setLocation(location) {
-    currentLocation = location.trim();
+    currentLocation = location.trim(); // Используем глобальную переменную
     localStorage.setItem('userLocation', currentLocation);
     document.getElementById('locationText').textContent = currentLocation;
     closeLocationModal();
+    
+    // Применяем фильтры с новым местоположением
+    const categorySelect = document.getElementById('categoryFilter');
+    const searchInput = document.getElementById('searchInput');
+    const categoryId = categorySelect ? categorySelect.value : '';
+    const searchTerm = searchInput ? searchInput.value.trim() : '';
+    applyFilters(categoryId, searchTerm);
 }
 
 // === ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', function() {
+    // Устанавливаем текущую локацию
     const locationText = document.getElementById('locationText');
     if (locationText) {
         locationText.textContent = currentLocation;
     }
     
+    // Спрашиваем локацию при первом посещении
     const alreadyAsked = localStorage.getItem('locationAsked');
     if (!alreadyAsked) {
         setTimeout(() => {
             openLocationModal();
             localStorage.setItem('locationAsked', 'true');
-        }, 1000);
+        }, 1500);
     }
 
+    // Обработчики для модального окна
     const locationDisplay = document.getElementById('locationDisplay');
     if (locationDisplay) {
         locationDisplay.addEventListener('click', openLocationModal);
     }
 
+    const locationInput = document.getElementById('locationInput');
+    if (locationInput) {
+        locationInput.addEventListener('input', debounceSearch);
+        locationInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                debounceSearch();
+            }
+        });
+    }
+
+    // Обработчики для фильтров
     const categorySelect = document.getElementById('categoryFilter');
     const searchInput = document.getElementById('searchInput');
-
     const searchBtn = document.querySelector('.search-btn');
+
     if (searchBtn) {
         searchBtn.addEventListener('click', function() {
             const categoryId = categorySelect ? categorySelect.value : '';
@@ -1180,6 +1392,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Закрытие модального окна при клике вне его
     window.addEventListener('click', function(event) {
         const modal = document.getElementById('locationModal');
         if (event.target === modal) {
@@ -1187,36 +1400,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Закрытие модального окна по ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeLocationModal();
         }
     });
 
+    // Переключение видов товаров
     const viewButtons = document.querySelectorAll('.view-btn');
+    
     function activateView(viewType) {
         const containers = {
             grid: document.getElementById('productsGridView'),
             list: document.getElementById('productsListView'),
             table: document.getElementById('productsTableView')
         };
+        
         for (let key in containers) {
             if (containers[key]) {
                 containers[key].style.display = key === viewType ? 'block' : 'none';
-                const inner = containers[key].querySelector(`.products-${key}-view`);
-                if (inner) {
-                inner.style.display = key === 'table' ? 'block' : 'grid'; // ← УДАЛИЛИ
-                if (key === 'grid') {
-                    inner.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))'; // ← УДАЛИЛИ
-                } else if (key === 'list') {
-                    inner.style.gridTemplateColumns = '1fr'; // ← УДАЛИЛИ
-                }
-            }
             }
         }
+        
         viewButtons.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-view') === viewType);
         });
+        
         localStorage.setItem('mainView', viewType);
     }
 
@@ -1226,7 +1436,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
- // Инициализация представления при загрузке
+    // Инициализация представления при загрузке
     const savedView = localStorage.getItem('mainView') || 'grid';
     
     // Убедимся, что кнопка активна

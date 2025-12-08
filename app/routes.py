@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, send_from_directory, current_app
+from flask import Blueprint, render_template, request, flash, redirect, url_for, send_from_directory, current_app, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import Product, Category, User, Review, Region
+from app.models import Product, Category, User, Review, Region, City  # ← Добавлен City
 from datetime import datetime
 import os
 import uuid
@@ -31,6 +31,7 @@ def allowed_file(filename):
 def index():
     category_id = request.args.get('category_id')
     search_term = request.args.get('search', '').strip()
+    location = request.args.get('location', '').strip()  # ← ДОБАВЛЕНО: параметр локации
     
     query = Product.query.filter_by(status=Product.STATUS_PUBLISHED)
     
@@ -43,6 +44,14 @@ def index():
         query = query.filter(
             Product.title.ilike(f'%{search_term}%') | 
             Product.description.ilike(f'%{search_term}%')
+        )
+    
+    # ← ДОБАВЛЕНО: фильтрация по местоположению
+    if location and location != 'Все регионы':
+        # Ищем товары по региону ИЛИ городу
+        query = query.filter(
+            (Product.region == location) | 
+            (Product.city == location)
         )
     
     query = query.options(joinedload(Product.product_category))
@@ -706,6 +715,297 @@ def clear_categories():
     
     return redirect(url_for('main.admin_categories'))
 
+# ========== НОВЫЕ МАРШРУТЫ ДЛЯ ГОРОДОВ ==========
+
+@main.route('/admin/cities/add', methods=['POST'])
+@login_required
+def add_city():
+    """Добавление города"""
+    if not current_user.is_admin:
+        flash('Недостаточно прав', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    name = request.form.get('name')
+    region_id = request.form.get('region_id')
+    description = request.form.get('description')
+    
+    if not name:
+        flash('Название города обязательно', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    if not region_id:
+        flash('Выберите регион', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    existing = City.query.filter_by(name=name, region_id=region_id).first()
+    if existing:
+        flash('Такой город уже существует в этом регионе', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    try:
+        new_city = City(
+            name=name,
+            region_id=int(region_id),
+            description=description
+        )
+        db.session.add(new_city)
+        db.session.commit()
+        flash(f'Город "{name}" добавлен', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка: {str(e)}', 'error')
+    
+    return redirect(url_for('main.admin_categories'))
+
+@main.route('/admin/cities/delete/<int:city_id>', methods=['POST'])
+@login_required
+def delete_city(city_id):
+    """Удаление города"""
+    if not current_user.is_admin:
+        flash('Недостаточно прав', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    city = City.query.get_or_404(city_id)
+    
+    # Проверяем, есть ли товары в этом городе
+    products_count = Product.query.filter_by(city=city.name).count()
+    if products_count > 0:
+        flash(f'Нельзя удалить город "{city.name}" — в нем есть товары', 'error')
+        return redirect(url_for('main.admin_categories'))
+    
+    db.session.delete(city)
+    db.session.commit()
+    flash(f'Город "{city.name}" удалён', 'success')
+    
+    return redirect(url_for('main.admin_categories'))
+
+# ========== API ДЛЯ ПОЛУЧЕНИЯ ЛОКАЦИЙ ==========
+
+@main.route('/api/locations')
+def get_locations():
+    """API для получения списка регионов и городов для автодополнения"""
+    try:
+        search = request.args.get('search', '').strip()
+        limit = int(request.args.get('limit', 20))
+        
+        results = []
+        
+        # Добавляем опцию "Все регионы"
+        results.append({
+            'id': 'all',
+            'name': 'Все регионы',
+            'type': 'all',
+            'display_name': 'Все регионы'
+        })
+        
+        # Если нет поиска - возвращаем популярные города из товаров
+        if not search:
+            # Сначала попробуем получить города из товаров
+            try:
+                cities_from_products = db.session.query(
+                    Product.city.distinct().label('city')
+                ).filter(
+                    Product.city.isnot(None),
+                    Product.city != ''
+                ).order_by(
+                    db.func.random()  # Случайный порядок для разнообразия
+                ).limit(10).all()
+                
+                for city_row in cities_from_products:
+                    city_name = city_row.city
+                    if city_name:
+                        results.append({
+                            'id': f'city_{city_name}',
+                            'name': city_name,
+                            'type': 'city',
+                            'display_name': city_name
+                        })
+            except Exception as e:
+                print(f"Ошибка при получении городов из товаров: {e}")
+            
+            # Если городов мало, добавляем города из базы
+            if len(results) < 15:
+                try:
+                    cities = City.query.join(Region).order_by(
+                        db.func.random()
+                    ).limit(15 - len(results)).all()
+                    
+                    for city in cities:
+                        results.append({
+                            'id': f'city_{city.id}',
+                            'name': city.name,
+                            'type': 'city',
+                            'region_name': city.region.name,
+                            'display_name': f"{city.name} ({city.region.name})"
+                        })
+                except Exception as e:
+                    print(f"Ошибка при получении городов из базы: {e}")
+        
+        else:
+            # Есть поисковой запрос
+            search_lower = f"%{search.lower()}%"
+            
+            # Ищем города
+            try:
+                cities = City.query.join(Region).filter(
+                    db.or_(
+                        City.name.ilike(search_lower),
+                        Region.name.ilike(search_lower)
+                    )
+                ).limit(limit // 2).all()
+                
+                for city in cities:
+                    results.append({
+                        'id': f'city_{city.id}',
+                        'name': city.name,
+                        'type': 'city',
+                        'region_name': city.region.name,
+                        'display_name': f"{city.name} ({city.region.name})"
+                    })
+            except Exception as e:
+                print(f"Ошибка при поиске городов: {e}")
+            
+            # Ищем регионы
+            try:
+                regions = Region.query.filter(
+                    Region.name.ilike(search_lower)
+                ).limit(limit // 2).all()
+                
+                for region in regions:
+                    results.append({
+                        'id': f'region_{region.id}',
+                        'name': region.name,
+                        'type': 'region',
+                        'display_name': region.name
+                    })
+            except Exception as e:
+                print(f"Ошибка при поиске регионов: {e}")
+        
+        # Удаляем дубликаты по display_name
+        seen = set()
+        unique_results = []
+        for item in results:
+            if item['display_name'] not in seen:
+                seen.add(item['display_name'])
+                unique_results.append(item)
+        
+        return jsonify(unique_results[:limit])
+        
+    except Exception as e:
+        print(f"Ошибка в /api/locations: {str(e)}")
+        # Запасной вариант - статичный список
+        return jsonify([
+            {
+                'id': 'all',
+                'name': 'Все регионы',
+                'type': 'all',
+                'display_name': 'Все регионы'
+            },
+            {
+                'id': 'city_1',
+                'name': 'Москва',
+                'type': 'city',
+                'display_name': 'Москва'
+            },
+            {
+                'id': 'city_2',
+                'name': 'Санкт-Петербург',
+                'type': 'city',
+                'display_name': 'Санкт-Петербург'
+            },
+            {
+                'id': 'city_3',
+                'name': 'Казань',
+                'type': 'city',
+                'display_name': 'Казань'
+            },
+            {
+                'id': 'city_4',
+                'name': 'Екатеринбург',
+                'type': 'city',
+                'display_name': 'Екатеринбург'
+            },
+            {
+                'id': 'city_5',
+                'name': 'Новосибирск',
+                'type': 'city',
+                'display_name': 'Новосибирск'
+            },
+            {
+                'id': 'city_6',
+                'name': 'Нижний Новгород',
+                'type': 'city',
+                'display_name': 'Нижний Новгород'
+            },
+            {
+                'id': 'city_7',
+                'name': 'Самара',
+                'type': 'city',
+                'display_name': 'Самара'
+            },
+            {
+                'id': 'city_8',
+                'name': 'Челябинск',
+                'type': 'city',
+                'display_name': 'Челябинск'
+            },
+            {
+                'id': 'city_9',
+                'name': 'Ростов-на-Дону',
+                'type': 'city',
+                'display_name': 'Ростов-на-Дону'
+            },
+            {
+                'id': 'city_10',
+                'name': 'Уфа',
+                'type': 'city',
+                'display_name': 'Уфа'
+            }
+        ])
+
+@main.route('/api/regions')
+def get_regions():
+    """API для получения всех регионов"""
+    regions = Region.query.filter_by(parent_id=None).order_by(Region.name).all()
+    
+    result = []
+    for region in regions:
+        region_data = {
+            'id': region.id,
+            'name': region.name,
+            'cities': []
+        }
+        
+        # Получаем города для региона
+        cities = City.query.filter_by(region_id=region.id).order_by(City.name).all()
+        for city in cities:
+            region_data['cities'].append({
+                'id': city.id,
+                'name': city.name,
+                'full_name': f"{city.name} ({region.name})"
+            })
+        
+        result.append(region_data)
+    
+    return jsonify(result)
+
+@main.route('/api/cities/by-region/<int:region_id>')
+def get_cities_by_region(region_id):
+    """API для получения городов по региону"""
+    cities = City.query.filter_by(region_id=region_id).order_by(City.name).all()
+    
+    result = []
+    for city in cities:
+        result.append({
+            'id': city.id,
+            'name': city.name,
+            'full_name': f"{city.name} (Регион ID: {region_id})"
+        })
+    
+    return jsonify(result)
+
+# ========== КОНЕЦ НОВЫХ МАРШРУТОВ ==========
+
 @main.route('/update_expired_products')
 def update_expired_products():
     expired_products = Product.query.filter(
@@ -931,3 +1231,152 @@ def delete_review(review_id):
     db.session.commit()
     flash('Ваш отзыв удалён.', 'success')
     return redirect(request.referrer or url_for('main.index'))
+
+# === ТЕСТОВЫЕ ДАННЫЕ ДЛЯ РЕГИОНОВ И ГОРОДОВ ===
+
+@main.route('/api/test-populate-locations')
+def test_populate_locations():
+    """Заполнение тестовыми данными (для разработки)"""
+    try:
+        # Создаем несколько тестовых регионов
+        test_regions = [
+            'Москва',
+            'Санкт-Петербург', 
+            'Республика Татарстан',
+            'Московская область',
+            'Свердловская область',
+            'Краснодарский край',
+            'Республика Башкортостан',
+            'Нижегородская область',
+            'Челябинская область',
+            'Новосибирская область',
+            'Самарская область',
+            'Ростовская область',
+            'Красноярский край',
+            'Пермский край',
+            'Воронежская область'
+        ]
+        
+        # Создаем несколько тестовых городов
+        test_cities = [
+            # Москва
+            {'name': 'Москва', 'region': 'Москва'},
+            # Санкт-Петербург
+            {'name': 'Санкт-Петербург', 'region': 'Санкт-Петербург'},
+            # Республика Татарстан
+            {'name': 'Казань', 'region': 'Республика Татарстан'},
+            {'name': 'Набережные Челны', 'region': 'Республика Татарстан'},
+            {'name': 'Альметьевск', 'region': 'Республика Татарстан'},
+            # Московская область
+            {'name': 'Балашиха', 'region': 'Московская область'},
+            {'name': 'Химки', 'region': 'Московская область'},
+            {'name': 'Подольск', 'region': 'Московская область'},
+            {'name': 'Королёв', 'region': 'Московская область'},
+            # Свердловская область
+            {'name': 'Екатеринбург', 'region': 'Свердловская область'},
+            {'name': 'Нижний Тагил', 'region': 'Свердловская область'},
+            {'name': 'Каменск-Уральский', 'region': 'Свердловская область'},
+            # Краснодарский край
+            {'name': 'Краснодар', 'region': 'Краснодарский край'},
+            {'name': 'Сочи', 'region': 'Краснодарский край'},
+            {'name': 'Новороссийск', 'region': 'Краснодарский край'},
+            # Республика Башкортостан
+            {'name': 'Уфа', 'region': 'Республика Башкортостан'},
+            {'name': 'Стерлитамак', 'region': 'Республика Башкортостан'},
+            {'name': 'Салават', 'region': 'Республика Башкортостан'},
+            # Нижегородская область
+            {'name': 'Нижний Новгород', 'region': 'Нижегородская область'},
+            {'name': 'Дзержинск', 'region': 'Нижегородская область'},
+            {'name': 'Арзамас', 'region': 'Нижегородская область'},
+            # Челябинская область
+            {'name': 'Челябинск', 'region': 'Челябинская область'},
+            {'name': 'Магнитогорск', 'region': 'Челябинская область'},
+            {'name': 'Златоуст', 'region': 'Челябинская область'},
+            # Новосибирская область
+            {'name': 'Новосибирск', 'region': 'Новосибирская область'},
+            {'name': 'Бердск', 'region': 'Новосибирская область'},
+            # Самарская область
+            {'name': 'Самара', 'region': 'Самарская область'},
+            {'name': 'Тольятти', 'region': 'Самарская область'},
+            {'name': 'Сызрань', 'region': 'Самарская область'},
+            # Ростовская область
+            {'name': 'Ростов-на-Дону', 'region': 'Ростовская область'},
+            {'name': 'Таганрог', 'region': 'Ростовская область'},
+            {'name': 'Шахты', 'region': 'Ростовская область'},
+            # Красноярский край
+            {'name': 'Красноярск', 'region': 'Красноярский край'},
+            {'name': 'Норильск', 'region': 'Красноярский край'},
+            # Пермский край
+            {'name': 'Пермь', 'region': 'Пермский край'},
+            {'name': 'Березники', 'region': 'Пермский край'},
+            # Воронежская область
+            {'name': 'Воронеж', 'region': 'Воронежская область'},
+            {'name': 'Борисоглебск', 'region': 'Воронежская область'}
+        ]
+        
+        # Создаем регионы
+        created_regions = {}
+        for region_name in test_regions:
+            region = Region.query.filter_by(name=region_name).first()
+            if not region:
+                region = Region(name=region_name)
+                db.session.add(region)
+                db.session.flush()  # Получаем ID
+            created_regions[region_name] = region
+        
+        # Создаем города
+        for city_data in test_cities:
+            region = created_regions.get(city_data['region'])
+            if region:
+                city = City.query.filter_by(name=city_data['name'], region_id=region.id).first()
+                if not city:
+                    city = City(
+                        name=city_data['name'],
+                        region_id=region.id
+                    )
+                    db.session.add(city)
+        
+        db.session.commit()
+        
+        return f"✅ Создано {len(created_regions)} регионов и {len(test_cities)} городов"
+        
+    except Exception as e:
+        db.session.rollback()
+        return f"❌ Ошибка: {str(e)}"
+
+@main.route('/api/debug/locations-status')
+def debug_locations_status():
+    """Отладочная информация о локациях"""
+    try:
+        regions_count = Region.query.count()
+        cities_count = City.query.count()
+        
+        # Получаем несколько примеров
+        regions_sample = Region.query.limit(5).all()
+        cities_sample = City.query.join(Region).limit(5).all()
+        
+        return jsonify({
+            'status': 'ok',
+            'regions_count': regions_count,
+            'cities_count': cities_count,
+            'regions_sample': [r.name for r in regions_sample],
+            'cities_sample': [{'name': c.name, 'region': c.region.name} for c in cities_sample]
+        })
+    except Exception as e:
+        print(f"Ошибка в /api/locations: {str(e)}")
+    # Запасной вариант - статичный список
+    return jsonify([
+        {
+            'id': 'all',
+            'name': 'Все регионы',
+            'type': 'all',
+            'display_name': 'Все регионы'
+        },
+        {
+            'id': 'city_1',
+            'name': 'Москва',
+            'type': 'city',
+            'display_name': 'Москва'
+        },
+        # ... остальные города (скопируйте полный список из функции выше)
+    ])
