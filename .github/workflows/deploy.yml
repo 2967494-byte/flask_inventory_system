@@ -12,10 +12,17 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Login to Selectel Container Registry
+      env:
+        SELECTEL_USER: ${{ secrets.SELECTEL_USERNAME }}
+        SELECTEL_PASS: ${{ secrets.SELECTEL_PASSWORD }}
       run: |
-        docker login cr.selcloud.ru -u ${{ secrets.SELECTEL_USERNAME }} -p ${{ secrets.SELECTEL_PASSWORD }}
+        echo "$SELECTEL_PASS" | docker login cr.selcloud.ru -u "$SELECTEL_USER" --password-stdin
     
     - name: Build and Push
+      env:
+        REGISTRY_USER: ${{ secrets.SELECTEL_USERNAME }}
       run: |
-        docker build -t cr.selcloud.ru/YOUR_SELECTEL_LOGIN/flask-inventory:latest .
-        docker push cr.selcloud.ru/YOUR_SELECTEL_LOGIN/flask-inventory:latest
+        # Извлекаем имя пользователя из email (до @)
+        USERNAME=$${REGISTRY_USER%%@*}
+        docker build -t cr.selcloud.ru/$USERNAME/flask-inventory:latest .
+        docker push cr.selcloud.ru/$USERNAME/flask-inventory:latest
