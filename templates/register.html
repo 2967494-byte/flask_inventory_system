@@ -139,7 +139,7 @@
                        required>
                 <label class="form-check-label" for="agree_terms">
                     Я согласен с <a href="#" class="text-avito-blue">условиями использования</a> 
-                    и <a href="#" class="text-avito-blue">политикой конфиденциальности</a> *
+                    и <a href="{{ url_for('main.privacy_policy') }}" target="_blank" class="text-avito-blue">политикой конфиденциальности</a> *
                 </label>
             </div>
         </div>
@@ -173,6 +173,16 @@
 .form-check-label {
     font-size: 14px;
     line-height: 1.4;
+}
+
+.text-avito-blue {
+    color: #0057FF;
+    text-decoration: none;
+}
+
+.text-avito-blue:hover {
+    text-decoration: underline;
+    color: #0044CC;
 }
 </style>
 {% endblock %}

@@ -1,0 +1,558 @@
+<!-- templates/policy.html -->
+{% extends "base.html" %}
+
+{% block title %}Политика конфиденциальности - Система продажи остатков ASAUDA{% endblock %}
+
+{% block styles %}
+<style>
+    /* Стили для политики конфиденциальности */
+    :root {
+        --policy-blue: #0057FF;
+        --policy-blue-hover: #0044CC;
+        --policy-background: #f8f9fa;
+        --policy-border: #E0E0E0;
+        --policy-text-primary: #1A1A1A;
+        --policy-text-secondary: #666666;
+        --policy-text-muted: #999999;
+        --policy-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .policy-hero-section {
+        background: linear-gradient(135deg, var(--policy-blue) 0%, var(--policy-blue-hover) 100%);
+        padding: 60px 0;
+        color: white;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .policy-title {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 16px;
+    }
+    
+    .policy-description {
+        font-size: 18px;
+        opacity: 0.9;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .policy-content-section {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: var(--policy-shadow);
+        border: 1px solid var(--policy-border);
+        margin-bottom: 60px;
+        margin-top: 20px;
+    }
+    
+    /* Оглавление */
+    .policy-toc-container {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 32px;
+        border-left: 4px solid var(--policy-blue);
+    }
+    
+    .policy-toc-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--policy-blue);
+    }
+    
+    .policy-toc-list {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    
+    .policy-toc-item {
+        margin-bottom: 10px;
+    }
+    
+    .policy-toc-link {
+        color: var(--policy-text-primary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: color 0.2s ease;
+        font-size: 15px;
+    }
+    
+    .policy-toc-link:hover {
+        color: var(--policy-blue);
+    }
+    
+    .policy-toc-link::before {
+        content: "•";
+        color: var(--policy-blue);
+        margin-right: 10px;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    
+    /* Заголовки разделов */
+    .policy-section-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 40px 0 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f0f0f0;
+        color: var(--policy-text-primary);
+        scroll-margin-top: 80px; /* Отступ для фиксированной шапки */
+    }
+    
+    .policy-section-title:first-of-type {
+        margin-top: 0;
+    }
+    
+    .policy-subsection-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 24px 0 12px;
+        color: var(--policy-text-primary);
+    }
+    
+    /* Текст контента */
+    .policy-content-text {
+        margin-bottom: 16px;
+        color: var(--policy-text-secondary);
+        line-height: 1.6;
+        font-size: 16px;
+    }
+    
+    .policy-content-text strong {
+        color: var(--policy-text-primary);
+    }
+    
+    .policy-highlight {
+        background-color: #f0f7ff;
+        padding: 16px 20px;
+        border-radius: 8px;
+        border-left: 4px solid var(--policy-blue);
+        margin: 20px 0;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    
+    /* Списки */
+    .policy-content-list {
+        margin-left: 24px;
+        margin-bottom: 16px;
+        color: var(--policy-text-secondary);
+    }
+    
+    .policy-content-list li {
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+    
+    /* Контакты */
+    .policy-contacts {
+        background-color: #f8f9fa;
+        padding: 24px;
+        border-radius: 8px;
+        margin-top: 32px;
+        border: 1px solid #E0E0E0;
+    }
+    
+    .policy-contacts-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--policy-text-primary);
+    }
+    
+    /* Активные ссылки в оглавлении */
+    .policy-toc-link.active {
+        color: var(--policy-blue);
+        font-weight: 600;
+    }
+    
+    /* Нумерация разделов */
+    .policy-section-counter {
+        color: var(--policy-blue);
+        margin-right: 8px;
+    }
+    
+    /* Информация о дате */
+    .policy-date-info {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #f0f0f0;
+        color: var(--policy-text-muted);
+        font-size: 14px;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .policy-hero-section {
+            padding: 40px 0;
+        }
+        
+        .policy-title {
+            font-size: 28px;
+        }
+        
+        .policy-description {
+            font-size: 16px;
+            padding: 0 15px;
+        }
+        
+        .policy-content-section {
+            padding: 24px 16px;
+        }
+        
+        .policy-section-title {
+            font-size: 20px;
+            margin: 32px 0 16px;
+        }
+        
+        .policy-subsection-title {
+            font-size: 17px;
+        }
+        
+        .policy-toc-container {
+            padding: 20px;
+        }
+        
+        .policy-highlight {
+            padding: 14px 16px;
+            font-size: 14px;
+        }
+        
+        .policy-content-text {
+            font-size: 15px;
+        }
+    }
+    
+    /* Кнопка "Наверх" для удобства навигации */
+    .back-to-top {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: var(--policy-blue);
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 87, 255, 0.3);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(20px);
+    }
+    
+    .back-to-top.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    
+    .back-to-top:hover {
+        background: var(--policy-blue-hover);
+        transform: translateY(-5px);
+        box-shadow: 0 6px 16px rgba(0, 87, 255, 0.4);
+    }
+    
+    @media (max-width: 768px) {
+        .back-to-top {
+            bottom: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="policy-hero-section">
+    <div class="container">
+        <h1 class="policy-title">Политика конфиденциальности</h1>
+        <p class="policy-description">Система продажи остатков ASAUDA (asauda.ru)</p>
+    </div>
+</div>
+
+<!-- Основной контент -->
+<div class="container">
+    <div class="policy-content-section">
+        <div class="policy-intro-text policy-content-text">
+            <p>В ASAUDA мы понимаем, что ваши персональные данные принадлежат только вам. Мы стремимся к полной прозрачности в работе с данными, чтобы вы могли управлять ими и принимать осознанные информированные решения.</p>
+            <p>Далее мы объясняем, как собираем, используем и защищаем вашу личную информацию. Прочитав эту Политику, вы узнаете, как контролировать обработку ваших данных.</p>
+        </div>
+        
+        <!-- Оглавление -->
+        <div class="policy-toc-container">
+            <h3 class="policy-toc-title">Содержание</h3>
+            <ul class="policy-toc-list">
+                <li class="policy-toc-item"><a href="#section1" class="policy-toc-link active">К кому применяется эта Политика?</a></li>
+                <li class="policy-toc-item"><a href="#section2" class="policy-toc-link">Какова роль ASAUDA в обработке ваших данных?</a></li>
+                <li class="policy-toc-item"><a href="#section3" class="policy-toc-link">Для чего мы обрабатываем персональные данные?</a></li>
+                <li class="policy-toc-item"><a href="#section4" class="policy-toc-link">Откуда мы получаем ваши данные и где их обрабатываем?</a></li>
+                <li class="policy-toc-item"><a href="#section5" class="policy-toc-link">На каких основаниях мы обрабатываем ваши данные?</a></li>
+                <li class="policy-toc-item"><a href="#section6" class="policy-toc-link">Какие права у вас есть и как их реализовать?</a></li>
+                <li class="policy-toc-item"><a href="#section7" class="policy-toc-link">Сколько мы храним ваши данные?</a></li>
+                <li class="policy-toc-item"><a href="#section8" class="policy-toc-link">Как мы защищаем ваши данные?</a></li>
+                <li class="policy-toc-item"><a href="#section9" class="policy-toc-link">Как вы узнаете об изменениях политики?</a></li>
+                <li class="policy-toc-item"><a href="#section10" class="policy-toc-link">Наши контакты</a></li>
+            </ul>
+        </div>
+        
+        <!-- Разделы политики -->
+        <div class="policy-content">
+            <h2 id="section1" class="policy-section-title">
+                <span class="policy-section-counter">1.</span> К кому применяется эта Политика?
+            </h2>
+            <p class="policy-content-text">Здесь мы описываем работу с персональными данными пользователей ASAUDA, а также иных физических лиц, кто обращается к нашему сайту или иным образом связывается с нами. Политика также применяется к данным участников наших акций, конкурсов и иных маркетинговых мероприятий.</p>
+            <p class="policy-content-text">Политика не применяется к данным работников ASAUDA и соискателей на наши вакансии.</p>
+            <p class="policy-content-text">Нашу работу с персональными данными регулирует российское законодательство.</p>
+            
+            <h2 id="section2" class="policy-section-title">
+                <span class="policy-section-counter">2.</span> Какова роль ASAUDA в обработке ваших данных?
+            </h2>
+            <p class="policy-content-text">ASAUDA несет всю ответственность за работу с персональными данными пользователей, выступая в роли оператора персональных данных.</p>
+            <div class="policy-highlight">
+                <p><strong>Оператор</strong> — это компания, которая самостоятельно или совместно с партнерами обрабатывает персональные данные, определяя цели обработки, состав данных и совершаемые с ними действия.</p>
+            </div>
+            <p class="policy-content-text">В некоторых случаях ASAUDA может обрабатывать данные по поручению и в интересах другого лица (как правило, компании). В таком случае оператором, отвечающим за соблюдение закона о персональных данных, будет эта компания.</p>
+            <div class="policy-highlight">
+                <p><strong>Обработка персональных данных</strong> — любые действия с данными, например, их сбор, передача, уничтожение, использование, обезличивание... список таких действий не ограничен.</p>
+            </div>
+            
+            <h2 id="section3" class="policy-section-title">
+                <span class="policy-section-counter">3.</span> Для чего мы обрабатываем персональные данные?
+            </h2>
+            <p class="policy-content-text">Ниже мы перечислили, зачем обрабатываем ваши данные, и добавили поясняющие примеры.</p>
+            
+            <h3 class="policy-subsection-title">3.1. Предоставление сервисов/услуг, поддержка пользователей</h3>
+            <p class="policy-content-text">Работа с данными необходима при любом взаимодействии с ASAUDA — от создания профиля и размещения первого объявления до использования наших сервисов. Эта цель обработки также включает:</p>
+            <ul class="policy-content-list">
+                <li>обмен данными с партнерами, участвующими в работе сервиса или специализированными провайдерами услуг, которых мы привлекаем для получения профессиональной помощи;</li>
+                <li>передачу данных другим пользователям ASAUDA, а также нашим партнерам, когда сервис предполагает такую передачу.</li>
+            </ul>
+            
+            <h3 class="policy-subsection-title">3.2. Обеспечение безопасности ASAUDA для пользователей</h3>
+            <p class="policy-content-text">Работа с данными необходима, чтобы выявлять и пресекать нарушения законов и правил ASAUDA, иные недобросовестные практики, расследовать соответствующие инциденты и реагировать на них.</p>
+            
+            <h3 class="policy-subsection-title">3.3. Совершенствование ASAUDA</h3>
+            <p class="policy-content-text">По этой цели работа с данными ведется, чтобы персонализовать пользовательский опыт, привлечь новых пользователей, разрабатывать и внедрять новые сервисы/услуги.</p>
+            
+            <h3 class="policy-subsection-title">3.4. Предоставление информации о сервисах</h3>
+            <p class="policy-content-text">Мы можем взаимодействовать с вами по разным каналам коммуникации, чтобы проинформировать о сервисах ASAUDA и партнеров.</p>
+            
+            <h3 class="policy-subsection-title">3.5. Показ рекламы</h3>
+            <p class="policy-content-text">Мы демонстрируем вам различные виды рекламы (в том числе партнерской), а также оцениваем эффективность рекламных кампаний.</p>
+            
+            <h3 class="policy-subsection-title">3.6. Проведение маркетинговых активностей</h3>
+            <p class="policy-content-text">В акциях, конкурсах, любых иных маркетинговых мероприятиях могут использоваться персональные данные на всех этапах подготовки.</p>
+            
+            <h3 class="policy-subsection-title">3.7. Выполнение требований закона</h3>
+            <p class="policy-content-text">Например, необходимо отвечать на запросы государственных органов, организовывать хранение, передачу и иную обработку данных по законам о бухгалтерском учете, налогах, информации и ее защите.</p>
+            
+            <h3 class="policy-subsection-title">3.8. Осуществление права на судебную и иную защиту</h3>
+            <p class="policy-content-text">Например, нужно хранить и обрабатывать данные в пределах сроков исковой давности, чтобы подготовить нашу позицию и представить доказательства по предъявленным требованиям или запросам регуляторов.</p>
+            
+            <h2 id="section4" class="policy-section-title">
+                <span class="policy-section-counter">4.</span> Откуда мы получаем ваши данные и где их обрабатываем?
+            </h2>
+            <p class="policy-content-text">Мы получаем ваши данные из следующих источников:</p>
+            <ul class="policy-content-list">
+                <li><strong>Непосредственно от вас.</strong> Например, когда вы регистрируетесь на ASAUDA, участвуете в мероприятиях или обращаетесь в службу поддержки.</li>
+                <li><strong>Через ваше взаимодействие с сервисами.</strong> Мы анализируем, как вы пользуетесь нашими сервисами.</li>
+                <li><strong>От наших партнеров.</strong> В некоторых случаях мы получаем данные от наших партнеров.</li>
+                <li><strong>Автоматически.</strong> Мы собираем техническую информацию: данные из файлов cookies, информацию о браузере и его настройках, технические характеристики вашего устройства, IP-адрес и другие подобные сведения.</li>
+            </ul>
+            <p class="policy-content-text">Мы обрабатываем персональные данные любыми способами, включая сбор, запись, систематизацию, накопление, хранение, уточнение (обновление, изменение), извлечение, использование, передачу, блокирование, удаление, уничтожение персональных данных.</p>
+            
+            <h2 id="section5" class="policy-section-title">
+                <span class="policy-section-counter">5.</span> На каких основаниях мы обрабатываем ваши данные?
+            </h2>
+            <p class="policy-content-text">По закону мы обязаны обрабатывать ваши данные, соблюдая определенные условия:</p>
+            <ul class="policy-content-list">
+                <li><strong>Заключение, исполнение, изменение или расторжение договора с вами.</strong> Когда мы предоставляем вам сервисы ASAUDA, мы делаем это на основании договора, заключенного с вами.</li>
+                <li><strong>Исполнение закона.</strong> Например, для бухгалтерского учета мы должны хранить информацию о ваших платежах.</li>
+                <li><strong>Защита прав и законных интересов ASAUDA и других субъектов персональных данных.</strong> Мы обрабатываем персональные данные, чтобы защитить пользователей от неправомерных действий.</li>
+                <li><strong>Согласие на обработку данных.</strong> В некоторых случаях мы можем работать с вашими данными только с вашего разрешения.</li>
+            </ul>
+            
+            <h2 id="section6" class="policy-section-title">
+                <span class="policy-section-counter">6.</span> Какие права у вас есть и как их реализовать?
+            </h2>
+            <p class="policy-content-text">Ниже — ключевые права в области обработки данных:</p>
+            <ul class="policy-content-list">
+                <li><strong>Право на доступ к вашим данным.</strong> Вы можете запросить информацию о том, как, для чего и на каком основании мы обрабатываем ваши персональные данные.</li>
+                <li><strong>Право на исправление данных.</strong> Если ваши данные устарели или ошибочны, вы можете исправить их в личном кабинете или обратиться к нам.</li>
+                <li><strong>Право прекратить незаконную обработку данных.</strong> Если вы считаете, что мы незаконно обрабатываем ваши данные, сообщите нам об этом.</li>
+                <li><strong>Право отозвать согласие на обработку данных.</strong> Если вы больше не хотите, чтобы мы обрабатывали ваши данные, вы можете отозвать согласие.</li>
+            </ul>
+            <p class="policy-content-text">Вы можете воспользоваться любым из этих прав в любое время, обратившись в службу поддержки.</p>
+            <p class="policy-content-text">Если вы считаете, что мы нарушили ваши права при обработке данных и не смогли вам помочь с проблемой, вы можете обратиться в Роскомнадзор или суд.</p>
+            
+            <h2 id="section7" class="policy-section-title">
+                <span class="policy-section-counter">7.</span> Сколько мы храним ваши данные?
+            </h2>
+            <p class="policy-content-text">Ниже мы перечислили ключевые принципы, определяющие, как долго мы храним данные и когда их уничтожаем:</p>
+            <ul class="policy-content-list">
+                <li>Сроки хранения зависят от целей работы с данными.</li>
+                <li>Мы храним данные, чтобы выполнить требования закона.</li>
+                <li>Мы удалим данные, если выявим их неправомерную обработку.</li>
+                <li>Мы храним данные до отзыва согласия на их обработку.</li>
+            </ul>
+            
+            <h2 id="section8" class="policy-section-title">
+                <span class="policy-section-counter">8.</span> Как мы защищаем ваши данные?
+            </h2>
+            <p class="policy-content-text">Мы используем разнообразные технологии и внедряем специальные процедуры для защиты ваших данных:</p>
+            <ul class="policy-content-list">
+                <li>Мы храним ваши данные в защищенных системах, усиливая меры для более чувствительной информации.</li>
+                <li>Мы используем безопасные способы передачи данных, исключающие доступ злоумышленников.</li>
+                <li>У нас есть специальные процедуры, которые контролируют безопасность ваших данных и оперативно реагируют на угрозы.</li>
+                <li>Мы предоставляем доступ к персональным данным только тем сотрудникам, которым он действительно нужен для работы.</li>
+                <li>Мы регулярно проверяем наши продукты и услуги на соответствие закону и стандартам защиты данных.</li>
+            </ul>
+            
+            <h2 id="section9" class="policy-section-title">
+                <span class="policy-section-counter">9.</span> Как вы узнаете об изменениях политики?
+            </h2>
+            <p class="policy-content-text">Мы постоянно совершенствуем наши сервисы и придумываем новые. Это может требовать от нас сбора новой информации, привлечения новых партнеров и т.д. Поэтому мы периодически обновляем эту Политику конфиденциальности. Мы будем публиковать любые изменения на этой странице, обновляя эту Политику. После публикации любых изменений дальнейшее использование ASAUDA будет регулироваться обновленной Политикой.</p>
+            
+            <h2 id="section10" class="policy-section-title">
+                <span class="policy-section-counter">10.</span> Наши контакты
+            </h2>
+            <p class="policy-content-text">По любым вопросам обращайтесь в поддержку через сайт ASAUDA.</p>
+            
+            <div class="policy-contacts">
+                <h3 class="policy-contacts-title">Контактная информация</h3>
+                <p class="policy-content-text"><strong>Сайт:</strong> asauda.ru</p>
+                <p class="policy-content-text"><strong>Электронная почта:</strong> support@asauda.ru</p>
+                <p class="policy-content-text"><strong>Дата публикации:</strong> 10.12.2025</p>
+                <p class="policy-content-text"><strong>Дата последнего обновления:</strong> 10.12.2025</p>
+            </div>
+            
+            <div class="policy-date-info">
+                <p>© 2025 Система продажи остатков ASAUDA. Все права защищены.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Кнопка "Наверх" -->
+<div class="back-to-top" id="backToTop">
+    ↑
+</div>
+
+<script>
+    // Активное оглавление
+    document.addEventListener('DOMContentLoaded', function() {
+        const sections = document.querySelectorAll('.policy-section-title');
+        const tocLinks = document.querySelectorAll('.policy-toc-link');
+        const backToTopBtn = document.getElementById('backToTop');
+        
+        // Функция для обновления активного раздела
+        function updateActiveSection() {
+            let currentSectionId = '';
+            
+            // Определяем текущий видимый раздел
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                // Порог для определения активного раздела (150px от верха окна)
+                if (rect.top <= 200 && rect.bottom >= 200) {
+                    currentSectionId = section.id;
+                }
+            });
+            
+            // Обновляем активную ссылку в оглавлении
+            tocLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + currentSectionId) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Показываем/скрываем кнопку "Наверх"
+            if (window.scrollY > 500) {
+                backToTopBtn.classList.add('visible');
+            } else {
+                backToTopBtn.classList.remove('visible');
+            }
+        }
+        
+        // Плавная прокрутка к разделам при клике на оглавление
+        tocLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    // Рассчитываем позицию с учетом фиксированной шапки
+                    const headerOffset = 80;
+                    const elementPosition = targetElement.offsetTop - headerOffset;
+                    
+                    window.scrollTo({
+                        top: elementPosition,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Обновляем URL без перезагрузки страницы
+                    history.pushState(null, null, targetId);
+                }
+            });
+        });
+        
+        // Прокрутка наверх при клике на кнопку
+        backToTopBtn.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // Обновляем активный раздел при прокрутке
+        window.addEventListener('scroll', updateActiveSection);
+        
+        // Обработка загрузки страницы с якорем в URL
+        window.addEventListener('load', function() {
+            if (window.location.hash) {
+                const targetId = window.location.hash;
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    setTimeout(() => {
+                        const headerOffset = 80;
+                        const elementPosition = targetElement.offsetTop - headerOffset;
+                        
+                        window.scrollTo({
+                            top: elementPosition,
+                            behavior: 'smooth'
+                        });
+                    }, 100);
+                }
+            }
+            
+            // Инициализация при загрузке
+            updateActiveSection();
+        });
+        
+        // Для мобильных устройств - закрытие навигации при клике на ссылку
+        if (window.innerWidth <= 768) {
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // Если есть мобильное меню, можно добавить его закрытие здесь
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

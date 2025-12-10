@@ -1816,3 +1816,7 @@ def debug_upload():
             f.seek(current_pos)
     
     return "OK", 200
+
+@main.route('/privacy-policy')
+def privacy_policy():
+    return render_template('policy.html')
