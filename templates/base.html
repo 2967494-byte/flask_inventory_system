@@ -6,6 +6,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Бесплатная система продажи остатков{% endblock %}</title>
+
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SXMDF15XTT"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-SXMDF15XTT');
+    </script>
+
     
     <!-- Avito-like стили -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
