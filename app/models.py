@@ -92,6 +92,11 @@ class User(UserMixin, db.Model):
             Review.seller_id == self.id,
             Review.is_published == True
         ).order_by(Review.created_at.desc()).limit(limit).all()
+
+    @classmethod
+    def get_total_users_count(cls):
+        """Возвращает общее количество пользователей"""
+        return cls.query.count()
     
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)

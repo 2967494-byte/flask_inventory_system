@@ -36,3 +36,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+    # Telegram Bot настройки
+    TELEGRAM_BOT_TOKEN = '8576859315:AAFUsWf2_L2ZaJEE8lUxTgOxK_e2IlOTnD0' 
+    TELEGRAM_CHAT_ID = '390300'  # Ваш Chat ID
+    TELEGRAM_ENABLED = True

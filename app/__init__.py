@@ -11,6 +11,14 @@ migrate = Migrate()
 login_manager = LoginManager()
 csrf = CSRFProtect()
 
+# =========== ДОБАВЬТЕ ЭТО ===========
+try:
+    from .telegram_bot import telegram_bot
+except ImportError as e:
+    print(f"⚠️ Не удалось импортировать Telegram бот: {e}")
+    telegram_bot = None
+# ====================================
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
@@ -20,6 +28,15 @@ def create_app():
     migrate.init_app(app, db) 
     login_manager.init_app(app)
     csrf.init_app(app)
+    
+    # =========== ДОБАВЬТЕ ЭТО ===========
+    # Инициализируем Telegram бота
+    if telegram_bot:
+        telegram_bot.init_app(app)
+        print(f"✅ Telegram бот инициализирован: токен={'установлен' if app.config.get('TELEGRAM_BOT_TOKEN') else 'не указан'}, chat_id={app.config.get('TELEGRAM_CHAT_ID')}")
+    else:
+        print("⚠️ Telegram бот не загружен")
+    # ====================================
     
     @app.before_request
     def before_request():

@@ -1,11 +1,15 @@
-# auth.py
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.models import User
+import logging
+
+# === ДОБАВЬТЕ ЭТОТ ИМПОРТ ===
+from app.telegram_bot import telegram_bot
 
 auth = Blueprint('auth', __name__)
+logger = logging.getLogger(__name__)
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
@@ -49,6 +53,45 @@ def register():
             db.session.add(new_user)
             db.session.commit()
             
+            # === ДОБАВЬТЕ ЭТОТ КОД ДЛЯ TELEGRAM УВЕДОМЛЕНИЯ ===
+            try:
+                # Проверяем, включен ли Telegram бот
+                from flask import current_app
+                if current_app.config.get('TELEGRAM_ENABLED', True):
+                    success = telegram_bot.send_new_user_notification(new_user)
+                    if success:
+                        logger.info(f"✅ Telegram уведомление отправлено о новом пользователе: {username}")
+                    else:
+                        logger.warning(f"⚠️ Не удалось отправить Telegram уведомление о пользователе: {username}")
+            except Exception as e:
+                logger.error(f"❌ Ошибка при отправке Telegram уведомления: {e}")
+                # Не прерываем регистрацию из-за ошибки Telegram
+            # === КОНЕЦ ДОБАВЛЕННОГО КОДА ===
+            
+            # =========== ДОБАВЬТЕ ЭТОТ ИМПОРТ ===========
+            try:
+                from .telegram_bot import telegram_bot
+                TELEGRAM_BOT_AVAILABLE = True
+            except ImportError:
+                telegram_bot = None
+                TELEGRAM_BOT_AVAILABLE = False
+                print("⚠️ Telegram бот не доступен в auth.py")
+            # ============================================
+
+            if TELEGRAM_BOT_AVAILABLE and telegram_bot:
+                try:
+                    if current_app.config.get('TELEGRAM_ENABLED', True):
+                        success = telegram_bot.send_new_user_notification(new_user)
+                        if success:
+                            logger.info(f"✅ Telegram уведомление отправлено о новом пользователе: {new_user.username}")
+                        else:
+                            logger.warning(f"⚠️ Не удалось отправить Telegram уведомление о пользователе: {new_user.username}")
+                except Exception as e:
+                    logger.error(f"❌ Ошибка при отправке Telegram уведомления: {e}")
+                    # Не прерываем регистрацию из-за ошибки Telegram
+            else:
+                logger.info("ℹ️ Telegram бот не доступен, уведомление не отправлено")
+
             # Автоматический вход после регистрации
             login_user(new_user)
             flash('Регистрация успешна! Вы вошли в систему.', 'success')
