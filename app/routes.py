@@ -43,22 +43,18 @@ def index():
     search_term = request.args.get('search', '').strip()
     location = request.args.get('location', '').strip()
     query = Product.query.filter_by(status=Product.STATUS_PUBLISHED)
-
     if category_id and category_id.isdigit():
         query = query.filter_by(category_id=int(category_id))
-
     if search_term:
         query = query.filter(
             Product.title.ilike(f'%{search_term}%') | 
             Product.description.ilike(f'%{search_term}%')
         )
-
     if location and location != 'Все регионы':
         query = query.filter(
             (Product.region == location) | 
             (Product.city == location)
         )
-
     query = query.options(joinedload(Product.product_category))
     products = query.order_by(Product.created_at.desc()).all()
     categories = Category.query.all()
@@ -78,7 +74,6 @@ def dashboard():
     ).update({Product.status: Product.STATUS_READY_FOR_PUBLICATION})
     if expired_count > 0:
         db.session.commit()
-
     products_data = []
     for product in user_products:
         product_dict = {
@@ -119,7 +114,6 @@ def product_detail(product_id):
         joinedload(Product.product_category),
         joinedload(Product.owner)
     ).get_or_404(product_id)
-
     can_view = (
         product.status == Product.STATUS_PUBLISHED or
         (current_user.is_authenticated and (current_user.id == product.user_id or current_user.role == 'admin'))
@@ -127,11 +121,9 @@ def product_detail(product_id):
     if not can_view:
         flash('Этот товар недоступен для просмотра', 'error')
         return redirect(url_for('main.index'))
-
     if product.status == Product.STATUS_PUBLISHED:
         product.view_count = (product.view_count or 0) + 1
         db.session.commit()
-
     return render_template('product_detail.html', product=product)
 
 @main.route('/add_product', methods=['GET', 'POST'])
@@ -143,7 +135,6 @@ def add_product():
             description = request.form.get('description')
             price = request.form.get('price')
             category_id_str = request.form.get('category_id', '').strip()
-
             if not title:
                 flash('Название товара обязательно для заполнения', 'error')
                 return redirect(url_for('main.add_product'))
@@ -153,44 +144,49 @@ def add_product():
             if not category_id_str:
                 flash('Категория товара обязательна для выбора', 'error')
                 return redirect(url_for('main.add_product'))
-
             try:
                 category_id_int = int(category_id_str)
             except (ValueError, TypeError):
                 flash('Некорректный выбор категории', 'error')
                 return redirect(url_for('main.add_product'))
-
             category = Category.query.get(category_id_int)
             if not category:
                 flash('Выбранная категория не существует', 'error')
                 return redirect(url_for('main.add_product'))
-
             region_id = request.form.get('region_id')
             city_id = request.form.get('city_id')
             old_region = request.form.get('old_region', '').strip()
             old_city = request.form.get('old_city', '').strip()
-
             region_name = None
             city_name = None
-
             if region_id:
                 region = Region.query.get(int(region_id))
                 region_name = region.name if region else old_region
             else:
                 region_name = old_region
-
             if city_id:
                 city = City.query.get(int(city_id))
                 city_name = city.name if city else old_city
             else:
                 city_name = old_city
-
             if not region_name:
                 flash('Субъект РФ обязателен для выбора', 'error')
                 return redirect(url_for('main.add_product'))
             if not city_name:
                 flash('Город обязателен для выбора', 'error')
                 return redirect(url_for('main.add_product'))
+
+            # === Получение и валидация количества и производителя ===
+            quantity_str = request.form.get('quantity', '1')
+            manufacturer = request.form.get('manufacturer', '').strip()
+
+            try:
+                quantity = int(quantity_str)
+                if quantity < 1:
+                    quantity = 1
+            except (ValueError, TypeError):
+                quantity = 1
+            # === Конец получения количества и производителя ===
 
             uploaded_files = request.files.getlist('image_files')
             new_images = []
@@ -210,11 +206,11 @@ def add_product():
                 title=title,
                 description=description,
                 price=float(price),
-                quantity=int(quantity),
-                manufacturer=manufacturer,
+                quantity=quantity,  # ← ИСПРАВЛЕНО: quantity уже int
+                manufacturer=manufacturer,  # ← ИСПРАВЛЕНО: переменная определена
                 category_id=category_id_int,
                 user_id=current_user.id,
-                images=','.join(new_images) if new_images else None,  # ← СЕРИАЛИЗУЕМ В СТРОКУ
+                images=','.join(new_images) if new_images else None,
                 status=Product.STATUS_PUBLISHED,
                 vat_included=request.form.get('vat_included') == 'on', 
                 condition=request.form.get('condition', 'new'),
@@ -235,7 +231,6 @@ def add_product():
             db.session.rollback()
             flash(f'Ошибка при добавлении товара: {str(e)}', 'error')
             return redirect(url_for('main.add_product'))
-
     categories = Category.query.all()
     if not categories:
         flash('Прежде чем добавлять товары, создайте хотя бы одну категорию', 'warning')
@@ -288,14 +283,12 @@ def edit_product(product_id):
     if product.user_id != current_user.id and current_user.role != 'admin':
         flash('У вас нет прав для редактирования этого товара', 'error')
         return redirect(url_for('main.product_detail', product_id=product_id))
-
     if request.method == 'POST':
         try:
             title = request.form.get('title')
             description = request.form.get('description')
             price = request.form.get('price')
             category_id = request.form.get('category_id')
-
             if not title:
                 flash('Название товара обязательно для заполнения', 'error')
                 return redirect(url_for('main.edit_product', product_id=product_id))
@@ -305,39 +298,32 @@ def edit_product(product_id):
             if not category_id:
                 flash('Категория товара обязательна для выбора', 'error')
                 return redirect(url_for('main.edit_product', product_id=product_id))
-
             category = Category.query.get(int(category_id))
             if not category:
                 flash('Выбранная категория не существует', 'error')
                 return redirect(url_for('main.edit_product', product_id=product_id))
-
             region_id = request.form.get('region_id')
             city_id = request.form.get('city_id')
             old_region = request.form.get('old_region', '').strip()
             old_city = request.form.get('old_city', '').strip()
-
             region_name = None
             city_name = None
-
             if region_id:
                 region = Region.query.get(int(region_id))
                 region_name = region.name if region else old_region
             else:
                 region_name = old_region
-
             if city_id:
                 city = City.query.get(int(city_id))
                 city_name = city.name if city else old_city
             else:
                 city_name = old_city
-
             if not region_name:
                 flash('Субъект РФ обязателен для выбора', 'error')
                 return redirect(url_for('main.edit_product', product_id=product_id))
             if not city_name:
                 flash('Город обязателен для выбора', 'error')
                 return redirect(url_for('main.edit_product', product_id=product_id))
-
             product.title = title
             product.description = description
             product.price = float(price)
@@ -352,12 +338,10 @@ def edit_product(product_id):
             product.region_id = int(region_id) if region_id else None
             product.city_id = int(city_id) if city_id else None
             product.delivery = request.form.get('delivery') == 'on'
-
             expires_at_str = request.form.get('expires_at')
             if expires_at_str:
                 product.expires_at = datetime.strptime(expires_at_str, '%Y-%m-%dT%H:%M')
-
-                        # ========== ИСПРАВЛЕННАЯ ОБРАБОТКА ИЗОБРАЖЕНИЙ ==========
+            # ========== ИСПРАВЛЕННАЯ ОБРАБОТКА ИЗОБРАЖЕНИЙ ==========
             current_images = _deserialize_images(product.images)
             removed_images = request.form.get('removed_images', '')
             if removed_images:
@@ -367,7 +351,6 @@ def edit_product(product_id):
                     image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], image_filename)
                     if os.path.exists(image_path):
                         os.remove(image_path)
-
             uploaded_files = request.files.getlist('image_files')
             new_images = []
             if uploaded_files and any(f.filename for f in uploaded_files):
@@ -375,11 +358,9 @@ def edit_product(product_id):
                 if available_slots <= 0:
                     flash('Достигнут лимит в 8 изображений. Удалите некоторые существующие изображения перед добавлением новых.', 'error')
                     return redirect(url_for('main.edit_product', product_id=product_id))
-
                 files_to_process = uploaded_files[:available_slots]
                 if len(uploaded_files) > available_slots:
                     flash(f'Добавлено {len(files_to_process)} из {len(uploaded_files)} изображений. Достигнут лимит в 8 изображений.', 'warning')
-
                 for file in files_to_process:
                     if file and file.filename:
                         if not allowed_file(file.filename):
@@ -390,14 +371,11 @@ def edit_product(product_id):
                         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
                         file.save(file_path)
                         new_images.append(unique_filename)
-
             if new_images:
                 current_images.extend(new_images)
             current_images = current_images[:8]
-
             product.images = _serialize_images(current_images)
             # ========== КОНЕЦ ОБРАБОТКИ ИЗОБРАЖЕНИЙ ==========
-
             db.session.commit()
             flash('Товар успешно обновлен', 'success')
             return redirect(url_for('main.product_detail', product_id=product_id))
@@ -405,7 +383,6 @@ def edit_product(product_id):
             db.session.rollback()
             flash(f'Ошибка при обновлении товара: {str(e)}', 'error')
             return redirect(url_for('main.edit_product', product_id=product_id))
-
     categories = Category.query.all()
     if not categories:
         flash('Нет доступных категорий', 'error')
@@ -419,8 +396,7 @@ def edit_product(product_id):
         if region_obj:
             product.region_id = region_obj.id
             cities = City.query.filter_by(region_id=region_obj.id).order_by(City.name).all()
-
-     # Десериализуем изображения для корректной передачи в шаблон
+    # Десериализуем изображения для корректной передачи в шаблон
     if product.images:
         if isinstance(product.images, str):
             product_images = [img.strip() for img in product.images.split(',') if img.strip()]
@@ -430,10 +406,9 @@ def edit_product(product_id):
             product_images = []
     else:
         product_images = []
-
     return render_template('edit_product.html', 
                          product=product, 
-                         product_images=product_images,  # ← передаём отдельно
+                         product_images=product_images,
                          categories=categories,
                          regions=regions,
                          cities=cities)
@@ -500,21 +475,17 @@ def profile():
 def admin_categories():
     if request.method == 'POST':
         action = request.form.get('action')
-        
         if action == 'add_category':
             name = request.form.get('name')
             parent_id = request.form.get('parent_id') or None
             description = request.form.get('description')
-            
             if not name:
                 flash('Название категории обязательно', 'error')
                 return redirect(url_for('main.admin_categories'))
-            
             existing_category = Category.query.filter_by(name=name, parent_id=parent_id).first()
             if existing_category:
                 flash('Такая категория уже существует', 'error')
                 return redirect(url_for('main.admin_categories'))
-            
             try:
                 new_category = Category(
                     name=name,
@@ -527,11 +498,9 @@ def admin_categories():
             except Exception as e:
                 db.session.rollback()
                 flash(f'Ошибка при добавлении категории: {str(e)}', 'error')
-        
         elif action == 'edit_category':
             category_id = request.form.get('category_id')
             flash('Редактирование категорий пока недоступно', 'info')
-        
         elif action == 'delete_category':
             category_id = request.form.get('category_id')
             if category_id:
@@ -550,54 +519,37 @@ def admin_categories():
                             flash(f'Категория "{category.name}" удалена', 'success')
                 else:
                     flash('Категория не найдена', 'error')
-        
         elif action == 'clear_empty':
             categories = Category.query.all()
             deleted_count = 0
             for cat in categories:
                 products_count = Product.query.filter_by(category_id=cat.id).count()
                 children_count = Category.query.filter_by(parent_id=cat.id).count()
-                
                 if products_count == 0 and children_count == 0:
                     db.session.delete(cat)
                     deleted_count += 1
-            
             if deleted_count > 0:
                 db.session.commit()
                 flash(f'Удалено {deleted_count} пустых категорий', 'success')
             else:
                 flash('Пустых категорий не найдено', 'info')
-        
         return redirect(url_for('main.admin_categories'))
-    
     # ========== ОЧИСТКА НАЗВАНИЙ РЕГИОНОВ ==========
-    # Находим регионы с префиксами (типа "01 - Республика Адыгея")
     regions_to_clean = Region.query.filter(Region.name.like('% - %')).all()
     if regions_to_clean:
         for region in regions_to_clean:
-            # Убираем префиксы вида "01 - ", "02 -   "
             cleaned_name = region.name.split('-', 1)[-1].strip()
             region.name = cleaned_name
         db.session.commit()
         print(f"DEBUG: Очищены названия {len(regions_to_clean)} регионов")
-    
-    # Загружаем категории
     categories = Category.query.all()
     parent_categories = Category.query.filter_by(parent_id=None).all()
     total_products = Product.query.count()
-    
-    # Загружаем регионы
     all_regions = Region.query.all()
     regions = Region.query.filter_by(parent_id=None).all()
     child_regions = Region.query.filter(Region.parent_id.isnot(None)).all()
-
-    # Загружаем все города для передачи в шаблон
     all_cities = City.query.all()
-    
-    # Считаем количество городов
     cities_count = len(all_cities)
-    
-    # Для отображения городов по регионам создаем структуру
     regions_with_cities = []
     for region in regions:
         region_cities = [city for city in all_cities if city.region_id == region.id]
@@ -605,7 +557,6 @@ def admin_categories():
             'region': region,
             'cities': region_cities
         })
-
     return render_template('admin_categories.html', 
                          categories=categories,
                          parent_categories=parent_categories,
@@ -613,58 +564,43 @@ def admin_categories():
                          all_regions=all_regions,
                          regions=regions,
                          child_regions=child_regions,
-                         cities=all_cities,  # ← передаем все города
-                         cities_count=cities_count,  # ← передаем количество городов
-                         regions_with_cities=regions_with_cities)  # ← для удобства
+                         cities=all_cities,
+                         cities_count=cities_count,
+                         regions_with_cities=regions_with_cities)
 
 @main.route('/admin/upload-locations', methods=['POST'])
 @login_required
 def upload_locations():
-    """Загрузка регионов и городов из файла (CSV/JSON)"""
     if not current_user.is_admin:
         flash('Недостаточно прав', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     if 'locations_file' not in request.files:
         flash('Файл не выбран', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     file = request.files['locations_file']
     if file.filename == '':
         flash('Файл не выбран', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     file_type = request.form.get('file_type', 'json')
     clear_existing = request.form.get('clear_existing') == 'on'
-    
     try:
         if clear_existing:
-            # Проверяем, есть ли связанные товары
             products_count = Product.query.filter(
                 (Product.region_id.isnot(None)) | (Product.city_id.isnot(None))
             ).count()
-            
             if products_count > 0:
                 flash(f'Нельзя удалить существующие данные - {products_count} товаров связаны с ними', 'error')
                 return redirect(url_for('main.admin_categories'))
-            
-            # Удаляем существующие данные
             City.query.delete()
             Region.query.delete()
             db.session.flush()
-        
         added_regions = 0
         added_cities = 0
-        region_cache = {}  # Кэш регионов для быстрого поиска
-        
+        region_cache = {}
         if file_type == 'csv':
             import csv
             import io
-            
-            # Читаем файл
             content = file.read().decode('utf-8')
-            
-            # Пробуем разные разделители
             for delimiter in [';', ',', '\t']:
                 try:
                     csv_reader = csv.reader(io.StringIO(content), delimiter=delimiter)
@@ -673,21 +609,14 @@ def upload_locations():
                         break
                 except:
                     continue
-            
-            # Пропускаем заголовок если есть
             if rows and ('регион' in rows[0][0].lower() or 'region' in rows[0][0].lower()):
                 rows = rows[1:]
-            
             for row in rows:
                 if len(row) >= 2:
                     region_name = row[0].strip()
                     city_name = row[1].strip()
-                    
-                    # Пропускаем пустые строки
                     if not region_name or not city_name:
                         continue
-                    
-                    # Ищем или создаем регион
                     if region_name not in region_cache:
                         region = Region.query.filter_by(name=region_name, parent_id=None).first()
                         if not region:
@@ -698,39 +627,24 @@ def upload_locations():
                         region_cache[region_name] = region
                     else:
                         region = region_cache[region_name]
-                    
-                    # Создаем город
                     existing_city = City.query.filter_by(
                         name=city_name, 
                         region_id=region.id
                     ).first()
-                    
                     if not existing_city:
                         city = City(name=city_name, region_id=region.id)
                         db.session.add(city)
                         added_cities += 1
-        
         elif file_type == 'json':
             import json
-            
-            # Читаем файл с учетом кодировки
             content = file.read().decode('utf-8')
             data = json.loads(content)
-            
-            # Поддерживаем оба формата:
-            # 1. Ваш формат: {"regions": [{"name": "Москва", "cities": ["Москва"]}, ...]}
-            # 2. Простой формат: [{"region": "Москва", "city": "Москва"}, ...]
-            
             if isinstance(data, dict) and 'regions' in data:
-                # Формат 1: Ваш формат
                 for region_data in data['regions']:
                     region_name = region_data.get('name', '').strip()
                     cities_list = region_data.get('cities', [])
-                    
                     if not region_name:
                         continue
-                    
-                    # Ищем или создаем регион
                     if region_name not in region_cache:
                         region = Region.query.filter_by(name=region_name, parent_id=None).first()
                         if not region:
@@ -741,8 +655,6 @@ def upload_locations():
                         region_cache[region_name] = region
                     else:
                         region = region_cache[region_name]
-                    
-                    # Создаем города для этого региона
                     for city_name in cities_list:
                         if isinstance(city_name, str) and city_name.strip():
                             city_name_clean = city_name.strip()
@@ -750,23 +662,17 @@ def upload_locations():
                                 name=city_name_clean, 
                                 region_id=region.id
                             ).first()
-                            
                             if not existing_city:
                                 city = City(name=city_name_clean, region_id=region.id)
                                 db.session.add(city)
                                 added_cities += 1
-            
             elif isinstance(data, list):
-                # Формат 2: Простой формат [{"region": "...", "city": "..."}]
                 for item in data:
                     if isinstance(item, dict):
                         region_name = item.get('region', '').strip()
                         city_name = item.get('city', '').strip()
-                        
                         if not region_name or not city_name:
                             continue
-                        
-                        # Ищем или создаем регион
                         if region_name not in region_cache:
                             region = Region.query.filter_by(name=region_name, parent_id=None).first()
                             if not region:
@@ -777,13 +683,10 @@ def upload_locations():
                             region_cache[region_name] = region
                         else:
                             region = region_cache[region_name]
-                        
-                        # Создаем город
                         existing_city = City.query.filter_by(
                             name=city_name, 
                             region_id=region.id
                         ).first()
-                        
                         if not existing_city:
                             city = City(name=city_name, region_id=region.id)
                             db.session.add(city)
@@ -791,14 +694,11 @@ def upload_locations():
             else:
                 flash('❌ Неподдерживаемый формат JSON файла', 'error')
                 return redirect(url_for('main.admin_categories'))
-        
         db.session.commit()
-        
         if added_regions > 0 or added_cities > 0:
             flash(f'✅ Успешно добавлено {added_regions} регионов и {added_cities} городов', 'success')
         else:
             flash('⚠️ Новых регионов и городов не обнаружено', 'info')
-        
     except json.JSONDecodeError as e:
         db.session.rollback()
         flash(f'❌ Ошибка чтения JSON: {str(e)}', 'error')
@@ -807,7 +707,6 @@ def upload_locations():
         db.session.rollback()
         flash(f'❌ Ошибка загрузки: {str(e)}', 'error')
         print(f"Ошибка загрузки локаций: {str(e)}")
-    
     return redirect(url_for('main.admin_categories'))
 
 @main.route('/admin/users')
@@ -816,14 +715,8 @@ def admin_users():
     if not current_user.is_admin:
         flash('У вас нет прав доступа к админке', 'error')
         return redirect(url_for('main.index'))
-    
-    # Если функция уже есть в admin.py, можно добавить редирект
-    # return redirect(url_for('admin_bp.admin_users'))
-    
-    # Или создать свою реализацию
     search = request.args.get('search', '').strip()
     query = User.query
-    
     if search:
         query = query.filter(
             User.username.ilike(f'%{search}%') |
@@ -831,7 +724,6 @@ def admin_users():
             User.company_name.ilike(f'%{search}%') |
             User.contact_person.ilike(f'%{search}%')
         )
-    
     users = query.order_by(User.created_at.desc()).all()
     return render_template('admin_users.html', users=users, search=search)
 
@@ -841,28 +733,21 @@ def add_region():
     if not current_user.is_admin:
         flash('Недостаточно прав', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     name = request.form.get('name', '').strip()
     parent_id = request.form.get('parent_id') or None
     description = request.form.get('description', '').strip()
-    
     if not name:
         flash('Название обязательно', 'error')
         return redirect(url_for('main.admin_categories'))
-    
-    if parent_id:  # СОЗДАЕМ ГОРОД
-        # Проверяем существует ли регион
+    if parent_id:
         region = Region.query.get(parent_id)
         if not region:
             flash('Выбранный регион не существует', 'error')
             return redirect(url_for('main.admin_categories'))
-        
-        # Проверяем нет ли уже такого города
         existing_city = City.query.filter_by(name=name, region_id=parent_id).first()
         if existing_city:
             flash(f'Город "{name}" уже существует в регионе "{region.name}"', 'error')
             return redirect(url_for('main.admin_categories'))
-        
         try:
             new_city = City(
                 name=name,
@@ -875,13 +760,11 @@ def add_region():
         except Exception as e:
             db.session.rollback()
             flash(f'Ошибка при создании города: {str(e)}', 'error')
-    
-    else:  # СОЗДАЕМ РЕГИОН
+    else:
         existing_region = Region.query.filter_by(name=name, parent_id=None).first()
         if existing_region:
             flash('Такой регион уже существует', 'error')
             return redirect(url_for('main.admin_categories'))
-        
         try:
             new_region = Region(
                 name=name,
@@ -894,7 +777,6 @@ def add_region():
         except Exception as e:
             db.session.rollback()
             flash(f'Ошибка: {str(e)}', 'error')
-    
     return redirect(url_for('main.admin_categories'))
 
 @main.route('/admin/regions/delete/<int:region_id>', methods=['POST'])
@@ -903,44 +785,35 @@ def delete_region(region_id):
     if not current_user.is_admin:
         flash('Недостаточно прав', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     region = Region.query.get_or_404(region_id)
     children = Region.query.filter_by(parent_id=region_id).all()
-    
     if children:
         flash(f'Нельзя удалить регион "{region.name}" — есть подрегионы', 'error')
     else:
         db.session.delete(region)
         db.session.commit()
         flash(f'Регион "{region.name}" удалён', 'success')
-    
     return redirect(url_for('main.admin_categories'))
 
 @main.route('/admin/upload-categories', methods=['POST'])
 @login_required
 def upload_categories():
     import json
-    
     if 'categories_file' not in request.files:
         flash('Файл не выбран', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     file = request.files['categories_file']
     if file.filename == '':
         flash('Файл не выбран', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     if not file.filename.endswith('.json'):
         flash('Только JSON файлы поддерживаются', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     try:
         categories_data = json.load(file)
         Category.query.delete()
-        
         parent_count = 0
         child_count = 0
-        
         for parent_data in categories_data:
             parent_category = Category(
                 name=parent_data['name'],
@@ -949,7 +822,6 @@ def upload_categories():
             db.session.add(parent_category)
             db.session.flush()
             parent_count += 1
-            
             for child_data in parent_data.get('children', []):
                 child_category = Category(
                     name=child_data['name'],
@@ -958,14 +830,11 @@ def upload_categories():
                 )
                 db.session.add(child_category)
                 child_count += 1
-        
         db.session.commit()
         flash(f'✅ Загружено {parent_count} родительских и {child_count} дочерних категорий!', 'success')
-        
     except Exception as e:
         db.session.rollback()
         flash(f'❌ Ошибка загрузки: {str(e)}', 'error')
-    
     return redirect(url_for('main.admin_categories'))
 
 @main.route('/admin/clear-categories', methods=['POST'])
@@ -974,7 +843,6 @@ def clear_categories():
     try:
         Product.query.update({Product.category_id: None})
         db.session.commit()
-        
         count = Category.query.count()
         Category.query.delete()
         db.session.commit()
@@ -982,56 +850,27 @@ def clear_categories():
     except Exception as e:
         db.session.rollback()
         flash(f'❌ Ошибка очистки: {str(e)}', 'error')
-    
     return redirect(url_for('main.admin_categories'))
 
 @main.route('/admin/cities/add', methods=['POST'])
 @login_required
 def add_city():
-    """Добавление города"""
     if not current_user.is_admin:
         flash('Недостаточно прав', 'error')
         return redirect(url_for('main.admin_categories'))
-    
-    # ОТЛАДКА: что приходит в запросе
-    print("=" * 50)
-    print("DEBUG add_city:")
-    print(f"  request.form: {dict(request.form)}")
-    print(f"  request.headers: {dict(request.headers)}")
-    print(f"  request.charset: {request.charset}")
-    
     name = request.form.get('name', '').strip()
     region_id = request.form.get('region_id')
     description = request.form.get('description', '').strip()
-    
-    print(f"  name raw: {repr(name)}")
-    print(f"  name bytes: {name.encode('utf-8') if name else 'empty'}")
-    
-    # Пробуем разные кодировки
-    encodings_to_try = ['utf-8', 'windows-1251', 'cp1251', 'iso-8859-1']
-    for encoding in encodings_to_try:
-        try:
-            decoded = name.encode('latin-1').decode(encoding)
-            print(f"  name as {encoding}: {repr(decoded)}")
-        except:
-            pass
-    
     if not name:
         flash('Название города обязательно', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     if not region_id:
         flash('Выберите регион', 'error')
         return redirect(url_for('main.admin_categories'))
-    
-    # Пробуем сохранить "как есть" для теста
-    print(f"  Сохраняем как есть: {repr(name)}")
-    
     existing = City.query.filter_by(name=name, region_id=region_id).first()
     if existing:
         flash('Такой город уже существует в этом регионе', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     try:
         new_city = City(
             name=name,
@@ -1040,65 +879,42 @@ def add_city():
         )
         db.session.add(new_city)
         db.session.commit()
-        print(f"  ✅ Город сохранен в БД: {name}")
         flash(f'Город "{name}" добавлен', 'success')
     except Exception as e:
         db.session.rollback()
-        print(f"  ❌ Ошибка сохранения: {str(e)}")
         flash(f'Ошибка: {str(e)}', 'error')
-    
-    print("=" * 50)
     return redirect(url_for('main.admin_categories'))
 
 @main.route('/admin/cities/delete/<int:city_id>', methods=['POST'])
 @login_required
 def delete_city(city_id):
-    """Удаление города"""
     if not current_user.is_admin:
         flash('Недостаточно прав', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     city = City.query.get_or_404(city_id)
-    
-    # Проверяем, есть ли товары в этом городе
     products_count = Product.query.filter_by(city=city.name).count()
     if products_count > 0:
         flash(f'Нельзя удалить город "{city.name}" — в нем есть товары', 'error')
         return redirect(url_for('main.admin_categories'))
-    
     db.session.delete(city)
     db.session.commit()
     flash(f'Город "{city.name}" удалён', 'success')
-    
     return redirect(url_for('main.admin_categories'))
 
 # ========== API ДЛЯ ПОЛУЧЕНИЯ ЛОКАЦИЙ ==========
-
 @main.route('/api/locations')
 def get_locations():
-    """API для получения списка регионов и городов для автодополнения"""
     try:
         search = request.args.get('search', '').strip()
         limit = int(request.args.get('limit', 30))
-        
-        # Отладка
-        print(f"=== API /api/locations вызван ===")
-        print(f"Поисковой запрос: '{search}'")
-        print(f"Лимит: {limit}")
-        
         results = []
-        
-        # Всегда добавляем "Все регионы"
         results.append({
             'id': 'all',
             'name': 'Все регионы',
             'type': 'all',
             'display_name': 'Все регионы'
         })
-        
         if not search:
-            print("Без поиска - возвращаем популярные локации")
-            # Если нет поиска - возвращаем популярные локации
             popular_locations = [
                 'Москва',
                 'Санкт-Петербург', 
@@ -1117,10 +933,7 @@ def get_locations():
                 'Челябинск',
                 'Самара'
             ]
-            
-            # Ищем эти локации в базе или создаем их
             for loc_name in popular_locations:
-                # Сначала ищем как город
                 city = City.query.filter_by(name=loc_name).first()
                 if city:
                     results.append({
@@ -1130,8 +943,6 @@ def get_locations():
                         'display_name': f"{city.name} ({city.region.name if city.region else 'Неизвестный регион'})"
                     })
                     continue
-                
-                # Если не нашли как город, ищем как регион
                 region = Region.query.filter_by(name=loc_name).first()
                 if region:
                     results.append({
@@ -1140,201 +951,110 @@ def get_locations():
                         'type': 'region',
                         'display_name': region.name
                     })
-        
         else:
-            # ЕСТЬ ПОИСКОВЫЙ ЗАПРОС
             search_lower = search.lower()
-            print(f"Поиск в нижнем регистре: '{search_lower}'")
-            
-            # Ищем регионы - поиск по НАЧАЛУ строки
-            try:
-                # Сначала ищем регионы, которые начинаются с поисковой строки
-                regions_start = Region.query.filter(
-                    Region.name.ilike(f'{search_lower}%')
-                ).order_by(Region.name).limit(limit // 2).all()
-                
-                # Затем ищем регионы, которые содержат поисковую строку в любом месте
-                regions_contains = Region.query.filter(
-                    Region.name.ilike(f'%{search_lower}%')
-                ).order_by(Region.name).limit(limit // 2).all()
-                
-                # Объединяем результаты, убирая дубликаты
-                all_regions = regions_start + [r for r in regions_contains if r not in regions_start]
-                all_regions = all_regions[:limit // 2]
-                
-                print(f"Найдено регионов: {len(all_regions)}")
-                for region in all_regions:
-                    results.append({
-                        'id': f'region_{region.id}',
-                        'name': region.name,
-                        'type': 'region',
-                        'display_name': region.name
-                    })
-                    print(f"  Регион: {region.name}")
-            except Exception as e:
-                print(f"Ошибка при поиске регионов: {e}")
-            
-            # Ищем города - поиск по НАЧАЛУ строки
-            try:
-                # Сначала ищем города, которые начинаются с поисковой строки
-                cities_start = City.query.join(Region).filter(
-                    City.name.ilike(f'{search_lower}%')
-                ).order_by(City.name).limit(limit // 2).all()
-                
-                # Затем ищем города, которые содержат поисковую строку в любом месте
-                cities_contains = City.query.join(Region).filter(
-                    City.name.ilike(f'%{search_lower}%')
-                ).order_by(City.name).limit(limit // 2).all()
-                
-                # Объединяем результаты, убирая дубликаты
-                all_cities = cities_start + [c for c in cities_contains if c not in cities_start]
-                all_cities = all_cities[:limit // 2]
-                
-                print(f"Найдено городов: {len(all_cities)}")
-                for city in all_cities:
-                    results.append({
-                        'id': f'city_{city.id}',
-                        'name': city.name,
-                        'type': 'city',
-                        'display_name': f"{city.name} ({city.region.name if city.region else 'Неизвестный регион'})"
-                    })
-                    print(f"  Город: {city.name} ({city.region.name if city.region else 'нет региона'})")
-            except Exception as e:
-                print(f"Ошибка при поиске городов: {e}")
-        
-        # Если при поиске ничего не найдено (кроме "Все регионы"),
-        # добавляем популярные города, содержащие поисковую строку
-        if search and len(results) <= 1:  # только "Все регионы"
-            print("Ничего не найдено в БД, ищем в статичном списке популярных городов")
-            
-            # Улучшенный статичный список городов
+            regions_start = Region.query.filter(
+                Region.name.ilike(f'{search_lower}%')
+            ).order_by(Region.name).limit(limit // 2).all()
+            regions_contains = Region.query.filter(
+                Region.name.ilike(f'%{search_lower}%')
+            ).order_by(Region.name).limit(limit // 2).all()
+            all_regions = regions_start + [r for r in regions_contains if r not in regions_start]
+            all_regions = all_regions[:limit // 2]
+            for region in all_regions:
+                results.append({
+                    'id': f'region_{region.id}',
+                    'name': region.name,
+                    'type': 'region',
+                    'display_name': region.name
+                })
+            cities_start = City.query.join(Region).filter(
+                City.name.ilike(f'{search_lower}%')
+            ).order_by(City.name).limit(limit // 2).all()
+            cities_contains = City.query.join(Region).filter(
+                City.name.ilike(f'%{search_lower}%')
+            ).order_by(City.name).limit(limit // 2).all()
+            all_cities = cities_start + [c for c in cities_contains if c not in cities_start]
+            all_cities = all_cities[:limit // 2]
+            for city in all_cities:
+                results.append({
+                    'id': f'city_{city.id}',
+                    'name': city.name,
+                    'type': 'city',
+                    'display_name': f"{city.name} ({city.region.name if city.region else 'Неизвестный регион'})"
+                })
+        if search and len(results) <= 1:
             popular_cities_extended = [
-                # Города на А
                 'Архангельск', 'Астрахань', 'Анапа', 'Альметьевск', 'Абакан',
-                # Города на Б
                 'Брянск', 'Белгород', 'Барнаул', 'Благовещенск', 'Бийск', 'Братск',
-                # Города на В
                 'Владивосток', 'Волгоград', 'Владимир', 'Вологда', 'Воронеж',
-                # Города на Г
                 'Грозный', 'Геленджик',
-                # Города на Д
                 'Донецк', 'Дзержинск', 'Димитровград',
-                # Города на Е
                 'Екатеринбург', 'Елец', 'Евпатория',
-                # Города на Ж
                 'Железногорск',
-                # Города на З
                 'Златоуст',
-                # Города на И
                 'Ижевск', 'Иркутск', 'Иваново',
-                # Города на Й
                 'Йошкар-Ола',
-                # Города на К
                 'Казань', 'Краснодар', 'Красноярск', 'Калининград', 'Кемерово',
                 'Киров', 'Кострома', 'Курск', 'Курган', 'Комсомольск-на-Амуре',
-                # Города на Л
                 'Липецк', 'Люберцы',
-                # Города на М
                 'Москва', 'Махачкала', 'Мурманск', 'Магнитогорск', 'Муром',
-                # Города на Н
                 'Нижний Новгород', 'Новосибирск', 'Новороссийск', 'Норильск',
                 'Набережные Челны', 'Нефтеюганск',
-                # Города на О
                 'Омск', 'Оренбург', 'Орёл', 'Обнинск',
-                # Города на П
                 'Пермь', 'Пенза', 'Псков', 'Петрозаводск', 'Подольск',
-                # Города на Р
                 'Ростов-на-Дону', 'Рязань', 'Рыбинск',
-                # Города на С
                 'Санкт-Петербург', 'Самара', 'Саратов', 'Смоленск', 'Сочи',
                 'Ставрополь', 'Стерлитамак', 'Сургут', 'Сыктывкар', 'Северодвинск',
-                # Города на Т
                 'Тверь', 'Тула', 'Тюмень', 'Таганрог', 'Тольятти', 'Томск',
-                # Города на У
                 'Уфа', 'Ульяновск', 'Улан-Удэ',
-                # Города на Ф
                 'Феодосия',
-                # Города на Х
                 'Хабаровск', 'Химки',
-                # Города на Ч
                 'Челябинск', 'Чебоксары', 'Чита',
-                # Города на Ш
                 'Шахты',
-                # Города на Щ
                 'Щёлково',
-                # Города на Э
                 'Элиста', 'Энгельс',
-                # Города на Ю
                 'Южно-Сахалинск',
-                # Города на Я
                 'Ярославль', 'Якутск'
             ]
-            
             search_lower = search.lower()
             found_in_static = False
-            
             for city_name in popular_cities_extended:
                 if search_lower in city_name.lower():
-                    # Проверяем, начинается ли город с поисковой строки (приоритет выше)
                     city_lower = city_name.lower()
                     if city_lower.startswith(search_lower):
-                        # Города, начинающиеся с поисковой строки, идут первыми
                         results.insert(1, {
                             'id': f'static_city_{city_name}',
                             'name': city_name,
                             'type': 'city',
                             'display_name': city_name,
-                            'priority': 1  # Высокий приоритет
+                            'priority': 1
                         })
                     else:
-                        # Города, содержащие поисковую строку, идут после
                         results.append({
                             'id': f'static_city_{city_name}',
                             'name': city_name,
                             'type': 'city',
                             'display_name': city_name,
-                            'priority': 0  # Низкий приоритет
+                            'priority': 0
                         })
                     found_in_static = True
-                    print(f"  Добавлен статичный город: {city_name}")
-            
-            if not found_in_static:
-                print("  Ничего не найдено даже в статичном списке")
-        
-        # Сортируем результаты: "Все регионы" всегда первый,
-        # затем города, начинающиеся с поисковой строки,
-        # затем остальные
         def sort_key(item):
             if item['display_name'] == 'Все регионы':
-                return (0, '')  # Всегда первый
+                return (0, '')
             elif item.get('priority') == 1:
-                return (1, item['display_name'])  # Начинающиеся с поиска
+                return (1, item['display_name'])
             else:
-                return (2, item['display_name'])  # Остальные
-        
+                return (2, item['display_name'])
         results.sort(key=sort_key)
-        
-        # Удаляем дубликаты по display_name
         seen = set()
         unique_results = []
         for item in results:
             if item['display_name'] not in seen:
                 seen.add(item['display_name'])
                 unique_results.append(item)
-        
-        print(f"Итоговый результат: {len(unique_results)} уникальных записей")
-        for item in unique_results[:min(10, len(unique_results))]:  # покажем первые 10 для отладки
-            print(f"  - {item['display_name']} ({item.get('priority', 'no priority')})")
-        print("=== Конец API вызова ===")
-        
         return jsonify(unique_results[:limit])
-        
     except Exception as e:
-        print(f"Критическая ошибка в /api/locations: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        # Запасной вариант - статичный список с популярными городами
         fallback_results = [
             {'id': 'all', 'name': 'Все регионы', 'type': 'all', 'display_name': 'Все регионы'},
             {'id': 'city_1', 'name': 'Москва', 'type': 'city', 'display_name': 'Москва'},
@@ -1346,23 +1066,18 @@ def get_locations():
             {'id': 'city_7', 'name': 'Ростов-на-Дону', 'type': 'city', 'display_name': 'Ростов-на-Дону'},
             {'id': 'city_8', 'name': 'Уфа', 'type': 'city', 'display_name': 'Уфа'},
         ]
-        
-        # Если есть поиск, фильтруем статичный список
         if search:
             search_lower = search.lower()
-            filtered_results = [fallback_results[0]]  # всегда "Все регионы"
+            filtered_results = [fallback_results[0]]
             for item in fallback_results[1:]:
                 if search_lower in item['name'].lower():
                     filtered_results.append(item)
             return jsonify(filtered_results)
-        
         return jsonify(fallback_results)
 
 @main.route('/api/regions')
 def get_regions():
-    """API для получения всех регионов"""
     regions = Region.query.filter_by(parent_id=None).order_by(Region.name).all()
-    
     result = []
     for region in regions:
         region_data = {
@@ -1370,8 +1085,6 @@ def get_regions():
             'name': region.name,
             'cities': []
         }
-        
-        # Получаем города для региона
         cities = City.query.filter_by(region_id=region.id).order_by(City.name).all()
         for city in cities:
             region_data['cities'].append({
@@ -1379,16 +1092,12 @@ def get_regions():
                 'name': city.name,
                 'full_name': f"{city.name} ({region.name})"
             })
-        
         result.append(region_data)
-    
     return jsonify(result)
 
 @main.route('/api/cities/by-region/<int:region_id>')
 def get_cities_by_region(region_id):
-    """API для получения городов по региону"""
     cities = City.query.filter_by(region_id=region_id).order_by(City.name).all()
-    
     result = []
     for city in cities:
         result.append({
@@ -1396,8 +1105,6 @@ def get_cities_by_region(region_id):
             'name': city.name,
             'full_name': f"{city.name} (Регион ID: {region_id})"
         })
-    
-    # Используем json.dumps с ensure_ascii=False
     import json
     response = current_app.response_class(
         response=json.dumps(result, ensure_ascii=False),
@@ -1412,15 +1119,12 @@ def update_expired_products():
         Product.status == Product.STATUS_PUBLISHED,
         Product.expires_at < datetime.utcnow()
     ).all()
-    
     updated_count = 0
     for product in expired_products:
         if product.update_status():
             updated_count += 1
-    
     if updated_count > 0:
         db.session.commit()
-    
     return f'Обновлено {updated_count} товаров с истекшим сроком публикации'
 
 @main.route('/product/<int:product_id>/favorite', methods=['POST'])
@@ -1434,22 +1138,18 @@ def toggle_favorite(product_id):
     db.session.commit()
     return redirect(url_for('main.product_detail', product_id=product_id))
 
-# Заглушка для сообщений
 @main.route('/messages/<int:user_id>/<int:product_id>')
 @login_required
 def messages(user_id, product_id):
-    # Позже здесь будет логика диалогов
     flash('Система сообщений находится в разработке', 'info')
     return redirect(url_for('main.product_detail', product_id=product_id))
 
-# Пожаловаться на товар
 @main.route('/product/<int:product_id>/report', methods=['POST'])
 @login_required
 def report_product(product_id):
     product = Product.query.get_or_404(product_id)
     reason = request.form.get('reason')
     if reason:
-        # Позже: сохранить в БД, отправить админу
         flash('Жалоба отправлена. Спасибо за участие!', 'success')
     else:
         flash('Выберите причину жалобы', 'error')
@@ -1458,37 +1158,26 @@ def report_product(product_id):
 @main.route('/favorites')
 @login_required
 def favorites():
-    # Получаем избранные товары текущего пользователя
     favorite_products = current_user.favorited_products.all()
     return render_template('favorites.html', products=favorite_products)
 
 @main.route('/user/<int:user_id>/reviews')
 def user_reviews(user_id):
-    """Просмотр всех отзывов о пользователе"""
     user = User.query.get_or_404(user_id)
-    
-    # Получаем отзывы
     reviews = Review.query.filter(
         Review.seller_id == user_id,
         Review.is_published == True
     ).order_by(Review.created_at.desc()).all()
-    
-    # Вручную считаем статистику
     total_reviews = len(reviews)
-    
     if total_reviews > 0:
-        # Средний рейтинг
         average_rating = sum(r.rating for r in reviews) / total_reviews
         average_rating = round(average_rating, 1)
-        
-        # Распределение оценок
         rating_distribution = {1:0, 2:0, 3:0, 4:0, 5:0}
         for review in reviews:
             rating_distribution[review.rating] += 1
     else:
         average_rating = 0
         rating_distribution = {1:0, 2:0, 3:0, 4:0, 5:0}
-    
     return render_template('user_reviews.html',
                          user=user,
                          reviews=reviews,
@@ -1499,31 +1188,19 @@ def user_reviews(user_id):
 @main.route('/product/<int:product_id>/add_review', methods=['GET', 'POST'])
 @login_required
 def add_review(product_id):
-    """Добавление отзыва на товар"""
     product = Product.query.get_or_404(product_id)
-    
-    # Проверяем, может ли пользователь оставить отзыв
-    # Обычно можно оставить только если пользователь покупал товар
-    # Для простоты пока разрешим всем авторизованным, кроме владельца
-    
     if current_user.id == product.user_id:
         flash('Вы не можете оставить отзыв на свой товар', 'error')
         return redirect(request.referrer or url_for('main.index'))
-    
-    # Проверяем, не оставлял ли уже отзыв на этого продавца через этот товар
     existing_review = Review.query.filter_by(
         seller_id=product.user_id,
         buyer_id=current_user.id,
         product_id=product_id
     ).first()
-    
     if existing_review:
         flash('Вы уже оставляли отзыв на этот товар', 'error')
         return redirect(url_for('main.product_detail', product_id=product_id))
-    
-    # Создаем форму
     form = ReviewForm()
-    
     if form.validate_on_submit():
         try:
             review = Review(
@@ -1533,17 +1210,13 @@ def add_review(product_id):
                 rating=form.rating.data,
                 text=form.text.data
             )
-            
             db.session.add(review)
             db.session.commit()
-            
             flash('Спасибо за ваш отзыв! Он будет опубликован после проверки.', 'success')
             return redirect(url_for('main.product_detail', product_id=product_id))
-            
         except Exception as e:
             db.session.rollback()
             flash(f'Ошибка при сохранении отзыва: {str(e)}', 'error')
-    
     return render_template('add_review.html', 
                          form=form, 
                          product=product)
@@ -1551,15 +1224,11 @@ def add_review(product_id):
 @main.route('/user/<int:user_id>/add_review_direct', methods=['GET', 'POST'])
 @login_required
 def add_review_direct(user_id):
-    """Добавление отзыва напрямую пользователю (не через товар)"""
     seller = User.query.get_or_404(user_id)
-    
     if current_user.id == seller.id:
         flash('Вы не можете оставить отзыв самому себе', 'error')
         return redirect(url_for('main.user_reviews', user_id=user_id))
-    
     form = ReviewForm()
-    
     if form.validate_on_submit():
         try:
             review = Review(
@@ -1568,17 +1237,13 @@ def add_review_direct(user_id):
                 rating=form.rating.data,
                 text=form.text.data
             )
-            
             db.session.add(review)
             db.session.commit()
-            
             flash('Спасибо за ваш отзыв! Он будет опубликован после проверки.', 'success')
             return redirect(request.referrer or url_for('main.product_detail', product_id=...))
-            
         except Exception as e:
             db.session.rollback()
             flash(f'Ошибка при сохранении отзыва: {str(e)}', 'error')
-    
     return render_template('add_review_direct.html', 
                          form=form, 
                          seller=seller)
@@ -1603,17 +1268,13 @@ def review_form(user_id):
     from app.models import User, Review
     from app.forms import ReviewForm
     seller = User.query.get_or_404(user_id)
-
-    # Проверяем, оставлял ли текущий пользователь уже отзыв
     if current_user.is_authenticated:
         existing_review = Review.query.filter_by(
             seller_id=seller.id,
             buyer_id=current_user.id
         ).first()
         if existing_review:
-            # Если уже оставлял — показываем сообщение
             return '<div class="p-3 text-center"><p class="text-muted">Вы уже оставили отзыв этому пользователю.</p><button class="btn btn-sm btn-secondary" onclick="closeReviewFormModal()">Закрыть</button></div>'
-
     form = ReviewForm()
     return render_template('partials/review_form.html', seller=seller, form=form)
 
@@ -1622,23 +1283,17 @@ def review_form(user_id):
 def delete_review(review_id):
     from app.models import Review
     review = Review.query.get_or_404(review_id)
-    
     if review.buyer_id != current_user.id:
         flash('Вы не можете удалить чужой отзыв.', 'danger')
         return redirect(request.referrer or url_for('main.index'))
-    
     db.session.delete(review)
     db.session.commit()
     flash('Ваш отзыв удалён.', 'success')
     return redirect(request.referrer or url_for('main.index'))
 
-# === ТЕСТОВЫЕ ДАННЫЕ ДЛЯ РЕГИОНОВ И ГОРОДОВ ===
-
 @main.route('/api/test-populate-locations')
 def test_populate_locations():
-    """Заполнение тестовыми данными (для разработки)"""
     try:
-        # Создаем несколько тестовых регионов
         test_regions = [
             'Москва',
             'Санкт-Петербург', 
@@ -1656,75 +1311,54 @@ def test_populate_locations():
             'Пермский край',
             'Воронежская область'
         ]
-        
-        # Создаем несколько тестовых городов
         test_cities = [
-            # Москва
             {'name': 'Москва', 'region': 'Москва'},
-            # Санкт-Петербург
             {'name': 'Санкт-Петербург', 'region': 'Санкт-Петербург'},
-            # Республика Татарстан
             {'name': 'Казань', 'region': 'Республика Татарстан'},
             {'name': 'Набережные Челны', 'region': 'Республика Татарстан'},
             {'name': 'Альметьевск', 'region': 'Республика Татарстан'},
-            # Московская область
             {'name': 'Балашиха', 'region': 'Московская область'},
             {'name': 'Химки', 'region': 'Московская область'},
             {'name': 'Подольск', 'region': 'Московская область'},
             {'name': 'Королёв', 'region': 'Московская область'},
-            # Свердловская область
             {'name': 'Екатеринбург', 'region': 'Свердловская область'},
             {'name': 'Нижний Тагил', 'region': 'Свердловская область'},
             {'name': 'Каменск-Уральский', 'region': 'Свердловская область'},
-            # Краснодарский край
             {'name': 'Краснодар', 'region': 'Краснодарский край'},
             {'name': 'Сочи', 'region': 'Краснодарский край'},
             {'name': 'Новороссийск', 'region': 'Краснодарский край'},
-            # Республика Башкортостан
             {'name': 'Уфа', 'region': 'Республика Башкортостан'},
             {'name': 'Стерлитамак', 'region': 'Республика Башкортостан'},
             {'name': 'Салават', 'region': 'Республика Башкортостан'},
-            # Нижегородская область
             {'name': 'Нижний Новгород', 'region': 'Нижегородская область'},
             {'name': 'Дзержинск', 'region': 'Нижегородская область'},
             {'name': 'Арзамас', 'region': 'Нижегородская область'},
-            # Челябинская область
             {'name': 'Челябинск', 'region': 'Челябинская область'},
             {'name': 'Магнитогорск', 'region': 'Челябинская область'},
             {'name': 'Златоуст', 'region': 'Челябинская область'},
-            # Новосибирская область
             {'name': 'Новосибирск', 'region': 'Новосибирская область'},
             {'name': 'Бердск', 'region': 'Новосибирская область'},
-            # Самарская область
             {'name': 'Самара', 'region': 'Самарская область'},
             {'name': 'Тольятти', 'region': 'Самарская область'},
             {'name': 'Сызрань', 'region': 'Самарская область'},
-            # Ростовская область
             {'name': 'Ростов-на-Дону', 'region': 'Ростовская область'},
             {'name': 'Таганрог', 'region': 'Ростовская область'},
             {'name': 'Шахты', 'region': 'Ростовская область'},
-            # Красноярский край
             {'name': 'Красноярск', 'region': 'Красноярский край'},
             {'name': 'Норильск', 'region': 'Красноярский край'},
-            # Пермский край
             {'name': 'Пермь', 'region': 'Пермский край'},
             {'name': 'Березники', 'region': 'Пермский край'},
-            # Воронежская область
             {'name': 'Воронеж', 'region': 'Воронежская область'},
             {'name': 'Борисоглебск', 'region': 'Воронежская область'}
         ]
-        
-        # Создаем регионы
         created_regions = {}
         for region_name in test_regions:
             region = Region.query.filter_by(name=region_name).first()
             if not region:
                 region = Region(name=region_name)
                 db.session.add(region)
-                db.session.flush()  # Получаем ID
+                db.session.flush()
             created_regions[region_name] = region
-        
-        # Создаем города
         for city_data in test_cities:
             region = created_regions.get(city_data['region'])
             if region:
@@ -1735,26 +1369,19 @@ def test_populate_locations():
                         region_id=region.id
                     )
                     db.session.add(city)
-        
         db.session.commit()
-        
         return f"✅ Создано {len(created_regions)} регионов и {len(test_cities)} городов"
-        
     except Exception as e:
         db.session.rollback()
         return f"❌ Ошибка: {str(e)}"
 
 @main.route('/api/debug/locations-status')
 def debug_locations_status():
-    """Отладочная информация о локациях"""
     try:
         regions_count = Region.query.count()
         cities_count = City.query.count()
-        
-        # Получаем несколько примеров
         regions_sample = Region.query.limit(5).all()
         cities_sample = City.query.join(Region).limit(5).all()
-        
         return jsonify({
             'status': 'ok',
             'regions_count': regions_count,
@@ -1764,57 +1391,32 @@ def debug_locations_status():
         })
     except Exception as e:
         print(f"Ошибка в /api/locations: {str(e)}")
-    # Запасной вариант - статичный список
-    return jsonify([
-        {
-            'id': 'all',
-            'name': 'Все регионы',
-            'type': 'all',
-            'display_name': 'Все регионы'
-        },
-        {
-            'id': 'city_1',
-            'name': 'Москва',
-            'type': 'city',
-            'display_name': 'Москва'
-        },
-        # ... остальные города (скопируйте полный список из функции выше)
-    ])
+        return jsonify([
+            {'id': 'all', 'name': 'Все регионы', 'type': 'all', 'display_name': 'Все регионы'},
+            {'id': 'city_1', 'name': 'Москва', 'type': 'city', 'display_name': 'Москва'},
+        ])
 
 @main.route('/debug-upload', methods=['POST'])
 @csrf.exempt
 def debug_upload():
-    """Простая проверка загрузки файлов"""
     print("\n=== DEBUG UPLOAD ===")
-    
-    # Проверяем сырые данные
     print(f"request.content_length: {request.content_length}")
     print(f"request.content_type: {request.content_type}")
-    
-    # Проверяем файлы
     files = request.files.getlist('test_files')
     print(f"Получено файлов: {len(files)}")
-    
     for i, f in enumerate(files):
         print(f"Файл {i}: {f.filename}")
         print(f"  content_length: {f.content_length}")
-        
         if f and f.filename:
-            # Читаем первые байты
             current_pos = f.tell()
             f.seek(0)
             first_bytes = f.read(10)
             print(f"  Первые 10 байт (hex): {first_bytes.hex()}")
-            
-            # Пробуем прочитать весь файл
             f.seek(0)
             all_data = f.read()
             print(f"  Прочитано всего байт: {len(all_data)}")
             print(f"  Данные (первые 50): {all_data[:50]}")
-            
-            # Возвращаем позицию
             f.seek(current_pos)
-    
     return "OK", 200
 
 @main.route('/privacy-policy')
