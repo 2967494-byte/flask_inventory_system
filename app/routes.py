@@ -7,6 +7,7 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
+from PIL import Image
 
 main = Blueprint('main', __name__, template_folder='../templates')
 
@@ -36,6 +37,101 @@ def _deserialize_images(images_field):
 def _serialize_images(images_list):
     """Преобразует список имён файлов в строку для хранения в БД."""
     return ','.join(images_list) if images_list else ''
+
+def process_category_image(file, category_id=None):
+    """Обрабатывает и сохраняет изображение категории с обрезкой"""
+    if file and allowed_file(file.filename):
+        try:
+            # Открываем изображение
+            img = Image.open(file)
+            
+            # Конвертируем в RGB если нужно
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            
+            # Определяем размеры
+            width, height = img.size
+            
+            # Если изображение очень большое, уменьшаем перед обрезкой
+            max_dimension = 800
+            if width > max_dimension or height > max_dimension:
+                if width > height:
+                    new_width = max_dimension
+                    new_height = int(height * (max_dimension / width))
+                else:
+                    new_height = max_dimension
+                    new_width = int(width * (max_dimension / height))
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                width, height = img.size
+            
+            # Обрезаем до квадрата (центрированно)
+            target_size = min(width, height)
+            
+            # Координаты для обрезки
+            left = (width - target_size) // 2
+            top = (height - target_size) // 2
+            right = left + target_size
+            bottom = top + target_size
+            
+            img_cropped = img.crop((left, top, right, bottom))
+            
+            # Создаем несколько размеров
+            sizes = {
+                'original': (target_size, target_size),  # Оригинальный квадрат
+                'large': (200, 200),  # Для десктопа
+                'medium': (150, 150), # Для планшетов
+                'small': (100, 100),  # Для мобильных
+                'thumbnail': (80, 80)  # Для превью (как в блоке категорий)
+            }
+            
+            # Генерируем уникальное имя файла
+            unique_filename = str(uuid.uuid4())
+            original_filename = secure_filename(file.filename)
+            ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'jpg'
+            
+            base_filename = f"{unique_filename}_{original_filename.split('.')[0]}"
+            
+            # Сохраняем все размеры
+            saved_filenames = {}
+            
+            for size_name, (size_width, size_height) in sizes.items():
+                # Ресайзим
+                img_resized = img_cropped.resize((size_width, size_height), Image.Resampling.LANCZOS)
+                
+                # Формируем имя файла
+                if size_name == 'thumbnail':
+                    filename = f"{base_filename}.{ext}"  # Основное имя для thumbnail
+                else:
+                    filename = f"{base_filename}_{size_name}.{ext}"
+                
+                # Путь для сохранения
+                upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                filepath = os.path.join(upload_folder, filename)
+                
+                # Сохраняем с оптимизацией
+                if ext in ['jpg', 'jpeg']:
+                    img_resized.save(filepath, 'JPEG', quality=85, optimize=True)
+                elif ext == 'png':
+                    img_resized.save(filepath, 'PNG', optimize=True)
+                else:
+                    img_resized.save(filepath)
+                
+                saved_filenames[size_name] = filename
+            
+            # Возвращаем имя thumbnail-файла (основное)
+            return saved_filenames['thumbnail'], None
+            
+        except Exception as e:
+            print(f"Error processing category image: {e}")
+            return None, str(e)
+    
+    return None, "Invalid file format"
 
 @main.route('/')
 def index():
@@ -158,7 +254,7 @@ def add_product():
             try:
                 category_id_int = int(category_id_str)
             except (ValueError, TypeError):
-                flash('Некорректный выбор категории', 'error')
+                flash('Некорректный выбор категория', 'error')
                 return redirect(url_for('main.add_product'))
             category = Category.query.get(category_id_int)
             if not category:
@@ -217,8 +313,8 @@ def add_product():
                 title=title,
                 description=description,
                 price=float(price),
-                quantity=quantity,  # ← ИСПРАВЛЕНО: quantity уже int
-                manufacturer=manufacturer,  # ← ИСПРАВЛЕНО: переменная определена
+                quantity=quantity,
+                manufacturer=manufacturer,
                 category_id=category_id_int,
                 user_id=current_user.id,
                 images=','.join(new_images) if new_images else None,
@@ -407,7 +503,7 @@ def edit_product(product_id):
         if region_obj:
             product.region_id = region_obj.id
             cities = City.query.filter_by(region_id=region_obj.id).order_by(City.name).all()
-    # Десериализуем изображения для корректной передачи в шаблон
+    # Десериализуем изображения для корректной передачи в шаблоне
     if product.images:
         if isinstance(product.images, str):
             product_images = [img.strip() for img in product.images.split(',') if img.strip()]
@@ -507,21 +603,17 @@ def admin_categories():
                 if 'category_image' in request.files:
                     image_file = request.files['category_image']
                     if image_file and image_file.filename:
-                        if allowed_file(image_file.filename):
-                            filename = secure_filename(image_file.filename)
-                            unique_filename = f"{uuid.uuid4().hex}_{filename}"
-                            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
-                            image_file.save(file_path)
-                            image_filename = unique_filename
-                        else:
-                            flash('Недопустимый формат изображения. Используйте JPG, PNG или GIF', 'warning')
+                        image_filename, error = process_category_image(image_file)
+                        if error:
+                            flash(f'Ошибка обработки изображения: {error}', 'warning')
+                
                 # === КОНЕЦ ОБРАБОТКИ ИЗОБРАЖЕНИЯ ===
                 
                 new_category = Category(
                     name=name,
                     description=description,
                     parent_id=parent_id if parent_id else None,
-                    image=image_filename  # ← ДОБАВЛЕНО ПОЛЕ IMAGE
+                    image=image_filename
                 )
                 db.session.add(new_category)
                 db.session.commit()
@@ -550,29 +642,47 @@ def admin_categories():
                 
                 # Обработка изображения
                 if remove_image and category.image:
-                    # Удаляем старый файл
-                    image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category.image)
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
+                    # Удаляем старые файлы всех размеров
+                    base_filename = category.image.rsplit('.', 1)[0]
+                    ext = category.image.rsplit('.', 1)[1] if '.' in category.image else 'jpg'
+                    
+                    sizes = ['thumbnail', 'small', 'medium', 'large', 'original']
+                    for size in sizes:
+                        if size == 'thumbnail':
+                            filename = category.image
+                        else:
+                            filename = f"{base_filename}_{size}.{ext}"
+                        
+                        image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories', filename)
+                        if os.path.exists(image_path):
+                            os.remove(image_path)
                     category.image = None
                 
                 if 'category_image' in request.files:
                     image_file = request.files['category_image']
                     if image_file and image_file.filename:
-                        if allowed_file(image_file.filename):
-                            # Удаляем старое изображение, если есть
-                            if category.image:
-                                old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category.image)
+                        # Удаляем старое изображение, если есть
+                        if category.image:
+                            base_filename = category.image.rsplit('.', 1)[0]
+                            ext = category.image.rsplit('.', 1)[1] if '.' in category.image else 'jpg'
+                            
+                            sizes = ['thumbnail', 'small', 'medium', 'large', 'original']
+                            for size in sizes:
+                                if size == 'thumbnail':
+                                    filename = category.image
+                                else:
+                                    filename = f"{base_filename}_{size}.{ext}"
+                                
+                                old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories', filename)
                                 if os.path.exists(old_path):
                                     os.remove(old_path)
-                            
-                            filename = secure_filename(image_file.filename)
-                            unique_filename = f"{uuid.uuid4().hex}_{filename}"
-                            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
-                            image_file.save(file_path)
-                            category.image = unique_filename
+                        
+                        # Сохраняем новое изображение
+                        image_filename, error = process_category_image(image_file)
+                        if error:
+                            flash(f'Ошибка обработки изображения: {error}', 'warning')
                         else:
-                            flash('Недопустимый формат изображения', 'warning')
+                            category.image = image_filename
                 
                 db.session.commit()
                 flash(f'Категория "{name}" успешно обновлена', 'success')
@@ -594,11 +704,21 @@ def admin_categories():
                         if products_in_category > 0:
                             flash(f'Нельзя удалить категорию "{category.name}" - в ней есть товары', 'error')
                         else:
-                            # Удаляем файл изображения, если есть
+                            # Удаляем файлы изображений всех размеров, если есть
                             if category.image:
-                                image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category.image)
-                                if os.path.exists(image_path):
-                                    os.remove(image_path)
+                                base_filename = category.image.rsplit('.', 1)[0]
+                                ext = category.image.rsplit('.', 1)[1] if '.' in category.image else 'jpg'
+                                
+                                sizes = ['thumbnail', 'small', 'medium', 'large', 'original']
+                                for size in sizes:
+                                    if size == 'thumbnail':
+                                        filename = category.image
+                                    else:
+                                        filename = f"{base_filename}_{size}.{ext}"
+                                    
+                                    image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories', filename)
+                                    if os.path.exists(image_path):
+                                        os.remove(image_path)
                             
                             db.session.delete(category)
                             db.session.commit()
@@ -613,11 +733,21 @@ def admin_categories():
                 products_count = Product.query.filter_by(category_id=cat.id).count()
                 children_count = Category.query.filter_by(parent_id=cat.id).count()
                 if products_count == 0 and children_count == 0:
-                    # Удаляем файл изображения, если есть
+                    # Удаляем файлы изображений всех размеров, если есть
                     if cat.image:
-                        image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], cat.image)
-                        if os.path.exists(image_path):
-                            os.remove(image_path)
+                        base_filename = cat.image.rsplit('.', 1)[0]
+                        ext = cat.image.rsplit('.', 1)[1] if '.' in cat.image else 'jpg'
+                        
+                        sizes = ['thumbnail', 'small', 'medium', 'large', 'original']
+                        for size in sizes:
+                            if size == 'thumbnail':
+                                filename = cat.image
+                            else:
+                                filename = f"{base_filename}_{size}.{ext}"
+                            
+                            image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories', filename)
+                            if os.path.exists(image_path):
+                                os.remove(image_path)
                     
                     db.session.delete(cat)
                     deleted_count += 1
@@ -633,10 +763,20 @@ def admin_categories():
             deleted_count = 0
             for cat in categories_with_images:
                 if cat.image:
-                    # Удаляем файл изображения
-                    image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], cat.image)
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
+                    # Удаляем файлы всех размеров
+                    base_filename = cat.image.rsplit('.', 1)[0]
+                    ext = cat.image.rsplit('.', 1)[1] if '.' in cat.image else 'jpg'
+                    
+                    sizes = ['thumbnail', 'small', 'medium', 'large', 'original']
+                    for size in sizes:
+                        if size == 'thumbnail':
+                            filename = cat.image
+                        else:
+                            filename = f"{base_filename}_{size}.{ext}"
+                        
+                        image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories', filename)
+                        if os.path.exists(image_path):
+                            os.remove(image_path)
                     # Очищаем поле в БД
                     cat.image = None
                     deleted_count += 1
@@ -683,7 +823,7 @@ def admin_categories():
     return render_template('admin_categories.html', 
                          categories=categories,
                          parent_categories=parent_categories,
-                         categories_with_images=categories_with_images,  # ← ДОБАВЛЕНО
+                         categories_with_images=categories_with_images,
                          total_products=total_products,
                          all_regions=all_regions,
                          regions=regions,
@@ -1551,3 +1691,111 @@ def privacy_policy():
 def deserialize_images_filter(images_field):
     """Jinja-фильтр для безопасной десериализации изображений"""
     return _deserialize_images(images_field)
+
+# ========== ФУНКЦИИ ДЛЯ РАБОТЫ С ИЗОБРАЖЕНИЯМИ КАТЕГОРИЙ ==========
+
+@main.route('/upload_category_image', methods=['POST'])
+@login_required
+def upload_category_image():
+    """Загрузка изображения для категории"""
+    if 'category_image' not in request.files:
+        return jsonify({'error': 'No file selected'}), 400
+    
+    category_id = request.form.get('category_id')
+    if not category_id:
+        return jsonify({'error': 'Category ID is required'}), 400
+    
+    file = request.files['category_image']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Обрабатываем изображение
+    filename, error = process_category_image(file, category_id)
+    
+    if error:
+        return jsonify({'error': error}), 400
+    
+    # Обновляем категорию в базе
+    category = Category.query.get(int(category_id))
+    if category:
+        # Удаляем старое изображение если есть
+        if category.image:
+            try:
+                # Удаляем все размеры
+                base_filename = category.image.rsplit('.', 1)[0]
+                ext = category.image.rsplit('.', 1)[1] if '.' in category.image else 'jpg'
+                
+                sizes = ['thumbnail', 'small', 'medium', 'large', 'original']
+                for size in sizes:
+                    if size == 'thumbnail':
+                        old_filename = category.image
+                    else:
+                        old_filename = f"{base_filename}_{size}.{ext}"
+                    
+                    old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories', old_filename)
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+            except Exception as e:
+                print(f"Error deleting old image: {e}")
+        
+        category.image = filename
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'image_url': url_for('main.get_category_image_by_size', 
+                               category_id=category_id, 
+                               size='thumbnail'),
+            'filename': filename
+        })
+    
+    return jsonify({'error': 'Category not found'}), 404
+
+@main.route('/category/<int:category_id>/image/<size>')
+def get_category_image_by_size(category_id, size='thumbnail'):
+    """Возвращает изображение категории нужного размера"""
+    category = Category.query.get_or_404(category_id)
+    
+    if not category.image:
+        # Возвращаем дефолтное изображение
+        return send_from_directory(
+            os.path.join(current_app.root_path, 'static', 'icons'),
+            'category_default.png'
+        )
+    
+    # Определяем имя файла нужного размера
+    base_filename = category.image.rsplit('.', 1)[0]
+    ext = category.image.rsplit('.', 1)[1] if '.' in category.image else 'jpg'
+    
+    # Поддерживаемые размеры
+    valid_sizes = ['thumbnail', 'small', 'medium', 'large', 'original']
+    if size not in valid_sizes:
+        size = 'thumbnail'
+    
+    # Формируем имя файла
+    if size == 'thumbnail':
+        filename = category.image  # thumbnail - основное имя
+    else:
+        filename = f"{base_filename}_{size}.{ext}"
+    
+    # Проверяем существует ли файл
+    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories', filename)
+    
+    if not os.path.exists(filepath):
+        # Если файла нужного размера нет, возвращаем thumbnail
+        filename = category.image
+    
+    return send_from_directory(
+        os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories'),
+        filename
+    )
+
+# Старая функция для обратной совместимости - перенаправляет на новую
+@main.route('/category_image/<filename>')
+def category_image(filename):
+    """Отдача изображений категорий (для обратной совместимости)"""
+    return send_from_directory(
+        os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories'),
+        filename
+    )

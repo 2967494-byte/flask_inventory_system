@@ -19,12 +19,12 @@
         background: var(--background);
         border-bottom: 1px solid var(--border);
         padding: 20px;
-        margin-bottom: 24px;
+        margin-bottom: 5px;
     }
     .search-row-full {
         width: 100%;
         background: white;
-        padding: 40px 0;
+        padding: 10px 0;
         box-shadow: var(--shadow-light);
     }
     .search-row {
@@ -66,16 +66,18 @@
         cursor: pointer;
         color: var(--text-primary);
     }
-    /* Блок категорий под строкой поиска - ГОРИЗОНТАЛЬНОЕ РАСПОЛОЖЕНИЕ */
+   
+    /* ===== СТИЛИ ДЛЯ КАТЕГОРИЙ ===== */
     .categories-section {
         background: white;
         padding: 20px 0;
         border-bottom: 1px solid var(--border);
+        margin-bottom: 10px;
     }
     .categories-container {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 15px;
     }
     .categories-title {
         font-size: 16px;
@@ -85,81 +87,271 @@
     }
     .categories-grid {
         display: flex !important;
-        flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 15px !important;
-        justify-content: flex-start;
-        align-items: flex-start;
-        width: 100%;
+        justify-content: center; /* Центрирование */
     }
-    .category-item {
+
+    /* Элемент категории */
+    .main-category-item {
         display: flex;
         flex-direction: column;
         align-items: center;
+        width: 90px;
         cursor: pointer;
-        transition: all 0.2s ease;
-        padding: 10px;
-        border-radius: 10px;
-        border: 2px solid transparent;
-        flex-shrink: 0;
-        min-width: 90px;
-        box-sizing: border-box;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        padding: 8px;
     }
-    .category-item:hover {
-        background: var(--background);
-        transform: translateY(-2px);
+    .main-category-item:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    .category-item.active {
-        background: #F0F7FF;
-        border-color: var(--avito-blue);
-    }
-    .category-icon {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 8px;
+
+    /* Иконка категории */
+    .main-category-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px; /* Скругление */
+        background: #f8f9fa;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--background);
-        border-radius: 12px;
-        padding: 10px;
-        transition: all 0.2s ease;
+        margin-bottom: 0;
+        border: 2px solid #eee;
         overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-light);
     }
-    .category-item.active .category-icon {
-        background: #E6F2FF;
-        transform: scale(1.05);
+    .main-category-item:hover .main-category-icon {
+        border-color: var(--avito-blue);
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    .category-icon svg {
+
+    /* Изображение внутри иконки */
+    .main-category-icon img {
         width: 100%;
         height: 100%;
-        stroke: #666;
+        object-fit: cover;
+        border-radius: 14px; /* Скругление изображения */
+        transition: transform 0.3s ease;
     }
-    .category-item.active .category-icon svg {
-        stroke: var(--avito-blue);
+    .main-category-item:hover .main-category-icon img {
+        transform: scale(1.1);
     }
-    .category-name {
-        font-size: 13px;
-        text-align: center;
-        color: var(--text-primary);
-        font-weight: 500;
-        line-height: 1.3;
-        max-width: 90px;
-        word-break: break-word;
+
+    /* Заглушка (буква) */
+    .main-category-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+        border-radius: 14px; /* Скругление */
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transition: all 0.3s ease;
     }
-    .listings-section {
-        background: white;
+    .main-category-item:hover .main-category-fallback {
+        transform: scale(1.1);
+        background: linear-gradient(135deg, var(--avito-blue) 0%, #0047cc 100%);
+    }
+
+    /* SVG "Все категории" */
+    .main-category-icon svg {
+        width: 40px;
+        height: 40px;
+        transition: transform 0.3s ease;
+    }
+    .main-category-item:hover .main-category-icon svg {
+        transform: scale(1.1);
+    }
+
+    /* Эффект при наведении на иконку — как у товара */
+    .main-category-item:hover .main-category-icon {
+        border-color: var(--avito-blue);
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    /* Активная иконка */
+    .main-category-item.active .main-category-icon {
+        border-color: var(--avito-blue);
+        border-width: 2px;
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 4px 12px rgba(0, 87, 255, 0.2);
+    }
+
+    /* Эффект при наведении на весь элемент - как у карточки товара */
+    .main-category-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Активная (выбранная) категория */
+    .main-category-item.active {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 2px solid var(--avito-blue);
         border-radius: 12px;
-        padding: 24px;
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border);
-        margin-bottom: 40px;
+        background: rgba(0, 87, 255, 0.05);
     }
+
+    /* Изображение внутри иконки */
+    .main-category-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 18px;
+        transition: transform 0.2s ease;
+    }
+
+    /* Эффект увеличения изображения при наведении */
+    .main-category-item:hover .main-category-icon img {
+        transform: scale(1.1);
+    }
+
+    /* Для SVG иконки "Все категории" */
+    .main-category-icon svg {
+        width: 40px;
+        height: 40px;
+        transition: all 0.2s ease;
+    }
+
+    .main-category-item:hover .main-category-icon svg {
+        transform: scale(1.1);
+    }
+
+    /* Падающий текст (заглушка) */
+    .main-category-fallback {
+        font-size: 28px;
+        font-weight: 700;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 18px;
+        transition: all 0.2s ease;
+    }
+
+    .main-category-item:hover .main-category-fallback {
+        transform: scale(1.1);
+        background: linear-gradient(135deg, var(--avito-blue) 0%, #0047cc 100%);
+    }
+
+    /* Тултип для названия категории */
+    .main-category-tooltip {
+        position: absolute;
+        bottom: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        z-index: 100;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .main-category-tooltip::after {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-bottom: 5px solid rgba(0, 0, 0, 0.85);
+    }
+
+    .main-category-item:hover .main-category-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(-2px);
+    }
+
+    /* ===== АДАПТИВНОСТЬ ДЛЯ КАТЕГОРИЙ ===== */
+    @media (max-width: 768px) {
+        .categories-grid {
+            justify-content: center;
+            gap: 12px !important;
+        }
+        
+        .main-category-item {
+            width: 80px;
+            padding: 6px;
+        }
+        
+        .main-category-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+        }
+        
+        .main-category-icon img,
+        .main-category-fallback {
+            border-radius: 14px;
+        }
+        
+        .main-category-fallback {
+            font-size: 24px;
+        }
+        
+        .main-category-tooltip {
+            bottom: -30px;
+            font-size: 11px;
+            padding: 4px 8px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .categories-grid {
+            gap: 10px !important;
+        }
+        
+        .main-category-item {
+            width: 70px;
+        }
+        
+        .main-category-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+        }
+        
+        .main-category-icon img,
+        .main-category-fallback {
+            border-radius: 12px;
+        }
+        
+        .main-category-fallback {
+            font-size: 20px;
+        }
+        
+        .main-category-icon svg {
+            width: 30px;
+            height: 30px;
+        }
+    }
+
     /* УБИРАЕМ ЛЕВЫЙ БЛОК КАТЕГОРИЙ - ВЕСЬ ЭКРАН ДЛЯ КОНТЕНТА */
     .content-container {
         width: 100%;
         flex-grow: 1;
     }
+    
     /* Стили для переключения видов */
     .view-controls {
         display: flex;
@@ -195,6 +387,7 @@
         background: #0057FF;
         color: white;
     }
+    
     /* Стили для представления плиткой - 4 КОЛОНКИ В РЯДУ */
     .products-grid-view {
         display: grid;
@@ -202,6 +395,7 @@
         gap: 16px;
         margin-bottom: 20px;
     }
+    
     /* Специфичные стили для представления списком */
     .products-list-view .product-card {
         display: flex;
@@ -230,6 +424,7 @@
         overflow: hidden;
         margin-bottom: 8px;
     }
+    
     /* Таблица товаров */
     .products-data-table {
         width: 100%;
@@ -297,6 +492,7 @@
     .products-data-table td:last-child {
         border-right: none;
     }
+    
     /* Стили для ячеек таблицы */
     .table-product-title {
         font-weight: 600;
@@ -313,6 +509,7 @@
         font-size: 16px;
         color: #0057FF;
     }
+    
     /* Бейджи для статусов */
     .vat-badge, .condition-badge, .delivery-badge {
         display: inline-block;
@@ -345,6 +542,7 @@
         background: #FFE6E6;
         color: #FF0000;
     }
+    
     .location-button {
         flex: 0 0 auto;
         display: inline-flex;
@@ -361,6 +559,7 @@
         min-height: 28px;
         border: 1px solid transparent;
     }
+    
     /* Пагинация для таблицы */
     .table-pagination {
         display: flex;
@@ -420,6 +619,7 @@
         background: #0057FF;
         color: white;
     }
+    
     /* === Стили для модального окна локации === */
     .location-search {
         position: relative;
@@ -499,6 +699,7 @@
         60% { content: '..'; }
         80%, 100% { content: '...'; }
     }
+    
     /* Стили для текущего местоположения */
     .suggestion-item.current-location {
         background-color: #e6f2ff;
@@ -726,36 +927,13 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         z-index: 2;
     }
+    
 
     /* ========================================= */
     /* АДАПТИВНОСТЬ ДЛЯ МОБИЛЬНЫХ - ИСПРАВЛЕНО */
     /* ========================================= */
     
     @media (max-width: 768px) {
-        /* Блок категорий на мобильных */
-        .categories-grid {
-            gap: 12px !important;
-            justify-content: center !important;
-        }
-        
-        .category-item {
-            padding: 8px !important;
-            min-width: 80px !important;
-            flex: 0 0 calc(25% - 12px) !important; /* 4 в ряд */
-            max-width: calc(25% - 12px) !important;
-        }
-        
-        .category-icon {
-            width: 40px !important;
-            height: 40px !important;
-            padding: 8px !important;
-        }
-        
-        .category-name {
-            font-size: 11px !important;
-            max-width: 80px !important;
-        }
-        
         /* Плиточный вид: 1 колонка на мобильных */
         .products-grid-view {
             grid-template-columns: 1fr !important;
@@ -874,16 +1052,6 @@
     /* ========================================= */
     
     @media (min-width: 769px) and (max-width: 1024px) {
-        .category-item {
-            flex: 0 0 calc(20% - 15px) !important; /* 5 в ряд */
-            max-width: calc(20% - 15px) !important;
-        }
-        
-        .category-icon {
-            width: 44px !important;
-            height: 44px !important;
-        }
-        
         .products-grid-view {
             grid-template-columns: repeat(3, 1fr) !important;
             gap: 20px !important;
@@ -895,16 +1063,6 @@
     /* ========================================= */
     
     @media (min-width: 1025px) {
-        .category-item {
-            flex: 0 0 calc(14.28% - 15px) !important; /* 7 в ряд */
-            max-width: calc(14.28% - 15px) !important;
-        }
-        
-        .category-icon {
-            width: 48px !important;
-            height: 48px !important;
-        }
-        
         .listings-section .products-grid-view {
             grid-template-columns: repeat(4, 1fr) !important;
             gap: 16px !important;
@@ -913,23 +1071,6 @@
     
     /* Для очень маленьких экранов (до 480px) */
     @media (max-width: 480px) {
-        .category-item {
-            flex: 0 0 calc(33.33% - 10px) !important; /* 3 в ряд */
-            max-width: calc(33.33% - 10px) !important;
-            min-width: 70px !important;
-        }
-        
-        .category-icon {
-            width: 36px !important;
-            height: 36px !important;
-            padding: 6px !important;
-        }
-        
-        .category-name {
-            font-size: 10px !important;
-            max-width: 70px !important;
-        }
-        
         .products-grid-view {
             gap: 16px !important;
         }
@@ -1000,86 +1141,51 @@
 <div class="categories-section">
     <div class="container">
         <div class="categories-container">
-            <div class="categories-title">Категории товаров</div>
+          
             <div class="categories-grid" id="categoriesGrid">
                 <!-- Все категории -->
-                <div class="category-item {% if not request.args.get('category_id') %}active{% endif %}" 
+                <div class="main-category-item {% if not request.args.get('category_id') %}active{% endif %}" 
                      data-category-id="" 
                      data-category-name="Все категории" 
-                     onclick="selectCategory(this, '')">
-                    <div class="category-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-                            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-                            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-                            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-                        </svg>
+                     onclick="selectCategory(this, '')"
+                     title="Все категории">
+                    <div class="main-category-icon">
+                        <div class="main-category-icon-inner">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                            </svg>
+                        </div>
                     </div>
-                    <div class="category-name">Все категории</div>
+                    <div class="main-category-tooltip">Все категории</div>
                 </div>
                 
                 <!-- Родительские категории из базы данных -->
                 {% for category in categories if not category.parent_id %}
-                <div class="category-item {% if request.args.get('category_id') == category.id|string %}active{% endif %}" 
+                <div class="main-category-item {% if request.args.get('category_id') == category.id|string %}active{% endif %}" 
                      data-category-id="{{ category.id }}" 
                      data-category-name="{{ category.name }}" 
-                     onclick="selectCategory(this, '{{ category.id }}')">
-                    <div class="category-icon">
-                        {% if category.icon_name %}
-                            {% if category.icon_name == 'electronics' %}
-                                <!-- Электроника -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                                    <path d="M12 12h.01"></path>
-                                    <path d="M17 12h.01"></path>
-                                    <path d="M7 12h.01"></path>
-                                </svg>
-                            {% elif category.icon_name == 'clothing' %}
-                                <!-- Одежда -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path>
-                                </svg>
-                            {% elif category.icon_name == 'home' %}
-                                <!-- Дом -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                </svg>
-                            {% elif category.icon_name == 'construction' %}
-                                <!-- Строительство -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-                                </svg>
-                            {% elif category.icon_name == 'auto' %}
-                                <!-- Авто -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path>
-                                    <circle cx="7" cy="17" r="2"></circle>
-                                    <circle cx="17" cy="17" r="2"></circle>
-                                </svg>
-                            {% elif category.icon_name == 'sports' %}
-                                <!-- Спорт -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <path d="M8 12h8"></path>
-                                    <path d="M12 8v8"></path>
-                                </svg>
+                     onclick="selectCategory(this, '{{ category.id }}')"
+                     title="{{ category.name }}">
+                    <div class="main-category-icon">
+                        <div class="main-category-icon-inner">
+                            {% if category.image %}
+                                <img src="{{ url_for('main.get_category_image_by_size', category_id=category.id, size='thumbnail') }}" 
+                                     alt="{{ category.name }}"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="category-fallback" style="display: none;">
+                                    {{ category.name|first|upper }}
+                                </div>
                             {% else %}
-                                <!-- Дефолтная иконка -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                                    <path d="M9 9h6v6H9z"></path>
-                                </svg>
+                                <div class="category-fallback">
+                                    {{ category.name|first|upper }}
+                                </div>
                             {% endif %}
-                        {% else %}
-                            <!-- Дефолтная иконка если нет icon_name -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                                <path d="M9 9h6v6H9z"></path>
-                            </svg>
-                        {% endif %}
+                        </div>
                     </div>
-                    <div class="category-name">{{ category.name }}</div>
+                
                 </div>
                 {% endfor %}
             </div>
@@ -1410,7 +1516,7 @@ function applyFilters(categoryId = '', searchTerm = '') {
 // === ФУНКЦИИ ДЛЯ КАТЕГОРИЙ ===
 function selectCategory(categoryElement, categoryId) {
     // Убираем активный класс у всех категорий
-    document.querySelectorAll('.category-item').forEach(item => {
+    document.querySelectorAll('.main-category-item').forEach(item => {
         item.classList.remove('active');
     });
     
@@ -1443,42 +1549,6 @@ function selectCategory(categoryElement, categoryId) {
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.trim() : '';
     applyFilters(categoryId, searchTerm);
-}
-
-function initializeCategories() {
-    // Восстанавливаем выбранную категорию при загрузке
-    if (selectedCategoryId) {
-        const categoryElement = document.querySelector(`.category-item[data-category-id="${selectedCategoryId}"]`);
-        if (categoryElement) {
-            categoryElement.classList.add('active');
-        } else {
-            // Если не нашли по id, ищем по имени категории из localStorage
-            const categoryName = localStorage.getItem('selectedCategoryName');
-            if (categoryName) {
-                const categoryElementByName = document.querySelector(`.category-item[data-category-name="${categoryName}"]`);
-                if (categoryElementByName) {
-                    categoryElementByName.classList.add('active');
-                    selectedCategoryId = categoryElementByName.dataset.categoryId;
-                }
-            }
-        }
-    } else {
-        // Если категория не выбрана, активируем "Все категории"
-        const allCategories = document.querySelector('.category-item[data-category-id=""]');
-        if (allCategories) {
-            allCategories.classList.add('active');
-        }
-    }
-    
-    // Добавляем обработчики для сохранения имени категории при клике
-    document.querySelectorAll('.category-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const categoryName = this.dataset.categoryName;
-            if (categoryName) {
-                localStorage.setItem('selectedCategoryName', categoryName);
-            }
-        });
-    });
 }
 
 // === ФУНКЦИИ ДЛЯ МОДАЛЬНОГО ОКНА ===
@@ -1661,11 +1731,11 @@ function debounceSearch() {
     // Устанавливаем новый таймаут
     searchTimeout = setTimeout(() => {
         searchLocations(searchTerm);
-    }, 300); // 300ms задержка
+    }, 300);
 }
 
 function setLocation(location) {
-    currentLocation = location.trim(); // Используем глобальную переменную
+    currentLocation = location.trim();
     localStorage.setItem('userLocation', currentLocation);
     document.getElementById('locationText').textContent = currentLocation;
     closeLocationModal();
@@ -1679,8 +1749,39 @@ function setLocation(location) {
 
 // === ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация категорий
-    initializeCategories();
+    // Восстанавливаем выбранную категорию при загрузке
+    if (selectedCategoryId) {
+        const categoryElement = document.querySelector(`.main-category-item[data-category-id="${selectedCategoryId}"]`);
+        if (categoryElement) {
+            categoryElement.classList.add('active');
+        } else {
+            // Если не нашли по id, ищем по имени категории из localStorage
+            const categoryName = localStorage.getItem('selectedCategoryName');
+            if (categoryName) {
+                const categoryElementByName = document.querySelector(`.main-category-item[data-category-name="${categoryName}"]`);
+                if (categoryElementByName) {
+                    categoryElementByName.classList.add('active');
+                    selectedCategoryId = categoryElementByName.dataset.categoryId;
+                }
+            }
+        }
+    } else {
+        // Если категория не выбрана, активируем "Все категории"
+        const allCategories = document.querySelector('.main-category-item[data-category-id=""]');
+        if (allCategories) {
+            allCategories.classList.add('active');
+        }
+    }
+    
+    // Сохраняем имя категории при клике
+    document.querySelectorAll('.main-category-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const categoryName = this.dataset.categoryName;
+            if (categoryName) {
+                localStorage.setItem('selectedCategoryName', categoryName);
+            }
+        });
+    });
     
     // Устанавливаем текущую локацию
     const locationText = document.getElementById('locationText');
@@ -1730,13 +1831,13 @@ document.addEventListener('DOMContentLoaded', function() {
         categorySelect.addEventListener('change', function() {
             // При изменении селекта, обновляем активную категорию в блоке картинок
             const selectedValue = this.value;
-            document.querySelectorAll('.category-item').forEach(item => {
+            document.querySelectorAll('.main-category-item').forEach(item => {
                 item.classList.remove('active');
             });
             
             // Ищем соответствующий элемент категории
             let found = false;
-            document.querySelectorAll('.category-item').forEach(item => {
+            document.querySelectorAll('.main-category-item').forEach(item => {
                 if (item.dataset.categoryId === selectedValue) {
                     item.classList.add('active');
                     found = true;
@@ -1747,7 +1848,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Если не нашли, активируем "Все категории"
             if (!found) {
-                const allCategories = document.querySelector('.category-item[data-category-id=""]');
+                const allCategories = document.querySelector('.main-category-item[data-category-id=""]');
                 if (allCategories) {
                     allCategories.classList.add('active');
                     selectedCategoryId = '';
@@ -1808,23 +1909,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Сохраняем выбор в localStorage
         localStorage.setItem('mainView', viewType);
-        
-        console.log('Активирован вид:', viewType);
     }
     
     viewButtons.forEach(button => {
         button.addEventListener('click', () => {
             const viewType = button.getAttribute('data-view');
-            console.log('Клик по кнопке:', viewType);
             activateView(viewType);
         });
     });
     
     // Инициализация представления при загрузке
     const savedView = localStorage.getItem('mainView') || 'grid';
-    console.log('Загружен сохраненный вид:', savedView);
-    
-    // Активируем представление
     activateView(savedView);
     
     // Принудительное исправление отображения категорий
@@ -1836,16 +1931,18 @@ document.addEventListener('DOMContentLoaded', function() {
             categoriesGrid.style.flexWrap = 'wrap';
             categoriesGrid.style.gap = '15px';
             categoriesGrid.style.justifyContent = 'flex-start';
-            categoriesGrid.style.alignItems = 'flex-start';
             
             // Исправляем каждый элемент
-            const categoryItems = categoriesGrid.querySelectorAll('.category-item');
+            const categoryItems = categoriesGrid.querySelectorAll('.main-category-item');
             categoryItems.forEach(item => {
                 item.style.display = 'flex';
                 item.style.flexDirection = 'column';
                 item.style.alignItems = 'center';
                 item.style.flexShrink = '0';
-                item.style.minWidth = '90px';
+                item.style.width = '90px';
+                
+                // Принудительно применяем стили для анимации
+                item.style.transition = 'all 0.2s ease';
             });
         }
     }
