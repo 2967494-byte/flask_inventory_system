@@ -66,6 +66,87 @@
         cursor: pointer;
         color: var(--text-primary);
     }
+    /* Блок категорий под строкой поиска - ГОРИЗОНТАЛЬНОЕ РАСПОЛОЖЕНИЕ */
+    .categories-section {
+        background: white;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .categories-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .categories-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 5px;
+    }
+    .categories-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 15px !important;
+        justify-content: flex-start;
+        align-items: flex-start;
+        width: 100%;
+    }
+    .category-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 10px;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        flex-shrink: 0;
+        min-width: 90px;
+        box-sizing: border-box;
+    }
+    .category-item:hover {
+        background: var(--background);
+        transform: translateY(-2px);
+    }
+    .category-item.active {
+        background: #F0F7FF;
+        border-color: var(--avito-blue);
+    }
+    .category-icon {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--background);
+        border-radius: 12px;
+        padding: 10px;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+    .category-item.active .category-icon {
+        background: #E6F2FF;
+        transform: scale(1.05);
+    }
+    .category-icon svg {
+        width: 100%;
+        height: 100%;
+        stroke: #666;
+    }
+    .category-item.active .category-icon svg {
+        stroke: var(--avito-blue);
+    }
+    .category-name {
+        font-size: 13px;
+        text-align: center;
+        color: var(--text-primary);
+        font-weight: 500;
+        line-height: 1.3;
+        max-width: 90px;
+        word-break: break-word;
+    }
     .listings-section {
         background: white;
         border-radius: 12px;
@@ -651,6 +732,30 @@
     /* ========================================= */
     
     @media (max-width: 768px) {
+        /* Блок категорий на мобильных */
+        .categories-grid {
+            gap: 12px !important;
+            justify-content: center !important;
+        }
+        
+        .category-item {
+            padding: 8px !important;
+            min-width: 80px !important;
+            flex: 0 0 calc(25% - 12px) !important; /* 4 в ряд */
+            max-width: calc(25% - 12px) !important;
+        }
+        
+        .category-icon {
+            width: 40px !important;
+            height: 40px !important;
+            padding: 8px !important;
+        }
+        
+        .category-name {
+            font-size: 11px !important;
+            max-width: 80px !important;
+        }
+        
         /* Плиточный вид: 1 колонка на мобильных */
         .products-grid-view {
             grid-template-columns: 1fr !important;
@@ -765,10 +870,20 @@
     }
     
     /* ========================================= */
-    /* ПЛАНШЕТЫ И НОУТБУКИ (3 колонки) */
+    /* ПЛАНШЕТЫ (5 колонок для категорий) */
     /* ========================================= */
     
     @media (min-width: 769px) and (max-width: 1024px) {
+        .category-item {
+            flex: 0 0 calc(20% - 15px) !important; /* 5 в ряд */
+            max-width: calc(20% - 15px) !important;
+        }
+        
+        .category-icon {
+            width: 44px !important;
+            height: 44px !important;
+        }
+        
         .products-grid-view {
             grid-template-columns: repeat(3, 1fr) !important;
             gap: 20px !important;
@@ -776,10 +891,20 @@
     }
     
     /* ========================================= */
-    /* ДЕСКТОПЫ (4 колонки) */
+    /* ДЕСКТОПЫ (7 колонок для категорий) */
     /* ========================================= */
     
     @media (min-width: 1025px) {
+        .category-item {
+            flex: 0 0 calc(14.28% - 15px) !important; /* 7 в ряд */
+            max-width: calc(14.28% - 15px) !important;
+        }
+        
+        .category-icon {
+            width: 48px !important;
+            height: 48px !important;
+        }
+        
         .listings-section .products-grid-view {
             grid-template-columns: repeat(4, 1fr) !important;
             gap: 16px !important;
@@ -788,6 +913,23 @@
     
     /* Для очень маленьких экранов (до 480px) */
     @media (max-width: 480px) {
+        .category-item {
+            flex: 0 0 calc(33.33% - 10px) !important; /* 3 в ряд */
+            max-width: calc(33.33% - 10px) !important;
+            min-width: 70px !important;
+        }
+        
+        .category-icon {
+            width: 36px !important;
+            height: 36px !important;
+            padding: 6px !important;
+        }
+        
+        .category-name {
+            font-size: 10px !important;
+            max-width: 70px !important;
+        }
+        
         .products-grid-view {
             gap: 16px !important;
         }
@@ -853,6 +995,98 @@
         </div>
     </div>
 </div>
+
+<!-- Блок категорий -->
+<div class="categories-section">
+    <div class="container">
+        <div class="categories-container">
+            <div class="categories-title">Категории товаров</div>
+            <div class="categories-grid" id="categoriesGrid">
+                <!-- Все категории -->
+                <div class="category-item {% if not request.args.get('category_id') %}active{% endif %}" 
+                     data-category-id="" 
+                     data-category-name="Все категории" 
+                     onclick="selectCategory(this, '')">
+                    <div class="category-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                        </svg>
+                    </div>
+                    <div class="category-name">Все категории</div>
+                </div>
+                
+                <!-- Родительские категории из базы данных -->
+                {% for category in categories if not category.parent_id %}
+                <div class="category-item {% if request.args.get('category_id') == category.id|string %}active{% endif %}" 
+                     data-category-id="{{ category.id }}" 
+                     data-category-name="{{ category.name }}" 
+                     onclick="selectCategory(this, '{{ category.id }}')">
+                    <div class="category-icon">
+                        {% if category.icon_name %}
+                            {% if category.icon_name == 'electronics' %}
+                                <!-- Электроника -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                                    <path d="M12 12h.01"></path>
+                                    <path d="M17 12h.01"></path>
+                                    <path d="M7 12h.01"></path>
+                                </svg>
+                            {% elif category.icon_name == 'clothing' %}
+                                <!-- Одежда -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path>
+                                </svg>
+                            {% elif category.icon_name == 'home' %}
+                                <!-- Дом -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            {% elif category.icon_name == 'construction' %}
+                                <!-- Строительство -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                </svg>
+                            {% elif category.icon_name == 'auto' %}
+                                <!-- Авто -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path>
+                                    <circle cx="7" cy="17" r="2"></circle>
+                                    <circle cx="17" cy="17" r="2"></circle>
+                                </svg>
+                            {% elif category.icon_name == 'sports' %}
+                                <!-- Спорт -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M8 12h8"></path>
+                                    <path d="M12 8v8"></path>
+                                </svg>
+                            {% else %}
+                                <!-- Дефолтная иконка -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                    <path d="M9 9h6v6H9z"></path>
+                                </svg>
+                            {% endif %}
+                        {% else %}
+                            <!-- Дефолтная иконка если нет icon_name -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                <path d="M9 9h6v6H9z"></path>
+                            </svg>
+                        {% endif %}
+                    </div>
+                    <div class="category-name">{{ category.name }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Main Content - УБИРАЕМ ЛЕВЫЙ БЛОК, ОСТАВЛЯЕМ ТОЛЬКО КОНТЕНТ -->
 <div class="container-fluid mt-4 px-4">
     <div class="content-container">
@@ -995,25 +1229,6 @@
                                         <span class="vat-label vat-excluded">Без НДС</span>
                                     {% endif %}
                                 </div>
-                                <!-- Убираем блок действий для спискового вида на главной странице -->
-                                <!--
-                                <div class="list-product-actions" onclick="event.stopPropagation();">
-                                    {% if product.status == product.STATUS_PUBLISHED %}
-                                    <form action="{{ url_for('main.unpublish_product', product_id=product.id) }}" method="POST" class="action-form">
-                                        <button type="submit" class="btn-unpublish" 
-                                                onclick="event.stopPropagation(); return confirm('Снять товар с публикации? Он станет виден только вам.')">
-                                            🟡 Снять
-                                        </button>
-                                    </form>
-                                    {% elif product.status == product.STATUS_READY_FOR_PUBLICATION or product.status == product.STATUS_UNPUBLISHED %}
-                                    <form action="{{ url_for('main.renew_product', product_id=product.id) }}" method="POST" class="action-form">
-                                        <button type="submit" class="btn-publish" onclick="event.stopPropagation();">
-                                            🟢 Опубликовать
-                                        </button>
-                                    </form>
-                                    {% endif %}
-                                </div>
-                                -->
                             </div>
                             {% endfor %}
                         </div>
@@ -1177,6 +1392,8 @@
 // === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
 let currentLocation = localStorage.getItem('userLocation') || 'Казань';
 let searchTimeout = null;
+let selectedCategoryId = localStorage.getItem('selectedCategoryId') || '';
+
 // === ОСНОВНЫЕ ФУНКЦИИ ===
 function applyFilters(categoryId = '', searchTerm = '') {
     let url = '/';
@@ -1189,6 +1406,81 @@ function applyFilters(categoryId = '', searchTerm = '') {
     if (params.toString()) url += '?' + params.toString();
     window.location.href = url;
 }
+
+// === ФУНКЦИИ ДЛЯ КАТЕГОРИЙ ===
+function selectCategory(categoryElement, categoryId) {
+    // Убираем активный класс у всех категорий
+    document.querySelectorAll('.category-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Добавляем активный класс выбранной категории
+    categoryElement.classList.add('active');
+    
+    // Сохраняем выбранную категорию
+    selectedCategoryId = categoryId;
+    localStorage.setItem('selectedCategoryId', categoryId);
+    
+    // Обновляем селект выбора категории
+    const categorySelect = document.getElementById('categoryFilter');
+    if (categorySelect) {
+        // Находим опцию с нужным значением или с текстом
+        let found = false;
+        for (let option of categorySelect.options) {
+            if (option.value === categoryId || option.text === categoryElement.dataset.categoryName) {
+                option.selected = true;
+                found = true;
+                break;
+            }
+        }
+        // Если не нашли точного соответствия, выбираем "Все категории"
+        if (!found && categorySelect.options.length > 0) {
+            categorySelect.options[0].selected = true;
+        }
+    }
+    
+    // Применяем фильтры
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? searchInput.value.trim() : '';
+    applyFilters(categoryId, searchTerm);
+}
+
+function initializeCategories() {
+    // Восстанавливаем выбранную категорию при загрузке
+    if (selectedCategoryId) {
+        const categoryElement = document.querySelector(`.category-item[data-category-id="${selectedCategoryId}"]`);
+        if (categoryElement) {
+            categoryElement.classList.add('active');
+        } else {
+            // Если не нашли по id, ищем по имени категории из localStorage
+            const categoryName = localStorage.getItem('selectedCategoryName');
+            if (categoryName) {
+                const categoryElementByName = document.querySelector(`.category-item[data-category-name="${categoryName}"]`);
+                if (categoryElementByName) {
+                    categoryElementByName.classList.add('active');
+                    selectedCategoryId = categoryElementByName.dataset.categoryId;
+                }
+            }
+        }
+    } else {
+        // Если категория не выбрана, активируем "Все категории"
+        const allCategories = document.querySelector('.category-item[data-category-id=""]');
+        if (allCategories) {
+            allCategories.classList.add('active');
+        }
+    }
+    
+    // Добавляем обработчики для сохранения имени категории при клике
+    document.querySelectorAll('.category-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const categoryName = this.dataset.categoryName;
+            if (categoryName) {
+                localStorage.setItem('selectedCategoryName', categoryName);
+            }
+        });
+    });
+}
+
 // === ФУНКЦИИ ДЛЯ МОДАЛЬНОГО ОКНА ===
 function openLocationModal() {
     const modal = document.getElementById('locationModal');
@@ -1211,6 +1503,7 @@ function openLocationModal() {
         }, 100);
     }
 }
+
 function closeLocationModal() {
     const modal = document.getElementById('locationModal');
     if (modal) {
@@ -1218,12 +1511,14 @@ function closeLocationModal() {
         document.body.style.overflow = 'auto';
     }
 }
+
 function clearLocationInput() {
     const input = document.getElementById('locationInput');
     input.value = '';
     input.focus();
     loadPopularLocations();
 }
+
 // Функция загрузки популярных локаций из API
 async function loadPopularLocations() {
     const suggestions = document.getElementById('locationSuggestions');
@@ -1294,6 +1589,7 @@ async function loadPopularLocations() {
         `;
     }
 }
+
 // Функция поиска локаций через API
 async function searchLocations(searchTerm) {
     const suggestions = document.getElementById('locationSuggestions');
@@ -1353,6 +1649,7 @@ async function searchLocations(searchTerm) {
         `;
     }
 }
+
 // Функция для задержки поиска (debounce)
 function debounceSearch() {
     const input = document.getElementById('locationInput');
@@ -1366,6 +1663,7 @@ function debounceSearch() {
         searchLocations(searchTerm);
     }, 300); // 300ms задержка
 }
+
 function setLocation(location) {
     currentLocation = location.trim(); // Используем глобальную переменную
     localStorage.setItem('userLocation', currentLocation);
@@ -1378,13 +1676,18 @@ function setLocation(location) {
     const searchTerm = searchInput ? searchInput.value.trim() : '';
     applyFilters(categoryId, searchTerm);
 }
+
 // === ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация категорий
+    initializeCategories();
+    
     // Устанавливаем текущую локацию
     const locationText = document.getElementById('locationText');
     if (locationText) {
         locationText.textContent = currentLocation;
     }
+    
     // Спрашиваем локацию при первом посещении
     const alreadyAsked = localStorage.getItem('locationAsked');
     if (!alreadyAsked) {
@@ -1393,11 +1696,13 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('locationAsked', 'true');
         }, 1500);
     }
+    
     // Обработчики для модального окна
     const locationDisplay = document.getElementById('locationDisplay');
     if (locationDisplay) {
         locationDisplay.addEventListener('click', openLocationModal);
     }
+    
     const locationInput = document.getElementById('locationInput');
     if (locationInput) {
         locationInput.addEventListener('input', debounceSearch);
@@ -1407,10 +1712,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
     // Обработчики для фильтров
     const categorySelect = document.getElementById('categoryFilter');
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.querySelector('.search-btn');
+    
     if (searchBtn) {
         searchBtn.addEventListener('click', function() {
             const categoryId = categorySelect ? categorySelect.value : '';
@@ -1418,12 +1725,41 @@ document.addEventListener('DOMContentLoaded', function() {
             applyFilters(categoryId, searchTerm);
         });
     }
+    
     if (categorySelect) {
         categorySelect.addEventListener('change', function() {
+            // При изменении селекта, обновляем активную категорию в блоке картинок
+            const selectedValue = this.value;
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Ищем соответствующий элемент категории
+            let found = false;
+            document.querySelectorAll('.category-item').forEach(item => {
+                if (item.dataset.categoryId === selectedValue) {
+                    item.classList.add('active');
+                    found = true;
+                    selectedCategoryId = selectedValue;
+                    localStorage.setItem('selectedCategoryId', selectedValue);
+                }
+            });
+            
+            // Если не нашли, активируем "Все категории"
+            if (!found) {
+                const allCategories = document.querySelector('.category-item[data-category-id=""]');
+                if (allCategories) {
+                    allCategories.classList.add('active');
+                    selectedCategoryId = '';
+                    localStorage.setItem('selectedCategoryId', '');
+                }
+            }
+            
             const searchTerm = searchInput ? searchInput.value.trim() : '';
-            applyFilters(this.value, searchTerm);
+            applyFilters(selectedValue, searchTerm);
         });
     }
+    
     if (searchInput) {
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -1432,6 +1768,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
     // Закрытие модального окна при клике вне его
     window.addEventListener('click', function(event) {
         const modal = document.getElementById('locationModal');
@@ -1439,14 +1776,17 @@ document.addEventListener('DOMContentLoaded', function() {
             closeLocationModal();
         }
     });
+    
     // Закрытие модального окна по ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeLocationModal();
         }
     });
+    
     // Переключение видов товаров
     const viewButtons = document.querySelectorAll('.view-btn');
+    
     function activateView(viewType) {
         const containers = {
             grid: document.getElementById('productsGridView'),
@@ -1487,21 +1827,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Активируем представление
     activateView(savedView);
     
-    // Дебаг: проверяем видимость контейнеров
-    setTimeout(() => {
-        const containers = {
-            grid: document.getElementById('productsGridView'),
-            list: document.getElementById('productsListView'),
-            table: document.getElementById('productsTableView')
-        };
-        
-        console.log('Состояние контейнеров после загрузки:');
-        for (let key in containers) {
-            if (containers[key]) {
-                console.log(`${key}: display = ${containers[key].style.display}, offsetHeight = ${containers[key].offsetHeight}`);
-            }
+    // Принудительное исправление отображения категорий
+    function fixCategoriesLayout() {
+        const categoriesGrid = document.getElementById('categoriesGrid');
+        if (categoriesGrid) {
+            categoriesGrid.style.display = 'flex';
+            categoriesGrid.style.flexDirection = 'row';
+            categoriesGrid.style.flexWrap = 'wrap';
+            categoriesGrid.style.gap = '15px';
+            categoriesGrid.style.justifyContent = 'flex-start';
+            categoriesGrid.style.alignItems = 'flex-start';
+            
+            // Исправляем каждый элемент
+            const categoryItems = categoriesGrid.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                item.style.display = 'flex';
+                item.style.flexDirection = 'column';
+                item.style.alignItems = 'center';
+                item.style.flexShrink = '0';
+                item.style.minWidth = '90px';
+            });
         }
-    }, 100);
+    }
+    
+    // Вызываем несколько раз для гарантии
+    setTimeout(fixCategoriesLayout, 100);
+    setTimeout(fixCategoriesLayout, 300);
+    setTimeout(fixCategoriesLayout, 500);
 });
 </script>
 {% endblock %}

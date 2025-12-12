@@ -486,32 +486,101 @@ def profile():
 def admin_categories():
     if request.method == 'POST':
         action = request.form.get('action')
+        
         if action == 'add_category':
             name = request.form.get('name')
             parent_id = request.form.get('parent_id') or None
             description = request.form.get('description')
+            
             if not name:
                 flash('Название категории обязательно', 'error')
                 return redirect(url_for('main.admin_categories'))
+            
             existing_category = Category.query.filter_by(name=name, parent_id=parent_id).first()
             if existing_category:
                 flash('Такая категория уже существует', 'error')
                 return redirect(url_for('main.admin_categories'))
+            
             try:
+                # === ОБРАБОТКА ЗАГРУЗКИ ИЗОБРАЖЕНИЯ ===
+                image_filename = None
+                if 'category_image' in request.files:
+                    image_file = request.files['category_image']
+                    if image_file and image_file.filename:
+                        if allowed_file(image_file.filename):
+                            filename = secure_filename(image_file.filename)
+                            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+                            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                            image_file.save(file_path)
+                            image_filename = unique_filename
+                        else:
+                            flash('Недопустимый формат изображения. Используйте JPG, PNG или GIF', 'warning')
+                # === КОНЕЦ ОБРАБОТКИ ИЗОБРАЖЕНИЯ ===
+                
                 new_category = Category(
                     name=name,
                     description=description,
-                    parent_id=parent_id if parent_id else None
+                    parent_id=parent_id if parent_id else None,
+                    image=image_filename  # ← ДОБАВЛЕНО ПОЛЕ IMAGE
                 )
                 db.session.add(new_category)
                 db.session.commit()
                 flash(f'Категория "{name}" успешно добавлена', 'success')
+                
             except Exception as e:
                 db.session.rollback()
                 flash(f'Ошибка при добавлении категории: {str(e)}', 'error')
+        
         elif action == 'edit_category':
             category_id = request.form.get('category_id')
-            flash('Редактирование категорий пока недоступно', 'info')
+            name = request.form.get('name')
+            parent_id = request.form.get('parent_id') or None
+            description = request.form.get('description')
+            remove_image = request.form.get('remove_image') == 'on'
+            
+            category = Category.query.get(category_id)
+            if not category:
+                flash('Категория не найдена', 'error')
+                return redirect(url_for('main.admin_categories'))
+            
+            try:
+                category.name = name
+                category.description = description
+                category.parent_id = parent_id
+                
+                # Обработка изображения
+                if remove_image and category.image:
+                    # Удаляем старый файл
+                    image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category.image)
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                    category.image = None
+                
+                if 'category_image' in request.files:
+                    image_file = request.files['category_image']
+                    if image_file and image_file.filename:
+                        if allowed_file(image_file.filename):
+                            # Удаляем старое изображение, если есть
+                            if category.image:
+                                old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category.image)
+                                if os.path.exists(old_path):
+                                    os.remove(old_path)
+                            
+                            filename = secure_filename(image_file.filename)
+                            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+                            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                            image_file.save(file_path)
+                            category.image = unique_filename
+                        else:
+                            flash('Недопустимый формат изображения', 'warning')
+                
+                db.session.commit()
+                flash(f'Категория "{name}" успешно обновлена', 'success')
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Ошибка при обновлении категории: {str(e)}', 'error')
+        
         elif action == 'delete_category':
             category_id = request.form.get('category_id')
             if category_id:
@@ -525,11 +594,18 @@ def admin_categories():
                         if products_in_category > 0:
                             flash(f'Нельзя удалить категорию "{category.name}" - в ней есть товары', 'error')
                         else:
+                            # Удаляем файл изображения, если есть
+                            if category.image:
+                                image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category.image)
+                                if os.path.exists(image_path):
+                                    os.remove(image_path)
+                            
                             db.session.delete(category)
                             db.session.commit()
                             flash(f'Категория "{category.name}" удалена', 'success')
                 else:
                     flash('Категория не найдена', 'error')
+        
         elif action == 'clear_empty':
             categories = Category.query.all()
             deleted_count = 0
@@ -537,6 +613,12 @@ def admin_categories():
                 products_count = Product.query.filter_by(category_id=cat.id).count()
                 children_count = Category.query.filter_by(parent_id=cat.id).count()
                 if products_count == 0 and children_count == 0:
+                    # Удаляем файл изображения, если есть
+                    if cat.image:
+                        image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], cat.image)
+                        if os.path.exists(image_path):
+                            os.remove(image_path)
+                    
                     db.session.delete(cat)
                     deleted_count += 1
             if deleted_count > 0:
@@ -544,7 +626,28 @@ def admin_categories():
                 flash(f'Удалено {deleted_count} пустых категорий', 'success')
             else:
                 flash('Пустых категорий не найдено', 'info')
+        
+        elif action == 'clear_images':
+            # Находим все категории с изображениями
+            categories_with_images = Category.query.filter(Category.image.isnot(None)).all()
+            deleted_count = 0
+            for cat in categories_with_images:
+                if cat.image:
+                    # Удаляем файл изображения
+                    image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], cat.image)
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                    # Очищаем поле в БД
+                    cat.image = None
+                    deleted_count += 1
+            if deleted_count > 0:
+                db.session.commit()
+                flash(f'Удалено {deleted_count} изображений категорий', 'success')
+            else:
+                flash('Изображений категорий не найдено', 'info')
+        
         return redirect(url_for('main.admin_categories'))
+    
     # ========== ОЧИСТКА НАЗВАНИЙ РЕГИОНОВ ==========
     regions_to_clean = Region.query.filter(Region.name.like('% - %')).all()
     if regions_to_clean:
@@ -553,6 +656,7 @@ def admin_categories():
             region.name = cleaned_name
         db.session.commit()
         print(f"DEBUG: Очищены названия {len(regions_to_clean)} регионов")
+    
     categories = Category.query.all()
     parent_categories = Category.query.filter_by(parent_id=None).all()
     total_products = Product.query.count()
@@ -561,6 +665,13 @@ def admin_categories():
     child_regions = Region.query.filter(Region.parent_id.isnot(None)).all()
     all_cities = City.query.all()
     cities_count = len(all_cities)
+    
+    # Подсчет категорий с изображениями
+    try:
+        categories_with_images = Category.query.filter(Category.image.isnot(None)).all()
+    except AttributeError:
+        categories_with_images = []
+    
     regions_with_cities = []
     for region in regions:
         region_cities = [city for city in all_cities if city.region_id == region.id]
@@ -568,9 +679,11 @@ def admin_categories():
             'region': region,
             'cities': region_cities
         })
+    
     return render_template('admin_categories.html', 
                          categories=categories,
                          parent_categories=parent_categories,
+                         categories_with_images=categories_with_images,  # ← ДОБАВЛЕНО
                          total_products=total_products,
                          all_regions=all_regions,
                          regions=regions,

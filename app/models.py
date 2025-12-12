@@ -103,7 +103,8 @@ class Category(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
-    
+    image = db.Column(db.String(255))  # путь к файлу или URL
+
     category_products = db.relationship('Product', backref='product_category', lazy=True)
     
     children = db.relationship(
