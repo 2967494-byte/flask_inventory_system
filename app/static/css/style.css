@@ -1711,7 +1711,7 @@
 }
 
 .content-container {
-    width: 75%;
+    width: 100%;
     flex-grow: 1;
 }
 
@@ -4415,4 +4415,12 @@ select:focus-visible {
     .products-grid-avito {
         grid-template-columns: 1fr !important;
     }
+}
+
+.user-icon,
+.logout-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
 }

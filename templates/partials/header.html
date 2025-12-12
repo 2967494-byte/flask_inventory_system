@@ -37,7 +37,7 @@
                     <div class="user-menu">
                         <!-- Ссылка на DASHBOARD (было profile) -->
                         <a href="{{ url_for('main.dashboard') }}" class="user-profile-link">
-                            <span class="user-icon">👤</span>
+                            <img src="{{ url_for('static', filename='icons/user_icon.svg') }}" alt="Профиль" class="user-icon">
                             <span class="user-name">
                                 {% if current_user.username %}
                                     {{ current_user.username }}
@@ -51,7 +51,7 @@
                         
                         <!-- Кнопка выхода с иконкой -->
                         <a href="{{ url_for('auth.logout') }}" class="logout-button" title="Выйти">
-                            <span class="logout-icon">🚪</span>
+                            <img src="{{ url_for('static', filename='icons/log_out_icon_128821.svg') }}" alt="Выйти" class="logout-icon">
                         </a>
                     </div>
                 {% endif %}
