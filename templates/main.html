@@ -118,7 +118,7 @@
     .products-grid-view {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
+        gap: 16px;
         margin-bottom: 20px;
     }
     /* Специфичные стили для представления списком */
@@ -782,6 +782,7 @@
     @media (min-width: 1025px) {
         .listings-section .products-grid-view {
             grid-template-columns: repeat(4, 1fr) !important;
+            gap: 16px !important;
         }
     }
     
@@ -921,9 +922,6 @@
                                     {{ product.product_category.name if product.product_category else 'Без категории' }}
                                 </div>
                                 <div class="product-name">{{ product.title }}</div>
-                                <div class="product-views">
-                                    <span class="views-count">👁️ {{ product.view_count if product.view_count else 0 }}</span>
-                                </div>
                                 <div class="product-price">
                                     <span class="current-price">{{ "%.2f"|format(product.price) }} ₽</span>
                                     {% if product.vat_included %}
@@ -931,10 +929,14 @@
                                     {% else %}
                                         <span class="vat-label vat-excluded">Без НДС</span>
                                     {% endif %}
-                                </div>
+                                </div>                                
                                 <div class="product-meta">
-                                    <span class="category">{{ product.product_category.name if product.product_category else 'Без категории' }}</span>
+                                    <span class="views-count">
+                                        <img src="{{ url_for('static', filename='icons/eye_icon.svg') }}" alt="Просмотры" class="eye-icon">
+                                        {{ product.view_count if product.view_count else 0 }}
+                                    </span>
                                     <span class="date">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
+                                    
                                 </div>
                             </div>
                         </div>

@@ -100,7 +100,6 @@
     {% include 'partials/header.html' %}
     
     <main class="main-content">
-        <div class="container-fluid px-4">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     <div class="flash-messages">
@@ -112,7 +111,7 @@
             {% endwith %}
             
             {% block content %}{% endblock %}
-        </div>
+        
     </main>
     
     {% include 'partials/footer.html' %}
