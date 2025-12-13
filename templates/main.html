@@ -316,6 +316,37 @@
 
     /* ===== АДАПТИВНОСТЬ ДЛЯ КАТЕГОРИЙ ===== */
     @media (max-width: 768px) {
+
+        /* FIX: Mobile Search Bar Layout */
+        .search-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .category-filter {
+            width: 100%;
+            margin-bottom: 0;
+            flex: none;
+        }
+
+        .search-group {
+            width: 100%;
+            flex: none;
+        }
+
+        .location-button {
+            width: 100%;
+            justify-content: center;
+            margin-top: 0;
+            flex: none;
+            background: #f0f0f0;
+            /* Более заметная кнопка на мобильном */
+            height: 48px;
+            /* Единая высота */
+        }
+
+        /* Categories Styles */
         .categories-grid {
             justify-content: center;
             gap: 12px !important;
