@@ -1,13 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const contactLink = document.querySelector('a[href="#contact"]'); // Or by ID if we set one
-    const footerContactLink = Array.from(document.querySelectorAll('.footer-link')).find(el => el.textContent.trim() === 'Контакты');
+    const contactLink = document.getElementById('contact-link');
     const modal = document.getElementById('contact-modal');
     const closeBtn = document.querySelector('.contact-modal-close');
     const form = document.getElementById('contact-form');
 
     // Attach event to footer link
-    if (footerContactLink) {
-        footerContactLink.addEventListener('click', function (e) {
+    if (contactLink) {
+        contactLink.addEventListener('click', function (e) {
             e.preventDefault();
             openModal();
         });
