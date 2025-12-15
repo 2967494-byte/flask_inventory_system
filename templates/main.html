@@ -1451,6 +1451,43 @@
     let selectedCategoryId = "{{ request.args.get('category_id', '') }}";
     let searchTimeout = null;
 
+    function selectCategory(categoryElement, categoryId) {
+        // Убираем активный класс у всех категорий
+        document.querySelectorAll('.main-category-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Добавляем активный класс выбранной категории
+        categoryElement.classList.add('active');
+
+        // Сохраняем выбранную категорию
+        selectedCategoryId = categoryId;
+        localStorage.setItem('selectedCategoryId', categoryId);
+
+        // Обновляем селект выбора категории
+        const categorySelect = document.getElementById('categoryFilter');
+        if (categorySelect) {
+            // Находим опцию с нужным значением или с текстом
+            let found = false;
+            for (let option of categorySelect.options) {
+                if (option.value === categoryId || option.text === categoryElement.dataset.categoryName) {
+                    option.selected = true;
+                    found = true;
+                    break;
+                }
+            }
+            // Если не нашли точного соответствия, выбираем "Все категории"
+            if (!found && categorySelect.options.length > 0) {
+                categorySelect.options[0].selected = true;
+            }
+        }
+
+        // Применяем фильтры
+        const searchInput = document.getElementById('searchInput');
+        const searchTerm = searchInput ? searchInput.value.trim() : '';
+        applyFilters(categoryId, searchTerm);
+    }
+
     function openLocationModal() {
         const modal = document.getElementById('locationModal');
         if (modal) {
