@@ -252,6 +252,53 @@
     }
 
     /* Падающий текст (заглушка) */
+    .category-fallback {
+        font-size: 18px;
+        font-weight: bold;
+        color: #ddd;
+    }
+
+    /* Production-matched Mobile Styles */
+    @media (max-width: 768px) {
+        .main-category-item {
+            width: 140px;
+            height: 85px;
+            flex: 0 0 auto;
+            padding: 10px;
+            background: white;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid var(--border);
+            min-width: 0;
+            /* Override desktop min-width */
+            max-width: none;
+            /* Override desktop max-width */
+        }
+
+        .main-category-item.active {
+            background: #eef2ff;
+            border-color: var(--avito-blue);
+        }
+
+        /* Adjust inner elements for mobile vertical layout */
+        .category-tile-name {
+            font-size: 13px;
+            margin-right: 0;
+            margin-bottom: 5px;
+            white-space: normal;
+        }
+
+        .main-category-icon {
+            margin-left: 0;
+            align-self: flex-end;
+            /* Push icon to bottom right like original design or keep standard? Production said justify-content: space-between */
+        }
+    }
+
     .main-category-fallback {
         font-size: 28px;
         font-weight: 700;
