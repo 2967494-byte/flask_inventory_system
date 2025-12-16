@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, send_file
+from app.utils import generate_captcha_image
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
@@ -18,6 +19,16 @@ logger = logging.getLogger(__name__)
 def register():
     if request.method == 'POST':
         try:
+            captcha_input = request.form.get('captcha', '')
+            captcha_session = session.get('register_captcha', '')
+            
+            # Clear captcha
+            session.pop('register_captcha', None)
+            
+            if not captcha_input or captcha_input != captcha_session:
+                flash('Неверный код с картинки', 'error')
+                return redirect(url_for('auth.register'))
+
             email = request.form['email']
             password = request.form['password']
             confirm_password = request.form['confirm_password']
@@ -180,6 +191,16 @@ def reset_password_request():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     if request.method == 'POST':
+        captcha_input = request.form.get('captcha', '')
+        captcha_session = session.get('password_reset_captcha', '')
+        
+        # Clear captcha from session to prevent reuse/guessing
+        session.pop('password_reset_captcha', None)
+        
+        if not captcha_input or captcha_input != captcha_session:
+            flash('Неверный код с картинки', 'error')
+            return redirect(url_for('auth.reset_password_request'))
+
         email = request.form['email']
         user = User.query.filter_by(email=email).first()
         if user:
@@ -219,3 +240,15 @@ def reset_password(token):
         return redirect(url_for('auth.login'))
         
     return render_template('reset_password.html')
+
+@auth.route('/password_reset_captcha')
+def password_reset_captcha():
+    code, image_io = generate_captcha_image()
+    session['password_reset_captcha'] = code
+    return send_file(image_io, mimetype='image/png')
+
+@auth.route('/register_captcha')
+def register_captcha():
+    code, image_io = generate_captcha_image()
+    session['register_captcha'] = code
+    return send_file(image_io, mimetype='image/png')

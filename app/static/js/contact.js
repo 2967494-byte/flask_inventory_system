@@ -4,10 +4,29 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeBtn = document.querySelector('.contact-modal-close');
     const form = document.getElementById('contact-form');
 
+    // Captcha elements
+    const captchaImage = document.getElementById('contact-captcha-image');
+    const refreshBtn = document.getElementById('contact-refresh-captcha');
+
+    function reloadCaptcha() {
+        if (captchaImage) {
+            captchaImage.src = '/contact_captcha?v=' + new Date().getTime();
+            document.getElementById('contact-captcha-input').value = '';
+        }
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', reloadCaptcha);
+    }
+    if (captchaImage) {
+        captchaImage.addEventListener('click', reloadCaptcha);
+    }
+
     // Attach event to footer link
     if (contactLink) {
         contactLink.addEventListener('click', function (e) {
             e.preventDefault();
+            reloadCaptcha(); // Reload captcha when opening
             openModal();
         });
     }
@@ -51,9 +70,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (result.success) {
                         showStatus('success', 'Ваше сообщение успешно отправлено!');
                         form.reset();
+                        reloadCaptcha(); // Get new captcha for next time
                         setTimeout(closeModal, 2000);
                     } else {
                         showStatus('error', result.message || 'Произошла ошибка. Попробуйте позже.');
+                        reloadCaptcha(); // Reload on error (likely captcha error)
                     }
                 })
                 .catch(error => {

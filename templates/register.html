@@ -106,6 +106,32 @@
                 placeholder="Краткое описание деятельности компании"></textarea>
         </div>
 
+        <div class="form-group mb-4">
+            <label class="form-label">Введите цифры с картинки *</label>
+            <div class="d-flex align-items-center gap-2">
+                <img src="{{ url_for('auth.register_captcha') }}" alt="Captcha" id="register-captcha-image"
+                    class="border rounded" style="cursor: pointer; height: 50px;" title="Нажмите, чтобы обновить">
+
+                <input type="text" class="form-control text-center mb-0" id="register-captcha-input" name="captcha"
+                    required autocomplete="off" placeholder="1234"
+                    style="width: 100px; height: 50px; font-size: 1.2rem; letter-spacing: 2px;">
+
+                <button type="button" class="btn btn-outline-secondary" id="register-refresh-captcha"
+                    style="height: 50px; width: 50px;" title="Обновить картинку">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <script>
+                function reloadRegCaptcha() {
+                    var img = document.getElementById('register-captcha-image');
+                    img.src = "{{ url_for('auth.register_captcha') }}?v=" + new Date().getTime();
+                    document.getElementById('register-captcha-input').value = '';
+                }
+                document.getElementById('register-refresh-captcha').addEventListener('click', reloadRegCaptcha);
+                document.getElementById('register-captcha-image').addEventListener('click', reloadRegCaptcha);
+            </script>
+        </div>
+
         <div class="form-group">
             <div class="form-check">
                 <input type="checkbox" name="agree_terms" class="form-check-input" id="agree_terms" required>

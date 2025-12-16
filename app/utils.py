@@ -1,51 +1,70 @@
 import uuid
 import random
 import io
+import os
+from flask import current_app
+from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw, ImageFont
 
 def generate_captcha_image():
-    """Generates a numeric captcha image and returns the code and image bytes."""
+    """Generates a secure numeric captcha image with rotation and noise."""
+    # Generate 4 random digits
     code = str(random.randint(1000, 9999))
+    
+    # Image dimensions
     width, height = 120, 50
+    # Create white background
     image = Image.new('RGB', (width, height), (255, 255, 255))
     draw = ImageDraw.Draw(image)
     
-    # Add noise
-    for _ in range(50):
-        x = random.randint(0, width)
-        y = random.randint(0, height)
-        draw.point((x, y), fill=(random.randint(0, 200), random.randint(0, 200), random.randint(0, 200)))
+    # Load font (try various system fonts or fallback)
+    try:
+        font = ImageFont.truetype("arial.ttf", 28)
+    except IOError:
+        font = ImageFont.load_default()
+    
+    # Draw each character with random rotation
+    char_width = width // 4
+    for i, char in enumerate(code):
+        # Create a separate image for the character to rotate it
+        # Make it larger than needed to avoid clipping during rotation
+        txt_img = Image.new('RGBA', (40, 40), (255, 255, 255, 0))
+        txt_draw = ImageDraw.Draw(txt_img)
         
-    for _ in range(5):
+        # Draw text centered in the small image
+        # Note: Position adjustments might be needed depending on font
+        txt_draw.text((10, 5), char, font=font, fill=(0, 0, 0, 255))
+        
+        # Rotate randomly between -20 and 20 degrees
+        angle = random.randint(-20, 20)
+        rotated_txt = txt_img.rotate(angle, expand=1, resample=Image.BICUBIC)
+        
+        # Calculate position to paste
+        # Add some random horizontal jitter
+        jitter_x = random.randint(-2, 2)
+        jitter_y = random.randint(-2, 2)
+        
+        paste_x = (i * char_width) + 10 + jitter_x
+        paste_y = 5 + jitter_y
+        
+        image.paste(rotated_txt, (paste_x, paste_y), rotated_txt)
+
+    # Add noise: lines
+    for _ in range(8):
         x1 = random.randint(0, width)
         y1 = random.randint(0, height)
         x2 = random.randint(0, width)
         y2 = random.randint(0, height)
-        draw.line((x1, y1, x2, y2), fill=(random.randint(200, 255), random.randint(200, 255), random.randint(200, 255)), width=1)
+        color = (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
+        draw.line((x1, y1, x2, y2), fill=color, width=1)
+        
+    # Add noise: points
+    for _ in range(100):
+        x = random.randint(0, width)
+        y = random.randint(0, height)
+        color = (random.randint(100, 200), random.randint(100, 200), random.randint(100, 200))
+        draw.point((x, y), fill=color)
 
-    # Try to load a font, fallback to default
-    try:
-        font = ImageFont.truetype("arial.ttf", 32)
-    except IOError:
-        font = ImageFont.load_default()
-
-    # Draw text
-    # textlength is new in Pillow 9.2.0, fallback to basic positioning logic if needed
-    try:
-        text_width = draw.textlength(code, font=font)
-    except AttributeError:
-         text_width = 40 # Estimating for default
-
-    x = (width - text_width) / 2
-    y = (height - 40) / 2 
-    
-    if isinstance(font, type(ImageFont.load_default())):
-         # Default font is very small, disable centering logic that might push it off
-         x = 10
-         y = 10
-
-    draw.text((x, y), code, font=font, fill=(0, 0, 0))
-    
     # Return code and image bytes
     byte_io = io.BytesIO()
     image.save(byte_io, 'PNG')

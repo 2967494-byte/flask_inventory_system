@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, send_from_directory, current_app, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, send_from_directory, current_app, jsonify, session, send_file
 from flask_login import login_required, current_user
 from app import db, csrf
 from app.models import Product, Category, User, Review, Region, City
@@ -790,6 +790,13 @@ def category_image(filename):
         filename
     )
 
+@main.route('/contact_captcha')
+def contact_captcha():
+    from app.utils import generate_captcha_image
+    code, image_io = generate_captcha_image()
+    session['contact_captcha'] = code
+    return send_file(image_io, mimetype='image/png')
+
 @main.route('/contact', methods=['POST'])
 def contact():
     data = request.get_json()
@@ -799,6 +806,14 @@ def contact():
     contact_info = data.get('contact_info')
     category = data.get('category')
     message = data.get('message')
+    captcha_input = data.get('captcha')
+    captcha_session = session.get('contact_captcha')
+    
+    # Clear captcha
+    session.pop('contact_captcha', None)
+    
+    if not captcha_input or captcha_input != captcha_session:
+        return jsonify({'success': False, 'message': 'Неверный код с картинки'}), 400
     
     if not contact_info or not message:
         return jsonify({'success': False, 'message': 'Заполните обязательные поля'}), 400
