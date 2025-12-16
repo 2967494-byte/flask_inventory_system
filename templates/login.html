@@ -19,6 +19,9 @@
         <div class="form-group">
             <label class="form-label">Пароль</label>
             <input type="password" name="password" class="form-control" placeholder="Ваш пароль" required>
+            <div class="text-end mt-1">
+                <a href="{{ url_for('auth.reset_password_request') }}" class="text-muted small">Забыли пароль?</a>
+            </div>
         </div>
 
         <button type="submit" class="btn-primary"

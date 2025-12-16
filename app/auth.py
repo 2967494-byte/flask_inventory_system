@@ -174,3 +174,48 @@ def logout():
 @auth.route('/debug_register')
 def debug_register():
     return render_template('debug_register.html')
+
+@auth.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    if request.method == 'POST':
+        email = request.form['email']
+        user = User.query.filter_by(email=email).first()
+        if user:
+            from itsdangerous import URLSafeTimedSerializer
+            ts = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+            token = ts.dumps(user.email, salt='recover-key')
+            recover_url = url_for('auth.reset_password', token=token, _external=True)
+            send_email(user.email, 'Восстановление пароля', 'reset_password', recover_url=recover_url)
+        flash('Если указанный email существует в системе, на него отправлены инструкции по восстановлению пароля.', 'info')
+        return redirect(url_for('auth.login'))
+    return render_template('reset_password_request.html')
+
+@auth.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    try:
+        from itsdangerous import URLSafeTimedSerializer
+        ts = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        email = ts.loads(token, salt='recover-key', max_age=86400)
+    except:
+        flash('Ссылка для восстановления пароля недействительна или истекла.', 'error')
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.filter_by(email=email).first_or_404()
+    
+    if request.method == 'POST':
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        if password != confirm_password:
+            flash('Пароли не совпадают', 'error')
+            return redirect(url_for('auth.reset_password', token=token))
+            
+        user.set_password(password)
+        db.session.commit()
+        flash('Ваш пароль успешно изменен.', 'success')
+        return redirect(url_for('auth.login'))
+        
+    return render_template('reset_password.html')
