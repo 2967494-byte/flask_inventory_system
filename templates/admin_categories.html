@@ -41,135 +41,90 @@
                         <span class="section-badge">Просмотр</span>
                     </div>
                     <div class="section-card">
-                        {% if categories %}
-                        <div class="categories-tree" id="categoriesTree">
-                            {% for parent in parent_categories %}
-                            <div class="category-node" data-id="{{ parent.id }}" data-name="{{ parent.name|lower }}">
-                                <div class="node-header">
-                                    {% set children = categories|selectattr('parent_id', 'equalto', parent.id)|list %}
-                                    {% if children %}
-                                    <span class="toggle-icon" onclick="toggleCategory(this)">➕</span>
+                        {% if parent_categories %}
+
+                        {# --- Recursive Macro for Category Tree --- #}
+                        {% macro render_category_node(category, categories_list) %}
+                        <div class="category-node {% if category.parent_id %}child-node{% endif %}"
+                            data-id="{{ category.id }}" data-name="{{ category.name|lower }}"
+                            style="{% if category.parent_id %}margin-left: 20px;{% endif %}">
+
+                            <div class="node-header">
+                                {% set children = category.children|sort(attribute='name') %}
+                                {% if children %}
+                                <span class="toggle-icon" onclick="toggleCategory(this)">▼</span>
+                                {% else %}
+                                <span class="toggle-icon">●</span>
+                                {% endif %}
+
+                                <!-- Иконка с изображением -->
+                                <span class="node-icon"
+                                    onclick="showCategoryImage({{ category.id }}, '{{ category.name }}')"
+                                    style="cursor: pointer; position: relative;"
+                                    title="{% if category.image %}Показать изображение{% else %}Нет изображения{% endif %}">
+                                    {% if category.image %}
+                                    <div class="category-image-thumbnail"
+                                        style="width: 24px; height: 24px; border-radius: 4px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: #f5f5f5;">
+                                        <img src="{{ url_for('main.get_category_image_by_size', category_id=category.id, size='thumbnail') }}"
+                                            alt="{{ category.name }}"
+                                            style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
                                     {% else %}
-                                    <span class="toggle-icon">├─</span>
+                                    📁
                                     {% endif %}
+                                </span>
 
-                                    <!-- Иконка с изображением -->
-                                    <span class="node-icon"
-                                        onclick="showCategoryImage({{ parent.id }}, '{{ parent.name }}')"
-                                        style="cursor: pointer; position: relative;"
-                                        title="{% if parent.image %}Показать изображение{% else %}Нет изображения{% endif %}">
-                                        {% if parent.image %}
-                                        <div class="category-image-thumbnail"
-                                            style="width: 24px; height: 24px; border-radius: 4px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: #f5f5f5;">
-                                            <img src="{{ url_for('main.get_category_image_by_size', category_id=parent.id, size='thumbnail') }}"
-                                                alt="{{ parent.name }}"
-                                                style="width: 100%; height: 100%; object-fit: cover;">
-                                        </div>
-                                        {% else %}
-                                        📁
-                                        {% endif %}
-                                    </span>
+                                <span class="node-name">{{ category.name }}</span>
+                                {% if category.description %}
+                                <span class="node-description text-muted">({{ category.description }})</span>
+                                {% endif %}
+                                <span class="node-badge">{{ category.products|length if category.products else 0 }}
+                                    тов.</span>
 
-                                    <span class="node-name">{{ parent.name }}</span>
-                                    {% if parent.description %}
-                                    <span class="node-description text-muted">({{ parent.description }})</span>
-                                    {% endif %}
-                                    <span class="node-badge">{{ parent.products|length if parent.products else 0 }}
-                                        тов.</span>
-                                    <div class="node-actions">
-                                        <button class="node-action-btn" title="Редактировать"
-                                            onclick="editCategory({{ parent.id }}, '{{ parent.name }}', '{{ parent.description if parent.description else '' }}', {{ parent.parent_id or 'null' }}, {% if parent.image %}'{{ parent.image }}'{% else %}null{% endif %})"
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                <div class="node-actions">
+                                    <button class="node-action-btn" title="Редактировать"
+                                        onclick="editCategory({{ category.id }}, '{{ category.name }}', '{{ category.description if category.description else '' }}', {{ category.parent_id or 'null' }}, {% if category.image %}'{{ category.image }}'{% else %}null{% endif %})">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4v7h7V4z"></path>
                                             <path
                                                 d="M17.7 4L15.9 5.8 12.3 2.2 10.5 4l3.6 3.6 1.8-1.8 3.6 3.6 1.8-1.8L17.7 4z">
                                             </path>
+                                        </svg>
+                                    </button>
+
+                                    <form method="POST" action="{{ url_for('admin_bp.admin_categories') }}"
+                                        onsubmit="return confirm('Удалить категорию и все подкатегории?')"
+                                        class="inline-form">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete_category">
+                                        <input type="hidden" name="category_id" value="{{ category.id }}">
+                                        <button type="submit" class="node-action-btn" title="Удалить">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path d="M3 6h18v2H3V6z"></path>
+                                                <path
+                                                    d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2">
+                                                </path>
                                             </svg>
                                         </button>
-
-                                        <form method="POST" action="{{ url_for('admin_bp.admin_categories') }}"
-                                            onsubmit="return confirm('Удалить категорию и все подкатегории?')"
-                                            class="inline-form">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <input type="hidden" name="action" value="delete_category">
-                                            <input type="hidden" name="category_id" value="{{ parent.id }}">
-                                            <button type="submit" class="node-action-btn" title="Удалить">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18v2H3V6z"></path>
-                                                    <path
-                                                        d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2">
-                                                    </path>
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    </div>
+                                    </form>
                                 </div>
-
-                                {% if children %}
-                                <div class="node-children" style="display: none;">
-                                    {% for child in children %}
-                                    <div class="category-node child-node" data-id="{{ child.id }}"
-                                        data-name="{{ child.name|lower }}">
-                                        <div class="node-header">
-                                            <span class="toggle-icon">└─</span>
-                                            <span class="node-icon"
-                                                onclick="showCategoryImage({{ child.id }}, '{{ child.name }}')"
-                                                style="cursor: pointer;"
-                                                title="{% if child.image %}Показать изображение{% else %}Нет изображения{% endif %}">
-                                                {% if child.image %}
-                                                <div class="category-image-thumbnail"
-                                                    style="width: 20px; height: 20px; border-radius: 3px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: #f5f5f5;">
-                                                    <img src="{{ url_for('main.get_category_image_by_size', category_id=child.id, size='thumbnail') }}"
-                                                        alt="{{ child.name }}"
-                                                        style="width: 100%; height: 100%; object-fit: cover;">
-                                                </div>
-                                                {% else %}
-                                                📄
-                                                {% endif %}
-                                            </span>
-                                            <span class="node-name">{{ child.name }}</span>
-                                            {% if child.description %}
-                                            <span class="node-description text-muted">({{ child.description }})</span>
-                                            {% endif %}
-                                            <span class="node-badge">{{ child.products|length if child.products else 0
-                                                }} тов.</span>
-                                            <div class="node-actions">
-                                                <button class="node-action-btn" title="Редактировать"
-                                                    onclick="editCategory({{ parent.id }}, '{{ parent.name }}', '{{ parent.description if parent.description else '' }}', {{ parent.parent_id or 'null' }}, {% if parent.image %}'{{ parent.image }}'{% else %}null{% endif %})"
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2">
-                                                    <path d="M11 4H4v7h7V4z"></path>
-                                                    <path
-                                                        d="M17.7 4L15.9 5.8 12.3 2.2 10.5 4l3.6 3.6 1.8-1.8 3.6 3.6 1.8-1.8L17.7 4z">
-                                                    </path>
-                                                    </svg>
-                                                </button>
-
-                                                <form method="POST" action="{{ url_for('admin_bp.admin_categories') }}"
-                                                    onsubmit="return confirm('Удалить подкатегорию?')"
-                                                    class="inline-form">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <input type="hidden" name="action" value="delete_category">
-                                                    <input type="hidden" name="category_id" value="{{ child.id }}">
-                                                    <button type="submit" class="node-action-btn" title="Удалить">
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                                            stroke="currentColor" stroke-width="2">
-                                                            <path d="M3 6h18v2H3V6z"></path>
-                                                            <path
-                                                                d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2">
-                                                            </path>
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
                             </div>
+
+                            {% if children %}
+                            <div class="node-children" style="display: block;"> <!-- Changed to block primarily -->
+                                {% for child in children %}
+                                {{ render_category_node(child, categories_list) }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endmacro %}
+
+                        <div class="categories-tree" id="categoriesTree">
+                            {% for parent in parent_categories %}
+                            {{ render_category_node(parent, categories) }}
                             {% endfor %}
                         </div>
                         {% else %}
@@ -215,7 +170,7 @@
                                     <select name="parent_id" id="categoryParent" class="form-select form-select-sm">
                                         <option value="">-- Без родительской --</option>
                                         {% for cat in categories %}
-                                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                        <option value="{{ cat.id }}">{{ cat.display_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -290,82 +245,100 @@
                         <span class="section-badge">Просмотр</span>
                     </div>
                     <div class="section-card">
-                        {% if regions and regions|length > 0 %}
-                        <div class="categories-tree" id="regionsTree">
-                            {% for region in regions %}
-                            <div class="category-node" data-name="{{ region.name|lower }}">
-                                <div class="node-header">
-                                    {% set region_cities = [] %}
-                                    {% for city in cities %}
-                                    {% if city.region_id == region.id %}
-                                    {% set _ = region_cities.append(city) %}
-                                    {% endif %}
-                                    {% endfor %}
-                                    {% if region_cities %}
-                                    <span class="toggle-icon" onclick="toggleCategory(this)">➕</span>
-                                    {% else %}
-                                    <span class="toggle-icon">├─</span>
-                                    {% endif %}
-                                    <span class="node-icon">📍</span>
-                                    <span class="node-name">{{ region.name }}</span>
-                                    <span class="node-badge">{{ region_cities|length }} гор.</span>
-                                    <div class="node-actions">
-                                        <button class="node-action-btn" title="Добавить город"
-                                            onclick="showAddCityForm({{ region.id }}, '{{ region.name }}')">
+                        {% if regions %}
+
+                        {# --- Recursive Macro for Regions and Cities --- #}
+                        {% macro render_region_node(region) %}
+                        <div class="category-node" data-name="{{ region.name|lower }}"
+                            style="{% if region.parent_id %}margin-left: 20px;{% endif %}">
+                            <div class="node-header">
+                                {% set subregions = region.children|sort(attribute='name') %}
+                                {% set cities = region.cities|sort(attribute='name') %}
+                                {% set has_children = subregions or cities %}
+
+                                {% if has_children %}
+                                <span class="toggle-icon" onclick="toggleCategory(this)">▼</span>
+                                {% else %}
+                                <span class="toggle-icon">●</span>
+                                {% endif %}
+
+                                <span class="node-icon">📍</span>
+                                <span class="node-name">{{ region.name }}</span>
+                                <span class="node-badge" title="Городов в этом регионе">{{ cities|length }} гор.</span>
+
+                                <div class="node-actions">
+                                    {# Добавить город в этот регион #}
+                                    <button class="node-action-btn" title="Добавить город"
+                                        onclick="showAddCityForm({{ region.id }}, '{{ region.name }}')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M12 5v14m-7-7h14"></path>
+                                        </svg>
+                                    </button>
+
+                                    {# Удалить регион #}
+                                    <form method="POST"
+                                        action="{{ url_for('admin_bp.delete_region', region_id=region.id) }}"
+                                        onsubmit="return confirm('Удалить регион и все города?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="node-action-btn" title="Удалить">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="2">
-                                                <path d="M12 5v14m-7-7h14"></path>
+                                                <path d="M3 6h18v2H3V6z"></path>
+                                                <path
+                                                    d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2">
+                                                </path>
                                             </svg>
                                         </button>
-                                        <form method="POST"
-                                            action="{{ url_for('admin_bp.delete_region', region_id=region.id) }}"
-                                            onsubmit="return confirm('Удалить регион и все города?')">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="node-action-btn" title="Удалить">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18v2H3V6z"></path>
-                                                    <path
-                                                        d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2">
-                                                    </path>
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    </div>
+                                    </form>
                                 </div>
+                            </div>
 
-                                {% if region_cities %}
-                                <div class="node-children" style="display: none;">
-                                    {% for city in region_cities %}
-                                    <div class="category-node child-node" data-name="{{ city.name|lower }}">
-                                        <div class="node-header">
-                                            <span class="toggle-icon">└─</span>
-                                            <span class="node-icon">🏙️</span>
-                                            <span class="node-name">{{ city.name }}</span>
-                                            <div class="node-actions">
-                                                <form method="POST"
-                                                    action="{{ url_for('admin_bp.delete_city', city_id=city.id) }}"
-                                                    onsubmit="return confirm('Удалить город?')">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="node-action-btn" title="Удалить">
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                                            stroke="currentColor" stroke-width="2">
-                                                            <path d="M3 6h18v2H3V6z"></path>
-                                                            <path
-                                                                d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2">
-                                                            </path>
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            </div>
+                            {% if has_children %}
+                            <div class="node-children" style="display: block;">
+                                {# Рендерим подрегионы #}
+                                {% for subregion in subregions %}
+                                {{ render_region_node(subregion) }}
+                                {% endfor %}
+
+                                {# Рендерим города этого региона #}
+                                {% for city in cities %}
+                                <div class="category-node child-node" data-name="{{ city.name|lower }}"
+                                    style="margin-left: 20px;">
+                                    <div class="node-header">
+                                        <span class="toggle-icon">●</span> <!-- Город - лист дерева -->
+                                        <span class="node-icon">🏙️</span>
+                                        <span class="node-name text-muted">{{ city.name }}</span>
+                                        <div class="node-actions">
+                                            <form method="POST"
+                                                action="{{ url_for('admin_bp.delete_city', city_id=city.id) }}"
+                                                onsubmit="return confirm('Удалить город?')">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="node-action-btn" title="Удалить">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="2">
+                                                        <path d="M3 6h18v2H3V6z"></path>
+                                                        <path
+                                                            d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M12 10v6m0 0l-2-2m2 2l2-2">
+                                                        </path>
+                                                    </svg>
+                                                </button>
+                                            </form>
                                         </div>
                                     </div>
-                                    {% endfor %}
                                 </div>
-                                {% endif %}
+                                {% endfor %}
                             </div>
+                            {% endif %}
+                        </div>
+                        {% endmacro %}
+
+                        <div class="categories-tree" id="regionsTree">
+                            {% for region in regions %}
+                            {{ render_region_node(region) }}
                             {% endfor %}
                         </div>
+
                         {% else %}
                         <div class="empty-state">
                             <div class="empty-icon">🌍</div>

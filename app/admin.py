@@ -20,7 +20,8 @@ def admin_categories():
         
         if action == 'add_category':
             name = request.form.get('name')
-            parent_id = request.form.get('parent_id') or None
+            parent_id = request.form.get('parent_id')
+            parent_id = int(parent_id) if parent_id else None
             description = request.form.get('description')
             
             if not name:
@@ -36,7 +37,7 @@ def admin_categories():
                 new_category = Category(
                     name=name,
                     description=description,
-                    parent_id=parent_id if parent_id else None
+                    parent_id=parent_id
                 )
                 db.session.add(new_category)
                 db.session.commit()
@@ -48,7 +49,8 @@ def admin_categories():
         elif action == 'edit_category':
             category_id = request.form.get('category_id')
             name = request.form.get('name')
-            parent_id = request.form.get('parent_id') or None
+            parent_id = request.form.get('parent_id')
+            parent_id = int(parent_id) if parent_id else None
             description = request.form.get('description')
             remove_image = request.form.get('remove_image') == 'on'
             
@@ -73,7 +75,7 @@ def admin_categories():
             try:
                 category.name = name
                 category.description = description
-                category.parent_id = parent_id if parent_id else None
+                category.parent_id = parent_id
                 
                 # Обработка изображения
                 if remove_image and category.image:
@@ -166,7 +168,7 @@ def admin_categories():
         
         return redirect(url_for('admin_bp.admin_categories'))
     
-    # ========== ОЧИСТКА НАЗВАНИЙ РЕГИОНОВ ==========
+    # === ОЧИСТКА НАЗВАНИЙ РЕГИОНОВ ===
     # Находим регионы с префиксами (типа "01 - Республика Адыгея")
     regions_to_clean = Region.query.filter(Region.name.like('% - %')).all()
     if regions_to_clean:
@@ -175,11 +177,31 @@ def admin_categories():
             cleaned_name = region.name.split('-', 1)[-1].strip()
             region.name = cleaned_name
         db.session.commit()
-        print(f"DEBUG: Очищены названия {len(regions_to_clean)} регионов")
     
-    # Загружаем категории
-    categories = Category.query.all()
-    parent_categories = Category.query.filter_by(parent_id=None).all()
+    # Helper для рекурсивного списка категорий (для выпадающего списка)
+    def get_category_choices(parent_id=None, level=0):
+        choices = []
+        # Сортировка по алфавиту
+        cats = Category.query.filter_by(parent_id=parent_id).order_by(Category.name).all()
+        for cat in cats:
+            choices.append({
+                'id': cat.id,
+                'name': cat.name,
+                'level': level,
+                'display_name': ('— ' * level) + cat.name
+            })
+            choices.extend(get_category_choices(cat.id, level + 1))
+        return choices
+
+    # Загружаем категории для списка выбора (плоский список с отступами)
+    category_choices = get_category_choices()
+    
+    # Загружаем корневые категории для дерева (сортировка по алфавиту)
+    parent_categories = Category.query.filter_by(parent_id=None).order_by(Category.name).all()
+    
+    # Для совместимости передаем 'categories' как category_choices, чтобы работал селект
+    # Но для дерева используем parent_categories и рекурсивную подгрузку в шаблоне
+    
     total_products = Product.query.count()
     
     # Загружаем регионы
@@ -189,12 +211,12 @@ def admin_categories():
 
     return render_template(
             'admin_categories.html',
-            categories=categories,
-            parent_categories=parent_categories,
+            categories=category_choices,  # Плоский список для select
+            parent_categories=parent_categories, # Корневые для дерева
             total_products=total_products,
-            all_regions=all_regions,      # ← все регионы
-            regions=regions,              # ← родительские регионы
-            child_regions=child_regions   # ← дочерние регионы
+            all_regions=all_regions,      
+            regions=regions,              
+            child_regions=child_regions   
     )
 
 # === РЕГИОНЫ ===
