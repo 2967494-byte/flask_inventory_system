@@ -1485,13 +1485,22 @@
         <div class="layout-sidebar" style="width: 300px; flex-shrink: 0; display: none;">
 
             <!-- Ad Block -->
+            <!-- Ad Block (Banner) -->
+            {% if sidebar_banner %}
+            <div class="ad-block mb-4">
+                <img src="{{ url_for('static', filename='img/ads/' + sidebar_banner) }}" alt="Реклама"
+                    class="img-fluid rounded shadow-sm" style="width: 100%; border: 1px solid #e0e0e0;">
+            </div>
+            {% else %}
+            <!-- Placeholder if no banner -->
             <div class="ad-block"
-                style="background: white; border-radius: 8px; border: 1px solid #e0e0e0; height: 400px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                style="background: white; border-radius: 8px; border: 1px solid #e0e0e0; height: 300px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
                 <div style="text-align: center; color: #999;">
                     <span style="font-size: 14px; display: block; margin-bottom: 8px;">Реклама</span>
-                    <span style="font-size: 24px; opacity: 0.3;">AD</span>
+                    <span style="font-size: 24px; opacity: 0.3;">Место для баннера</span>
                 </div>
             </div>
+            {% endif %}
 
             <!-- News Block -->
             <div class="news-block"

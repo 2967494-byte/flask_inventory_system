@@ -65,11 +65,21 @@ def index():
     # Для плиток категорий (только верхний уровень)
     root_categories = Category.query.filter_by(parent_id=None).order_by(Category.name).all()
     
+    # Check for sidebar banner
+    sidebar_banner = None
+    banner_folder = os.path.join(current_app.static_folder, 'img/ads')
+    if os.path.exists(banner_folder):
+        for ext in ['jpg', 'jpeg', 'png', 'gif']:
+            if os.path.exists(os.path.join(banner_folder, f'sidebar_banner.{ext}')):
+                sidebar_banner = f'sidebar_banner.{ext}'
+                break
+    
     return render_template('main.html', 
                          products=products, 
                          categories=categories,
                          root_categories=root_categories,
-                         search_term=search_term)
+                         search_term=search_term,
+                         sidebar_banner=sidebar_banner)
 
 @main.route('/dashboard')
 @login_required

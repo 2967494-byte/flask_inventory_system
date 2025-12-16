@@ -651,3 +651,57 @@ def toggle_request_status(request_id):
     flash('Статус обновлен', 'success')
     return redirect(url_for('admin_bp.admin_contact_requests'))
 
+@admin_bp.route('/banner', methods=['GET', 'POST'])
+@login_required
+def admin_banner_settings():
+    if not current_user.is_admin:
+        flash('Недостаточно прав', 'error')
+        return redirect(url_for('main.index'))
+    
+    upload_folder = os.path.join(current_app.static_folder, 'img/ads')
+    os.makedirs(upload_folder, exist_ok=True)
+    
+    # Check for existing banner
+    banner_file = None
+    for ext in ['jpg', 'jpeg', 'png', 'gif']:
+        if os.path.exists(os.path.join(upload_folder, f'sidebar_banner.{ext}')):
+            banner_file = f'sidebar_banner.{ext}'
+            break
+            
+    if request.method == 'POST':
+        if 'delete_banner' in request.form:
+            if banner_file:
+                try:
+                    os.remove(os.path.join(upload_folder, banner_file))
+                    flash('Баннер удален', 'success')
+                except Exception as e:
+                    flash(f'Ошибка удаления: {e}', 'error')
+            return redirect(url_for('admin_bp.admin_banner_settings'))
+            
+        if 'banner' not in request.files:
+            flash('Нет файла', 'error')
+            return redirect(request.url)
+            
+        file = request.files['banner']
+        if file.filename == '':
+            flash('Нет выбранного файла', 'error')
+            return redirect(request.url)
+            
+        if file:
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            if ext not in ['jpg', 'jpeg', 'png', 'gif']:
+                flash('Разрешены только изображения (jpg, png, gif)', 'error')
+                return redirect(request.url)
+                
+            # Remove old banner if exists (might have different extension)
+            if banner_file:
+                 try:
+                    os.remove(os.path.join(upload_folder, banner_file))
+                 except: pass
+
+            filename = f'sidebar_banner.{ext}'
+            file.save(os.path.join(upload_folder, filename))
+            flash('Баннер успешно загружен', 'success')
+            return redirect(url_for('admin_bp.admin_banner_settings'))
+
+    return render_template('admin_banner.html', banner_file=banner_file)

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="admin-header">
+        <h1 class="page-title">📢 Управление баннером</h1>
+        <p class="admin-subtitle">Управление рекламным блоком на главной странице</p>
+    </div>
+
+    <!-- Вкладки -->
+    <div class="admin-tabs mb-4">
+        <div class="tabs">
+            <a href="{{ url_for('admin_bp.admin_categories') }}" class="tab-btn">📂 Категории</a>
+            <a href="{{ url_for('admin_bp.admin_users') }}" class="tab-btn">👥 Пользователи</a>
+            <a href="{{ url_for('admin_bp.admin_contact_requests') }}" class="tab-btn">💬 Сообщения</a>
+            <a href="{{ url_for('admin_bp.admin_banner_settings') }}" class="tab-btn active">📢 Баннер</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="admin-section">
+                <h5 class="mb-3">Загрузка изображения</h5>
+                <p class="text-muted small mb-4">
+                    Баннер отображается в правой колонке главной страницы.
+                    Рекомендуемый размер: ширина 250-300px, высота любая (оптимально до 400px).
+                    Поддерживаются форматы: JPG, PNG, GIF.
+                </p>
+
+                <form method="POST" enctype="multipart/form-data" class="mb-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label for="banner" class="form-label fw-bold">Выберите файл</label>
+                        <input class="form-control" type="file" id="banner" name="banner" accept="image/*" required>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            💾 Загрузить и опубликовать
+                        </button>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <h5 class="mb-3">Текущий баннер</h5>
+                {% if banner_file %}
+                <div class="text-center mb-3 p-3 bg-light rounded border">
+                    <img src="{{ url_for('static', filename='img/ads/' + banner_file) }}" alt="Current Banner"
+                        class="img-fluid rounded shadow-sm" style="max-width: 100%; max-height: 400px;">
+                </div>
+                <div class="text-center">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="delete_banner" value="true">
+                        <button type="submit" class="btn btn-outline-danger"
+                            onclick="return confirm('Удалить баннер? Место будет заменено заглушкой.')">
+                            🗑 Удалить баннер
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="alert alert-secondary text-center">
+                    Баннер не установлен. Отображается стандартная заглушка.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* === ЕДИНЫЙ ДИЗАЙН АДМИНКИ === */
+    .admin-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+    .admin-header .page-title {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+
+    .admin-tabs {
+        background: var(--background);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 2px;
+        background: var(--background-secondary);
+        padding: 4px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 14px 20px;
+        background: transparent;
+        border: none;
+        border-radius: calc(var(--radius) - 2px);
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    .tab-btn:hover {
+        background: var(--background);
+        color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+        background: var(--background);
+        color: var(--avito-blue);
+        box-shadow: var(--shadow-light);
+    }
+
+    .admin-section {
+        background: white;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+    }
+
+    @media (max-width: 768px) {
+        .tabs {
+            flex-direction: column;
+        }
+
+        .tab-btn {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>
+{% endblock %}
