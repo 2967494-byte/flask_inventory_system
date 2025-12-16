@@ -134,6 +134,8 @@
         position: relative;
         padding: 4px 10px;
         /* Reduced padding */
+        gap: 10px;
+        /* Consistent gap matching padding */
         background: white;
         border-radius: 10px;
         /* Slightly smaller radius */
@@ -161,7 +163,8 @@
         color: var(--text-primary);
         /* Default text dark */
         line-height: 1.25;
-        margin-right: 16px;
+        margin-right: 0;
+        /* Removed fixed margin */
         z-index: 2;
         transition: color 0.2s ease;
     }
@@ -180,8 +183,8 @@
         margin-bottom: 0;
         border: none;
         overflow: hidden;
-        margin-left: auto;
-        /* Push to right */
+        margin-left: 0;
+        /* Removed auto margin property */
         flex-shrink: 0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
