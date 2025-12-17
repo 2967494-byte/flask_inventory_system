@@ -111,6 +111,8 @@ def create_app():
     
     # Обработчик ошибок CSRF
     from flask_wtf.csrf import CSRFError
+    from werkzeug.exceptions import HTTPException
+    
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
         return render_template('csrf_error.html', reason=e.description), 400
@@ -125,7 +127,7 @@ def create_app():
     @app.errorhandler(Exception)
     def handle_exception(e):
         # Pass through HTTP errors
-        if hasattr(e, 'code'):
+        if isinstance(e, HTTPException):
             return e
             
         # Handle non-HTTP exceptions
