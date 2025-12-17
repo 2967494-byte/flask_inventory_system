@@ -1,5 +1,3 @@
-# 1. Восстановим оригинальный config.py, но с правильным паролем
-cat > /opt/flask_inventory_system/config.py << 'EOF'
 import os
 import tempfile
 
@@ -22,16 +20,14 @@ class Config:
         
         SQLALCHEMY_DATABASE_URI = database_url
         DEBUG = False
-        # print(f"🚀 ПРОДАКШЕН: Используется PostgreSQL с psycopg3")
         
         # В продакшене используем временную папку (лучше настроить S3 в будущем)
         UPLOAD_FOLDER = '/opt/flask_inventory_system/app/static/uploads'
         
     else:
-        # Локальная разработка - ОБНОВЛЕН ПАРОЛЬ!
-        SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://postgres:Mat604192@localhost:5432/flask_inventory'
+        # Локальная разработка
+        SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://postgres:postgres@localhost:5432/flask_inventory'
         DEBUG = True
-        # print("💻 РАЗРАБОТКА: Локальный PostgreSQL")
         
         UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'static', 'uploads')
     
@@ -41,7 +37,7 @@ class Config:
 
     # Telegram Bot настройки
     TELEGRAM_BOT_TOKEN = '8576859315:AAFUsWf2_L2ZaJEE8lUxTgOxK_e2IlOTnD0' 
-    TELEGRAM_CHAT_ID = '390300'  # Ваш Chat ID
+    TELEGRAM_CHAT_ID = '390300'
     TELEGRAM_ENABLED = True
 
     # Email settings
@@ -54,30 +50,3 @@ class Config:
 
     # DaData API
     DADATA_API_KEY = os.environ.get('DADATA_API_KEY') or '101eb3d6682561b0db5bf155c592a3f8dad52dcf'
-EOF
-
-# 2. Добавим load_dotenv() в app/__init__.py перед созданием приложения
-sed -i '1s/^/from dotenv import load_dotenv\nload_dotenv()\n/' /opt/flask_inventory_system/app/__init__.py
-
-# 3. Проверим, что добавилось
-head -10 /opt/flask_inventory_system/app/__init__.py
-
-# 4. Проверим работу приложения
-cd /opt/flask_inventory_system
-python3 -c "
-from app import create_app
-app = create_app()
-print('Приложение создано успешно!')
-print('DATABASE_URL:', app.config['SQLALCHEMY_DATABASE_URI'])
-print('DEBUG:', app.config['DEBUG'])
-"
-
-# 5. Запустим gunicorn для теста
-pkill -f gunicorn
-sudo -u www-data /opt/flask_inventory_system/venv/bin/gunicorn \
-    --workers 1 \
-    --bind 127.0.0.1:8000 \
-    wsgi:app &
-sleep 3
-curl -s http://127.0.0.1:8000/ | head -20 || echo "Ошибка"
-pkill -f gunicorn

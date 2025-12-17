@@ -252,3 +252,14 @@ def register_captcha():
     code, image_io = generate_captcha_image()
     session['register_captcha'] = code
     return send_file(image_io, mimetype='image/png')
+
+@auth.route('/validate_captcha', methods=['POST'])
+def validate_captcha():
+    data = request.get_json()
+    captcha_input = data.get('captcha', '')
+    captcha_session = session.get('register_captcha', '')
+    
+    if not captcha_input or captcha_input != captcha_session:
+        return {'valid': False}, 200
+    
+    return {'valid': True}, 200
