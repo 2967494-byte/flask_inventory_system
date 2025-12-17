@@ -48,7 +48,7 @@
                     <script>
                         const INITIAL_PATH = [
                             {% for cat in category_path %}
-                        { id: { { cat.id } }, name: "{{ cat.name }}" },
+                        { id: {{ cat.id }}, name: {{ cat.name | tojson }} },
                         {% endfor %}
                         ];
 
@@ -68,6 +68,12 @@
                                 const nextId = INITIAL_PATH[i + 1].id;
 
                                 await loadNextLevel(parentId, i + 1, nextId);
+                            }
+
+                            // Load children for the last item in the path (to allow selecting deeper levels)
+                            if (INITIAL_PATH.length > 0) {
+                                const lastItem = INITIAL_PATH[INITIAL_PATH.length - 1];
+                                await loadNextLevel(lastItem.id, INITIAL_PATH.length, null);
                             }
                         }
 
@@ -1093,7 +1099,7 @@
                     citySelect.appendChild(option);
                 });
                 citySelect.disabled = false;
-                const savedCityId = {{ product.city_id| tojson | safe
+                const savedCityId = {{ product.city_id | tojson | safe
             }};
     if (savedCityId) citySelect.value = savedCityId;
         })
