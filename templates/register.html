@@ -9,18 +9,20 @@
         <p class="page-subtitle">Создайте аккаунт для вашей компании</p>
     </div>
 
-    <form method="POST">
+    <form method="POST" id="registration-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <!-- ✅ ДОБАВЛЕНО: Поле для username -->
         <div class="form-group">
             <label class="form-label">Имя пользователя (логин) *</label>
-            <input type="text" name="username" class="form-control" placeholder="mycompany" required>
+            <input type="text" name="username" class="form-control" placeholder="mycompany" required
+                value="{{ request.form.get('username', '') }}">
             <small class="text-muted">Будет отображаться в системе. Можно использовать латинские буквы и цифры.</small>
         </div>
 
         <div class="form-group">
             <label class="form-label">Email *</label>
-            <input type="email" name="email" class="form-control" placeholder="contact@company.ru" required>
+            <input type="email" name="email" class="form-control" placeholder="contact@company.ru" required
+                value="{{ request.form.get('email', '') }}">
         </div>
 
         <div class="form-group">
@@ -37,13 +39,14 @@
         <div class="form-group">
             <label class="form-label">Название организации *</label>
             <input type="text" name="company_name" class="form-control bg-light"
-                placeholder="ООО 'Ромашка' (Заполнится автоматически)" readonly required>
+                placeholder="ООО 'Ромашка' (Заполнится автоматически)" readonly required
+                value="{{ request.form.get('company_name', '') }}">
         </div>
 
         <div class="form-group">
             <label class="form-label">ИНН *</label>
             <input type="text" name="inn" class="form-control" placeholder="1234567890" maxlength="12"
-                pattern="[0-9]{10,12}" required>
+                pattern="[0-9]{10,12}" required value="{{ request.form.get('inn', '') }}">
             <small class="text-muted">Введите ИНН и нажмите кнопку поиска</small>
         </div>
 
@@ -52,14 +55,14 @@
                 <div class="form-group">
                     <label class="form-label">КПП</label>
                     <input type="text" name="kpp" class="form-control bg-light" placeholder="Заполнится автоматически"
-                        readonly>
+                        readonly value="{{ request.form.get('kpp', '') }}">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">ОГРН</label>
                     <input type="text" name="ogrn" class="form-control bg-light" placeholder="Заполнится автоматически"
-                        readonly>
+                        readonly value="{{ request.form.get('ogrn', '') }}">
                 </div>
             </div>
         </div>
@@ -67,43 +70,53 @@
         <div class="form-group">
             <label class="form-label">Юридический адрес *</label>
             <input type="text" name="legal_address" class="form-control bg-light"
-                placeholder="г. Москва, ул. Примерная, д. 1 (Заполнится автоматически)" readonly required>
+                placeholder="г. Москва, ул. Примерная, д. 1 (Заполнится автоматически)" readonly required
+                value="{{ request.form.get('legal_address', '') }}">
         </div>
 
         <div class="form-group">
             <label class="form-label">ФИО контактного лица *</label>
-            <input type="text" name="contact_person" class="form-control" placeholder="Иванов Иван Иванович" required>
+            <input type="text" name="contact_person" class="form-control" placeholder="Иванов Иван Иванович" required
+                value="{{ request.form.get('contact_person', '') }}">
         </div>
 
         <div class="form-group">
             <label class="form-label">Должность *</label>
-            <input type="text" name="position" class="form-control" placeholder="Менеджер по закупкам" required>
+            <input type="text" name="position" class="form-control" placeholder="Менеджер по закупкам" required
+                value="{{ request.form.get('position', '') }}">
         </div>
 
         <div class="form-group">
             <label class="form-label">Телефон *</label>
-            <input type="tel" name="phone" class="form-control" placeholder="+7 (999) 123-45-67" required>
+            <input type="tel" name="phone" class="form-control" placeholder="+7 (999) 123-45-67" required
+                value="{{ request.form.get('phone', '') }}">
         </div>
 
         <div class="form-group">
             <label class="form-label">Сфера деятельности</label>
             <select name="industry" class="form-select">
                 <option value="">-- Выберите сферу деятельности --</option>
-                <option value="production">Производство</option>
-                <option value="wholesale">Оптовая торговля</option>
-                <option value="retail">Розничная торговля</option>
-                <option value="services">Услуги</option>
-                <option value="logistics">Логистика</option>
-                <option value="construction">Строительство</option>
-                <option value="it">IT-технологии</option>
-                <option value="other">Другое</option>
+                <option value="production" {% if request.form.get('industry')=='production' %}selected{% endif %}>
+                    Производство</option>
+                <option value="wholesale" {% if request.form.get('industry')=='wholesale' %}selected{% endif %}>Оптовая
+                    торговля</option>
+                <option value="retail" {% if request.form.get('industry')=='retail' %}selected{% endif %}>Розничная
+                    торговля</option>
+                <option value="services" {% if request.form.get('industry')=='services' %}selected{% endif %}>Услуги
+                </option>
+                <option value="logistics" {% if request.form.get('industry')=='logistics' %}selected{% endif %}>
+                    Логистика</option>
+                <option value="construction" {% if request.form.get('industry')=='construction' %}selected{% endif %}>
+                    Строительство</option>
+                <option value="it" {% if request.form.get('industry')=='it' %}selected{% endif %}>IT-технологии</option>
+                <option value="other" {% if request.form.get('industry')=='other' %}selected{% endif %}>Другое</option>
             </select>
         </div>
 
         <div class="form-group">
             <label class="form-label">О компании</label>
             <textarea name="about" class="form-control" rows="3"
-                placeholder="Краткое описание деятельности компании"></textarea>
+                placeholder="Краткое описание деятельности компании">{{ request.form.get('about', '') }}</textarea>
         </div>
 
         <div class="form-group mb-4">
@@ -134,7 +147,8 @@
 
         <div class="form-group">
             <div class="form-check">
-                <input type="checkbox" name="agree_terms" class="form-check-input" id="agree_terms" required>
+                <input type="checkbox" name="agree_terms" class="form-check-input" id="agree_terms" required {% if
+                    request.form.get('agree_terms') %}checked{% endif %}>
                 <label class="form-check-label" for="agree_terms">
                     Я согласен с <a href="#" class="text-avito-blue">условиями использования</a>
                     и <a href="{{ url_for('main.privacy_policy') }}" target="_blank" class="text-avito-blue">политикой

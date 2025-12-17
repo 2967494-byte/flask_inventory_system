@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const form = document.querySelector('form');
+    const form = document.getElementById('registration-form');
     const captchaInput = document.getElementById('register-captcha-input');
     const csrfToken = document.querySelector('input[name="csrf_token"]').value;
 
-    if (form && captchaInput) {
+    if (form) {
         // Clear validity on input so user can type
         captchaInput.addEventListener('input', function () {
             this.setCustomValidity('');

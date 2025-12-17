@@ -27,7 +27,7 @@ def register():
             
             if not captcha_input or captcha_input != captcha_session:
                 flash('Неверный код с картинки', 'error')
-                return redirect(url_for('auth.register'))
+                return render_template('register.html')
 
             email = request.form['email']
             password = request.form['password']
@@ -36,19 +36,19 @@ def register():
             
             if password != confirm_password:
                 flash('Пароли не совпадают', 'error')
-                return redirect(url_for('auth.register'))
+                return render_template('register.html')
             
             if User.query.filter_by(email=email).first():
                 flash('Пользователь с таким email уже существует', 'error')
-                return redirect(url_for('auth.register'))
+                return render_template('register.html')
             
             if User.query.filter_by(username=username).first():
                 flash('Пользователь с таким именем пользователя уже существует', 'error')
-                return redirect(url_for('auth.register'))
+                return render_template('register.html')
             
             if 'agree_terms' not in request.form:
                 flash('Необходимо согласие с условиями использования', 'error')
-                return redirect(url_for('auth.register'))
+                return render_template('register.html')
             
             new_user = User(
                 email=email,
@@ -125,7 +125,7 @@ def register():
         except Exception as e:
             db.session.rollback()
             flash(f'Ошибка при регистрации: {str(e)}', 'error')
-            return redirect(url_for('auth.register'))
+            return render_template('register.html')
     
     return render_template('register.html')
 
