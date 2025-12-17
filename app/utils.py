@@ -261,3 +261,13 @@ def get_category_choices(parent_id=None, level=0):
         })
         choices.extend(get_category_choices(cat.id, level + 1))
     return choices
+
+def format_price(value):
+    """Форматирует цену с пробелом в качестве разделителя тысяч."""
+    if value is None:
+        return ""
+    try:
+        # Приводим к float, форматируем без десятичных знаков, заменяем запятую на пробел
+        return "{:,.0f}".format(float(value)).replace(",", " ")
+    except (ValueError, TypeError):
+        return str(value)

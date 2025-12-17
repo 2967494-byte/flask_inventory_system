@@ -59,6 +59,11 @@ def create_app():
     login_manager.login_message = 'Пожалуйста, войдите в систему для доступа к этой странице.'
     login_manager.login_message_category = 'info'
     
+    # Регистрация фильтров
+    from app.utils import format_price
+    app.jinja_env.filters['format_price'] = format_price
+
+    
     @login_manager.user_loader
     def load_user(user_id):
         from app.models import User
@@ -94,6 +99,10 @@ def create_app():
     app.register_blueprint(api_bp)
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(admin_bp)
+
+    from app.blueprints.monitoring import monitoring_bp
+    app.register_blueprint(monitoring_bp)
+
     from flask_admin import Admin
     from flask_admin.contrib.sqla import ModelView
 

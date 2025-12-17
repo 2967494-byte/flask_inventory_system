@@ -705,3 +705,11 @@ def admin_banner_settings():
             return redirect(url_for('admin_bp.admin_banner_settings'))
 
     return render_template('admin_banner.html', banner_file=banner_file)
+
+@admin_bp.route('/monitoring')
+@login_required
+def admin_monitoring():
+    if not current_user.is_admin:
+        flash('У вас нет прав доступа', 'error')
+        return redirect(url_for('main.index'))
+    return render_template('admin_monitoring.html')

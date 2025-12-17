@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="admin-header">
+        <h1 class="page-title">🩺 Мониторинг системы</h1>
+        <p class="admin-subtitle">Состояние серверов, приложения и инфраструктуры</p>
+    </div>
+
+    <!-- Вкладки (как в остальных админках) -->
+    <div class="admin-tabs mb-4">
+        <div class="tabs">
+            <a href="{{ url_for('admin_bp.admin_categories') }}" class="tab-btn">📂 Категории</a>
+            <a href="{{ url_for('admin_bp.admin_users') }}" class="tab-btn">👥 Пользователи</a>
+            <a href="{{ url_for('admin_bp.admin_contact_requests') }}" class="tab-btn">💬 Сообщения</a>
+            <a href="{{ url_for('admin_bp.admin_banner_settings') }}" class="tab-btn">📢 Баннер</a>
+            <a href="{{ url_for('admin_bp.admin_monitoring') }}" class="tab-btn active">🩺 Мониторинг</a>
+        </div>
+    </div>
+
+    <!-- Основные метрики GRID -->
+    <div class="row mb-4">
+        <!-- Application Status -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body text-center">
+                    <h5 class="text-muted mb-3">Приложение (DB)</h5>
+                    <div id="app-status-icon" class="status-icon mb-2">🔄</div>
+                    <div id="app-status-text" class="h4">Загрузка...</div>
+                    <small id="app-db-status" class="text-muted d-block mt-2">DB: ...</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Uptime -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body text-center">
+                    <h5 class="text-muted mb-3">Время работы (Uptime)</h5>
+                    <div class="display-4 mb-2">⏱️</div>
+                    <div id="uptime-text" class="h4">...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Basic Health -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body text-center">
+                    <h5 class="text-muted mb-3">Базовая проверка (Basic)</h5>
+                    <div id="basic-status-icon" class="status-icon mb-2">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                    <div id="basic-status-text" class="h4">Ожидание...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики и Детали -->
+    <div class="row">
+        <!-- CPU & RAM -->
+        <div class="col-md-6 mb-4">
+            <div class="admin-section h-100">
+                <h5 class="mb-4">Нагрузка на сервер</h5>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>CPU Usage</span>
+                        <span id="cpu-val" class="fw-bold">0%</span>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div id="cpu-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>RAM Usage</span>
+                        <span id="ram-val" class="fw-bold">0 / 0 GB</span>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div id="ram-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border mt-4">
+                    <strong>Инфраструктура:</strong>
+                    <ul class="mb-0 mt-2 smaller">
+                        <li>CPU %: <span id="cpu-detail">0</span></li>
+                        <li>RAM Free: <span id="ram-free">0</span> MB</li>
+                        <li>Disk Free: <span id="disk-free">0</span> GB</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log / Raw Data -->
+        <div class="col-md-6 mb-4">
+            <div class="admin-section h-100">
+                <h5 class="mb-3">Сырые данные (JSON)</h5>
+                <pre id="raw-json" class="bg-light p-3 rounded"
+                    style="font-size: 11px; height: 300px; overflow: auto; border: 1px solid #eee;">
+Waiting for data...
+                </pre>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="refreshAll()">🔄 Обновить сейчас</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function formatBytes(bytes, decimals = 2) {
+        if (!+bytes) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    }
+
+    function formatTime(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        return `${h}ч ${m}м`;
+    }
+
+    function updateBasic() {
+        fetch('/monitoring/basic')
+            .then(res => res.json())
+            .then(data => {
+                const icon = document.getElementById('basic-status-icon');
+                const text = document.getElementById('basic-status-text');
+                if (data.status === 'ok') {
+                    icon.innerHTML = '✅';
+                    text.innerText = 'Доступен';
+                    icon.className = 'status-icon text-success mb-2';
+                } else {
+                    icon.innerHTML = '❌';
+                    text.innerText = 'Ошибка';
+                    icon.className = 'status-icon text-danger mb-2';
+                }
+            })
+            .catch(err => {
+                document.getElementById('basic-status-text').innerText = 'Сбой сети';
+            });
+    }
+
+    function updateApp() {
+        fetch('/monitoring/app')
+            .then(res => res.json())
+            .then(data => {
+                const icon = document.getElementById('app-status-icon');
+                const text = document.getElementById('app-status-text');
+                const dbText = document.getElementById('app-db-status');
+
+                if (data.status === 'ok') {
+                    icon.innerHTML = '🟢';
+                    text.innerText = 'Работает';
+                    icon.className = 'status-icon text-success mb-2';
+                    dbText.innerHTML = `DB Connection: <span class="text-success">OK</span>`;
+                } else {
+                    icon.innerHTML = '🔴';
+                    text.innerText = 'Проблема';
+                    icon.className = 'status-icon text-danger mb-2';
+                    dbText.innerHTML = `DB Error: <span class="text-danger">${data.details.database}</span>`;
+                }
+            });
+    }
+
+    function updateInfra() {
+        fetch('/monitoring/infra')
+            .then(res => res.json())
+            .then(data => {
+                // Raw JSON
+                document.getElementById('raw-json').innerText = JSON.stringify(data, null, 2);
+
+                // CPU
+                const cpu = data.cpu.percent;
+                document.getElementById('cpu-val').innerText = cpu + '%';
+                document.getElementById('cpu-bar').style.width = cpu + '%';
+                document.getElementById('cpu-detail').innerText = cpu;
+
+                // RAM
+                const mem = data.memory;
+                const memUsed = formatBytes(mem.used);
+                const memTotal = formatBytes(mem.total);
+                document.getElementById('ram-val').innerText = `${memUsed} / ${memTotal}`;
+                document.getElementById('ram-bar').style.width = mem.percent + '%';
+                document.getElementById('ram-free').innerText = formatBytes(mem.available);
+
+                // Disk
+                document.getElementById('disk-free').innerText = formatBytes(data.disk.free);
+
+                // Uptime
+                document.getElementById('uptime-text').innerText = formatTime(data.uptime_seconds);
+            });
+    }
+
+    function refreshAll() {
+        updateBasic();
+        updateApp();
+        updateInfra();
+    }
+
+    // Auto-refresh every 5 seconds
+    setInterval(refreshAll, 5000);
+    // Initial load
+    refreshAll();
+</script>
+
+<style>
+    .status-icon {
+        font-size: 40px;
+    }
+
+    /* Copied Styles from Admin Panel */
+    .admin-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+    .admin-header .page-title {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+
+    .admin-tabs {
+        background: var(--background);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 2px;
+        background: var(--background-secondary);
+        padding: 4px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 14px 20px;
+        background: transparent;
+        border: none;
+        border-radius: calc(var(--radius) - 2px);
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    .tab-btn:hover {
+        background: var(--background);
+        color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+        background: var(--background);
+        color: var(--avito-blue);
+        box-shadow: var(--shadow-light);
+    }
+
+    .admin-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+    }
+
+    @media (max-width: 768px) {
+        .tabs {
+            flex-direction: column;
+        }
+
+        .tab-btn {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+{% endblock %}

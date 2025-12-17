@@ -33,7 +33,7 @@
 
             <!-- Price -->
             <div class="card-price">
-                {{ "%.0f"|format(product.price) }} ₽
+                {{ product.price|format_price }} ₽
             </div>
 
             <!-- Meta: Date, Views, Favorite -->

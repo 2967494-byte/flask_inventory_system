@@ -9,10 +9,11 @@
         </a>
         <span class="text-muted small">ID: {{ product.id }}</span>
     </div>
-    
+
     <!-- Баннер статуса -->
     {% if product.status != product.STATUS_PUBLISHED %}
-    <div class="status-banner {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}status-ready{% elif product.status == product.STATUS_UNPUBLISHED %}status-unpublished{% else %}status-review{% endif %} mb-4">
+    <div
+        class="status-banner {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}status-ready{% elif product.status == product.STATUS_UNPUBLISHED %}status-unpublished{% else %}status-review{% endif %} mb-4">
         {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}
         ⏰ Срок публикации истек. Товар виден только вам.
         {% elif product.status == product.STATUS_UNPUBLISHED %}
@@ -22,7 +23,7 @@
         {% endif %}
     </div>
     {% endif %}
-    
+
     <div class="product-details-container">
         <!-- Заголовок товара -->
         <div class="product-title-section mb-4">
@@ -34,47 +35,45 @@
             </div>
             {% endif %}
         </div>
-        
+
         <div class="product-layout">
             <!-- Левая колонка: Галерея и информация -->
             <div class="product-left-column">
                 <!-- Галерея изображений -->
                 <div class="product-gallery mb-4">
-                    {% set image_list = product.images.split(',') if product.images and ',' in product.images else ([product.images] if product.images else []) %}
+                    {% set image_list = product.images.split(',') if product.images and ',' in product.images else
+                    ([product.images] if product.images else []) %}
                     {% if image_list and image_list|length > 0 %}
-                        <div class="main-image">
-                            <img src="{{ url_for('main.serve_uploaded_file', filename=image_list[0]) }}" 
-                                alt="{{ product.title }}" 
-                                id="mainImage"
-                                onerror="this.src='/static/images/no-image.png'">
-                        </div>
-                        {% if image_list|length > 1 %}
-                        <div class="image-thumbnails mt-3">
-                            {% for image in image_list %}
-                            <img src="{{ url_for('main.serve_uploaded_file', filename=image) }}" 
-                                alt="{{ product.title }}" 
-                                class="thumbnail {% if loop.first %}active{% endif %}"
-                                onclick="changeImage(this)"
-                                onerror="this.src='/static/images/no-image.png'">
-                            {% endfor %}
-                        </div>
-                        {% endif %}
+                    <div class="main-image">
+                        <img src="{{ url_for('main.serve_uploaded_file', filename=image_list[0]) }}"
+                            alt="{{ product.title }}" id="mainImage" onerror="this.src='/static/images/no-image.png'">
+                    </div>
+                    {% if image_list|length > 1 %}
+                    <div class="image-thumbnails mt-3">
+                        {% for image in image_list %}
+                        <img src="{{ url_for('main.serve_uploaded_file', filename=image) }}" alt="{{ product.title }}"
+                            class="thumbnail {% if loop.first %}active{% endif %}" onclick="changeImage(this)"
+                            onerror="this.src='/static/images/no-image.png'">
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                     {% else %}
-                        <div class="main-image no-image d-flex align-items-center justify-content-center">
-                            <div class="text-center">
-                                <div class="no-image-icon text-muted mb-2">
-                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                        <polyline points="21 15 16 10 5 21"></polyline>
-                                    </svg>
-                                </div>
-                                <span class="text-muted">Нет изображения</span>
+                    <div class="main-image no-image d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="no-image-icon text-muted mb-2">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
                             </div>
+                            <span class="text-muted">Нет изображения</span>
                         </div>
+                    </div>
                     {% endif %}
                 </div>
-                
+
                 <!-- Характеристики товара -->
                 <div class="product-specs-card mb-4">
                     <h3 class="mb-3"><i class="specs-icon">📋</i> Характеристики</h3>
@@ -85,29 +84,31 @@
                             <span class="spec-value">{{ product.manufacturer }}</span>
                         </div>
                         {% endif %}
-                        
+
                         <div class="spec-item">
                             <span class="spec-label">Количество</span>
                             <span class="spec-value">{{ product.quantity }} шт.</span>
                         </div>
-                        
+
                         <div class="spec-item">
                             <span class="spec-label">Доставка</span>
-                            <span class="spec-value">{% if product.delivery %}Доступна{% else %}Не доступна{% endif %}</span>
+                            <span class="spec-value">{% if product.delivery %}Доступна{% else %}Не доступна{% endif
+                                %}</span>
                         </div>
 
                         <div class="spec-item">
                             <span class="spec-label">Категория</span>
-                            <span class="spec-value">{{ product.product_category.name if product.product_category else 'Не указана' }}</span>
+                            <span class="spec-value">{{ product.product_category.name if product.product_category else
+                                'Не указана' }}</span>
                         </div>
-                        
+
                         <div class="spec-item">
                             <span class="spec-label">Дата добавления</span>
                             <span class="spec-value">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Описание -->
                 <div class="product-description-card">
                     <div class="description-header d-flex justify-content-between align-items-center mb-3">
@@ -126,7 +127,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Правая колонка: Липкий блок -->
             <div class="product-right-column">
                 <!-- Липкий блок: Цена, действия, контакты -->
@@ -137,15 +138,17 @@
                             <!-- Цена с адаптивным размером -->
                             <div class="price-container flex-grow-1">
                                 <div class="product-price" data-price="{{ product.price }}">
-                                    {{ "%.2f"|format(product.price) }} ₽
+                                    {{ product.price|format_price }} ₽
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-1 flex-shrink-0">
                                 <!-- Выпадающий список "..." для владельца/админа -->
                                 {% if current_user.id == product.user_id or current_user.role == 'admin' %}
                                 <div class="dropdown product-actions-dropdown">
-                                    <button class="btn-actions-dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <button class="btn-actions-dropdown" type="button" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
                                             <circle cx="12" cy="5" r="1"></circle>
                                             <circle cx="12" cy="12" r="1"></circle>
                                             <circle cx="12" cy="19" r="1"></circle>
@@ -154,17 +157,20 @@
                                     <ul class="dropdown-menu">
                                         {% if current_user.id == product.user_id %}
                                         <li>
-                                            <a class="dropdown-item" href="{{ url_for('main.edit_product', product_id=product.id) }}">
+                                            <a class="dropdown-item"
+                                                href="{{ url_for('main.edit_product', product_id=product.id) }}">
                                                 <i class="action-modern-icon">✏️</i> Редактировать
                                             </a>
                                         </li>
                                         {% endif %}
-                                        
-                                        {% if product.status == product.STATUS_PUBLISHED and current_user.id == product.user_id %}
+
+                                        {% if product.status == product.STATUS_PUBLISHED and current_user.id ==
+                                        product.user_id %}
                                         <li>
-                                            <form method="POST" action="{{ url_for('main.unpublish_product', product_id=product.id) }}" 
-                                                  onsubmit="return confirm('Снять товар с публикации? Он станет виден только вам.')"
-                                                  class="dropdown-form">
+                                            <form method="POST"
+                                                action="{{ url_for('main.unpublish_product', product_id=product.id) }}"
+                                                onsubmit="return confirm('Снять товар с публикации? Он станет виден только вам.')"
+                                                class="dropdown-form">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="dropdown-item">
                                                     <i class="action-modern-icon">⏸️</i> Снять с публикации
@@ -172,11 +178,13 @@
                                             </form>
                                         </li>
                                         {% endif %}
-                                        
-                                        {% if product.status in [product.STATUS_READY_FOR_PUBLICATION, product.STATUS_UNPUBLISHED] and current_user.id == product.user_id %}
+
+                                        {% if product.status in [product.STATUS_READY_FOR_PUBLICATION,
+                                        product.STATUS_UNPUBLISHED] and current_user.id == product.user_id %}
                                         <li>
-                                            <form method="POST" action="{{ url_for('main.renew_product', product_id=product.id) }}"
-                                                  class="dropdown-form">
+                                            <form method="POST"
+                                                action="{{ url_for('main.renew_product', product_id=product.id) }}"
+                                                class="dropdown-form">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="dropdown-item">
                                                     <i class="action-modern-icon">📤</i> Опубликовать
@@ -184,12 +192,15 @@
                                             </form>
                                         </li>
                                         {% endif %}
-                                        
-                                        <li><hr class="dropdown-divider"></li>
+
                                         <li>
-                                            <form method="POST" action="{{ url_for('main.delete_product', product_id=product.id) }}" 
-                                                  onsubmit="return confirm('Вы уверены, что хотите удалить этот товар?')"
-                                                  class="dropdown-form">
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <form method="POST"
+                                                action="{{ url_for('main.delete_product', product_id=product.id) }}"
+                                                onsubmit="return confirm('Вы уверены, что хотите удалить этот товар?')"
+                                                class="dropdown-form">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="dropdown-item text-danger">
                                                     <i class="action-modern-icon">🗑️</i> Удалить товар
@@ -199,42 +210,47 @@
                                     </ul>
                                 </div>
                                 {% endif %}
-                                
+
                                 <!-- Избранное -->
                                 {% if current_user.is_authenticated %}
-                                <form method="POST" action="{{ url_for('main.toggle_favorite', product_id=product.id) }}" 
-                                      class="favorite-form">
+                                <form method="POST"
+                                    action="{{ url_for('main.toggle_favorite', product_id=product.id) }}"
+                                    class="favorite-form">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="favorite-icon-btn {% if product in current_user.favorited_products %}active{% endif %}"
-                                            title="{% if product in current_user.favorited_products %}Удалить из избранного{% else %}Добавить в избранное{% endif %}">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="{% if product in current_user.favorited_products %}red{% else %}none{% endif %}" 
-                                             stroke="{% if product in current_user.favorited_products %}red{% else %}gray{% endif %}" 
-                                             stroke-width="2">
-                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    <button type="submit"
+                                        class="favorite-icon-btn {% if product in current_user.favorited_products %}active{% endif %}"
+                                        title="{% if product in current_user.favorited_products %}Удалить из избранного{% else %}Добавить в избранное{% endif %}">
+                                        <svg width="20" height="20" viewBox="0 0 24 24"
+                                            fill="{% if product in current_user.favorited_products %}red{% else %}none{% endif %}"
+                                            stroke="{% if product in current_user.favorited_products %}red{% else %}gray{% endif %}"
+                                            stroke-width="2">
+                                            <path
+                                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                                            </path>
                                         </svg>
                                     </button>
                                 </form>
                                 {% endif %}
                             </div>
                         </div>
-                        
+
                         <!-- НДС -->
                         <div class="vat-status mt-2">
                             {% if product.vat_included %}
-                                <span class="vat-label vat-included">С НДС</span>
+                            <span class="vat-label vat-included">С НДС</span>
                             {% else %}
-                                <span class="vat-label vat-excluded">Без НДС</span>
+                            <span class="vat-label vat-excluded">Без НДС</span>
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     {% if product.quantity > 1 %}
                     <div class="product-quantity text-muted mb-3 py-2 border-top border-bottom">
                         <i class="quantity-icon">📦</i>
                         <span>В наличии: {{ product.quantity }} шт.</span>
                     </div>
                     {% endif %}
-                    
+
                     <!-- Контактная информация (только для опубликованных или владельца) -->
                     {% if product.status == product.STATUS_PUBLISHED or current_user.id == product.user_id %}
                     <div class="contact-section mb-4">
@@ -245,65 +261,56 @@
                                     <i class="avatar-icon">👤</i>
                                 </div>
                                 <div class="seller-details">
-                                    <div class="seller-name fw-bold" 
-                                        onclick="openSellerProfile({{ product.user_id }})"
+                                    <div class="seller-name fw-bold" onclick="openSellerProfile({{ product.user_id }})"
                                         style="cursor: pointer; color: #0057FF; text-decoration: none;">
                                         {% if product.owner.username %}
-                                            {{ product.owner.username }}
+                                        {{ product.owner.username }}
                                         {% elif product.owner.company_name %}
-                                            {{ product.owner.company_name }}
+                                        {{ product.owner.company_name }}
                                         {% else %}
-                                            {{ product.owner.email.split('@')[0] }}
+                                        {{ product.owner.email.split('@')[0] }}
                                         {% endif %}
                                     </div>
                                     <div class="seller-rating">
                                         {% set avg_rating = product.owner.average_rating %}
                                         <span class="stars text-warning">
                                             {% for i in range(1, 6) %}
-                                                {% if avg_rating > 0 and i <= avg_rating|round %}
-                                                    ★
-                                                {% else %}
-                                                    ☆
-                                                {% endif %}
-                                            {% endfor %}
-                                        </span>
-                                        <span class="rating-text text-muted ms-1">
-                                            {% if avg_rating > 0 %}
-                                                {{ "%.1f"|format(avg_rating) }} • {{ product.owner.reviews_count }} {{ 'отзыв' if product.owner.reviews_count == 1 else 'отзыва' if 2 <= product.owner.reviews_count <= 4 else 'отзывов' }}
-                                            {% else %}
-                                                Нет отзывов
-                                            {% endif %}
-                                        </span>
+                                            {% if avg_rating > 0 and i <= avg_rating|round %} ★ {% else %} ☆ {% endif %}
+                                                {% endfor %} </span>
+                                                <span class="rating-text text-muted ms-1">
+                                                    {% if avg_rating > 0 %}
+                                                    {{ "%.1f"|format(avg_rating) }} • {{ product.owner.reviews_count }}
+                                                    {{ 'отзыв' if product.owner.reviews_count == 1 else 'отзыва' if 2 <=
+                                                        product.owner.reviews_count <=4 else 'отзывов' }} {% else %} Нет
+                                                        отзывов {% endif %} </span>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Кнопка для модального окна с отзывами -->
-                                <div class="seller-reviews-link mb-3">
-                                    <button type="button" 
-                                            class="btn btn-outline-primary btn-sm w-100"
-                                            onclick="openReviewsModal({{ product.user_id }})">
-                                        <i class="bi bi-star-fill me-1"></i>
-                                        Посмотреть все отзывы 
-                                        {% if product.owner.reviews_count > 0 %}
-                                            ({{ product.owner.reviews_count }})
-                                        {% endif %}
-                                    </button>
-                                    {% if current_user.is_authenticated and current_user.id != product.user_id %}
-                                    <button type="button" 
-                                            class="btn btn-outline-success btn-sm w-100 mt-2"
-                                            onclick="openReviewFormModal({{ product.user_id }})">
-                                        <i class="bi bi-chat-left-text me-1"></i>
-                                        Оставить отзыв
-                                    </button>
+                            <div class="seller-reviews-link mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm w-100"
+                                    onclick="openReviewsModal({{ product.user_id }})">
+                                    <i class="bi bi-star-fill me-1"></i>
+                                    Посмотреть все отзывы
+                                    {% if product.owner.reviews_count > 0 %}
+                                    ({{ product.owner.reviews_count }})
                                     {% endif %}
-                                </div>
+                                </button>
+                                {% if current_user.is_authenticated and current_user.id != product.user_id %}
+                                <button type="button" class="btn btn-outline-success btn-sm w-100 mt-2"
+                                    onclick="openReviewFormModal({{ product.user_id }})">
+                                    <i class="bi bi-chat-left-text me-1"></i>
+                                    Оставить отзыв
+                                </button>
+                                {% endif %}
+                            </div>
 
                             <div class="seller-response-time text-muted mb-3">
                                 <i class="bi bi-clock me-1"></i>
                                 Отвечает около 30 минут
                             </div>
-                            
+
                             <!-- Кнопки контактов в одну строку -->
                             <div class="contact-buttons-row mb-3">
                                 {% if product.owner.phone and current_user.is_authenticated %}
@@ -311,10 +318,10 @@
                                     Показать телефон
                                 </button>
                                 {% endif %}
-                                
+
                                 {% if current_user.is_authenticated %}
-                                <a href="{{ url_for('main.messages', user_id=product.user_id, product_id=product.id) }}" 
-                                   class="btn-contact btn-write">
+                                <a href="{{ url_for('main.messages', user_id=product.user_id, product_id=product.id) }}"
+                                    class="btn-contact btn-write">
                                     Написать
                                 </a>
                                 {% endif %}
@@ -322,7 +329,7 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     <!-- Информация о продавце -->
                     {% if product.status == product.STATUS_PUBLISHED or current_user.id == product.user_id %}
                     <div class="seller-info-section mb-4">
@@ -349,11 +356,12 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     <!-- Жалоба -->
                     <div class="report-section mt-4 pt-3 border-top">
                         <button class="btn-report" onclick="reportProduct()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="8" x2="12" y2="12"></line>
                                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -433,804 +441,827 @@
 </div>
 
 <style>
+    /* Липкий блок */
+    .sticky-sidebar {
+        position: sticky;
+        top: 84px;
+        /* Отступ от header */
+        background: white;
+        border: 1px solid #E6E6E6;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        z-index: 10;
+        width: 100%;
+        box-sizing: border-box;
+        /* Важно для правильного расчета ширины */
+    }
 
-/* Липкий блок */
-.sticky-sidebar {
-    position: sticky;
-    top: 84px; /* Отступ от header */
-    background: white;
-    border: 1px solid #E6E6E6;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    z-index: 10;
-    width: 100%;
-    box-sizing: border-box; /* Важно для правильного расчета ширины */
-}
+    /* Цена с адаптивным размером */
+    .price-container {
+        flex: 1;
+        min-width: 0;
+        /* Позволяет элементу сжиматься */
+        overflow: hidden;
+        /* Скрывает переполнение */
+    }
 
-/* Цена с адаптивным размером */
-.price-container {
-    flex: 1;
-    min-width: 0; /* Позволяет элементу сжиматься */
-    overflow: hidden; /* Скрывает переполнение */
-}
-
-.product-price {
-    font-weight: 800;
-    color: #1F1F1F;
-    line-height: 1;
-    font-size: 28px; /* Начальный размер */
-    white-space: nowrap; /* Текст в одну строку */
-    overflow: hidden; /* Скрываем переполнение */
-    text-overflow: ellipsis; /* Добавляем многоточие если не влезает */
-    max-width: 100%;
-    display: block;
-}
-
-/* Адаптивный размер шрифта цены */
-@media (max-width: 1200px) {
     .product-price {
+        font-weight: 800;
+        color: #1F1F1F;
+        line-height: 1;
+        font-size: 28px;
+        /* Начальный размер */
+        white-space: nowrap;
+        /* Текст в одну строку */
+        overflow: hidden;
+        /* Скрываем переполнение */
+        text-overflow: ellipsis;
+        /* Добавляем многоточие если не влезает */
+        max-width: 100%;
+        display: block;
+    }
+
+    /* Адаптивный размер шрифта цены */
+    @media (max-width: 1200px) {
+        .product-price {
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .product-price {
+            font-size: 22px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .sticky-sidebar {
+            position: static;
+            margin-top: 20px;
+        }
+
+        .product-price {
+            font-size: 20px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .product-price {
+            font-size: 18px;
+        }
+    }
+
+    /* Избранное и кнопки действий */
+    .favorite-form,
+    .product-actions-dropdown {
+        flex-shrink: 0;
+    }
+
+    .favorite-icon-btn,
+    .btn-actions-dropdown {
+        background: none;
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .favorite-icon-btn:hover,
+    .btn-actions-dropdown:hover {
+        background: #f5f5f5;
+    }
+
+    .favorite-icon-btn svg,
+    .btn-actions-dropdown svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .favorite-icon-btn.active svg {
+        animation: heartbeat 0.3s ease;
+    }
+
+    @keyframes heartbeat {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* НДС */
+    .vat-label {
+        font-size: 14px;
+        font-weight: 500;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .vat-included {
+        color: #28a745;
+        background: rgba(40, 167, 69, 0.1);
+    }
+
+    .vat-excluded {
+        color: #dc3545;
+        background: rgba(220, 53, 69, 0.1);
+    }
+
+    /* Кнопки контактов в одну строку */
+    .contact-buttons-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-contact {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 14px;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .btn-phone {
+        background: #0057FF;
+        color: white;
+        border-color: #0057FF;
+    }
+
+    .btn-phone:hover {
+        background: #0045CC;
+        border-color: #0045CC;
+    }
+
+    .btn-write {
+        background: white;
+        color: #0057FF;
+        border-color: #0057FF;
+    }
+
+    .btn-write:hover {
+        background: #f0f7ff;
+    }
+
+    /* Заголовок товара */
+    .product-title-section {
+        margin-bottom: 24px;
+    }
+
+    .product-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1F1F1F;
+        line-height: 1.3;
+        margin-bottom: 8px;
+        word-break: break-word;
+    }
+
+    .product-manufacturer {
+        font-size: 14px;
+        color: #7F7F7F;
+    }
+
+    /* Баннер статуса */
+    .status-banner {
+        padding: 12px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        text-align: center;
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+
+    .status-banner.status-ready {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+
+    .status-banner.status-unpublished {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+        color: #c62828;
+    }
+
+    .status-banner.status-review {
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+        color: #1565c0;
+    }
+
+    /* Информация о продавце */
+    .seller-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #0057FF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .avatar-icon {
         font-size: 24px;
     }
-}
 
-@media (max-width: 992px) {
-    .product-price {
-        font-size: 22px;
+    .seller-name {
+        font-size: 16px;
+        color: #1F1F1F;
+        margin-bottom: 2px;
     }
-}
 
-@media (max-width: 768px) {
+    .seller-rating {
+        font-size: 13px;
+    }
+
+    .seller-response-time {
+        font-size: 13px;
+    }
+
+    /* Жалоба */
+    .btn-report {
+        background: none;
+        border: none;
+        color: #666;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 8px;
+        font-size: 14px;
+        text-decoration: none;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .btn-report:hover {
+        opacity: 1;
+        text-decoration: underline;
+    }
+
+    /* Плавная прокрутка для липкого блока */
+    @media (min-width: 769px) {
+        .sticky-sidebar {
+            transition: top 0.3s ease;
+        }
+
+        /* При скролле уменьшаем отступ */
+        .scrolled .sticky-sidebar {
+            top: 68px;
+        }
+    }
+
+    /* Гарантия, что контент не ломается */
+    .price-favorite-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .price-favorite-section>div:first-child {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 40px;
+    }
+
+    /* Улучшение для выпадающего меню */
+    .dropdown-menu {
+        border: 1px solid #E6E6E6;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 8px;
+        min-width: 200px;
+        z-index: 1050;
+    }
+
+    /* Убираем прокрутку на липком блоке */
     .sticky-sidebar {
-        position: static;
+        overflow: visible !important;
+    }
+
+    .product-right-column {
+        overflow: visible !important;
+    }
+
+    /* Утилиты */
+    .flex-shrink-0 {
+        flex-shrink: 0;
+    }
+
+    .flex-grow-1 {
+        flex-grow: 1;
+    }
+
+    /* Стили для сворачиваемого описания */
+    .product-description-wrapper {
+        position: relative;
+        transition: max-height 0.3s ease;
+        overflow: hidden;
+    }
+
+    .product-description-wrapper.collapsed {
+        max-height: 100px;
+        /* 4 строки примерно */
+    }
+
+    .product-description-wrapper.expanded {
+        max-height: none;
+    }
+
+    .product-description-text {
+        line-height: 1.6;
+        font-size: 15px;
+        color: #444;
+        white-space: pre-line;
+        word-wrap: break-word;
+    }
+
+    .description-toggle {
+        margin-top: 10px;
+        text-align: right;
+    }
+
+    .toggle-btn {
+        background: none;
+        border: none;
+        color: #0057FF;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .toggle-btn:hover {
+        background: rgba(0, 87, 255, 0.1);
+    }
+
+    .toggle-icon {
+        font-size: 12px;
+        transition: transform 0.3s ease;
+        display: inline-block;
+    }
+
+    .toggle-icon.expanded {
+        transform: rotate(180deg);
+    }
+
+    .toggle-icon.collapsed {
+        transform: rotate(0deg);
+    }
+
+    /* Градиент для плавного перехода в свернутом состоянии */
+    .product-description-wrapper.collapsed::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 70%, rgba(255, 255, 255, 1) 100%);
+        pointer-events: none;
+    }
+
+    /* Характеристики товара */
+    .product-specs-card {
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #eee;
+    }
+
+    .specs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .spec-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .spec-label {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 4px;
+    }
+
+    .spec-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    /* Описание товара */
+    .product-description-card {
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #eee;
         margin-top: 20px;
     }
-    
-    .product-price {
-        font-size: 20px;
-    }
-}
 
-@media (max-width: 576px) {
-    .product-price {
+    .description-header {
+        margin-bottom: 15px;
+    }
+
+    .description-header h3 {
         font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-}
 
-/* Избранное и кнопки действий */
-.favorite-form, .product-actions-dropdown {
-    flex-shrink: 0;
-}
-
-.favorite-icon-btn, .btn-actions-dropdown {
-    background: none;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.favorite-icon-btn:hover, .btn-actions-dropdown:hover {
-    background: #f5f5f5;
-}
-
-.favorite-icon-btn svg, .btn-actions-dropdown svg {
-    width: 20px;
-    height: 20px;
-}
-
-.favorite-icon-btn.active svg {
-    animation: heartbeat 0.3s ease;
-}
-
-@keyframes heartbeat {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-/* НДС */
-.vat-label {
-    font-size: 14px;
-    font-weight: 500;
-    padding: 4px 8px;
-    border-radius: 4px;
-    display: inline-block;
-}
-
-.vat-included {
-    color: #28a745;
-    background: rgba(40, 167, 69, 0.1);
-}
-
-.vat-excluded {
-    color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
-}
-
-/* Кнопки контактов в одну строку */
-.contact-buttons-row {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-contact {
-    flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 14px;
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
-    white-space: nowrap;
-    min-width: 0;
-}
-
-.btn-phone {
-    background: #0057FF;
-    color: white;
-    border-color: #0057FF;
-}
-
-.btn-phone:hover {
-    background: #0045CC;
-    border-color: #0045CC;
-}
-
-.btn-write {
-    background: white;
-    color: #0057FF;
-    border-color: #0057FF;
-}
-
-.btn-write:hover {
-    background: #f0f7ff;
-}
-
-/* Заголовок товара */
-.product-title-section {
-    margin-bottom: 24px;
-}
-
-.product-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #1F1F1F;
-    line-height: 1.3;
-    margin-bottom: 8px;
-    word-break: break-word;
-}
-
-.product-manufacturer {
-    font-size: 14px;
-    color: #7F7F7F;
-}
-
-/* Баннер статуса */
-.status-banner {
-    padding: 12px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    text-align: center;
-    font-size: 14px;
-    margin-bottom: 16px;
-}
-
-.status-banner.status-ready {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-}
-
-.status-banner.status-unpublished {
-    background: #ffebee;
-    border: 1px solid #ffcdd2;
-    color: #c62828;
-}
-
-.status-banner.status-review {
-    background: #e3f2fd;
-    border: 1px solid #bbdefb;
-    color: #1565c0;
-}
-
-/* Информация о продавце */
-.seller-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: #0057FF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    flex-shrink: 0;
-}
-
-.avatar-icon {
-    font-size: 24px;
-}
-
-.seller-name {
-    font-size: 16px;
-    color: #1F1F1F;
-    margin-bottom: 2px;
-}
-
-.seller-rating {
-    font-size: 13px;
-}
-
-.seller-response-time {
-    font-size: 13px;
-}
-
-/* Жалоба */
-.btn-report {
-    background: none;
-    border: none;
-    color: #666;
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 8px;
-    font-size: 14px;
-    text-decoration: none;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-}
-
-.btn-report:hover {
-    opacity: 1;
-    text-decoration: underline;
-}
-
-/* Плавная прокрутка для липкого блока */
-@media (min-width: 769px) {
-    .sticky-sidebar {
-        transition: top 0.3s ease;
+    .description-icon {
+        font-size: 16px;
     }
-    
-    /* При скролле уменьшаем отступ */
-    .scrolled .sticky-sidebar {
-        top: 68px;
+
+    /* Модальные окна */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
     }
-}
 
-/* Гарантия, что контент не ломается */
-.price-favorite-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+    .modal-content {
+        background-color: white;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        position: relative;
+    }
 
-.price-favorite-section > div:first-child {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 40px;
-}
+    .modal-content .close {
+        position: absolute;
+        right: 15px;
+        top: 10px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #999;
+    }
 
-/* Улучшение для выпадающего меню */
-.dropdown-menu {
-    border: 1px solid #E6E6E6;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 8px;
-    min-width: 200px;
-    z-index: 1050;
-}
+    .modal-content .close:hover {
+        color: #333;
+    }
 
-/* Убираем прокрутку на липком блоке */
-.sticky-sidebar {
-    overflow: visible !important;
-}
+    .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(0, 87, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #0057FF;
+        animation: spin 1s ease-in-out infinite;
+    }
 
-.product-right-column {
-    overflow: visible !important;
-}
-
-/* Утилиты */
-.flex-shrink-0 {
-    flex-shrink: 0;
-}
-
-.flex-grow-1 {
-    flex-grow: 1;
-}
-
-/* Стили для сворачиваемого описания */
-.product-description-wrapper {
-    position: relative;
-    transition: max-height 0.3s ease;
-    overflow: hidden;
-}
-
-.product-description-wrapper.collapsed {
-    max-height: 100px; /* 4 строки примерно */
-}
-
-.product-description-wrapper.expanded {
-    max-height: none;
-}
-
-.product-description-text {
-    line-height: 1.6;
-    font-size: 15px;
-    color: #444;
-    white-space: pre-line;
-    word-wrap: break-word;
-}
-
-.description-toggle {
-    margin-top: 10px;
-    text-align: right;
-}
-
-.toggle-btn {
-    background: none;
-    border: none;
-    color: #0057FF;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.toggle-btn:hover {
-    background: rgba(0, 87, 255, 0.1);
-}
-
-.toggle-icon {
-    font-size: 12px;
-    transition: transform 0.3s ease;
-    display: inline-block;
-}
-
-.toggle-icon.expanded {
-    transform: rotate(180deg);
-}
-
-.toggle-icon.collapsed {
-    transform: rotate(0deg);
-}
-
-/* Градиент для плавного перехода в свернутом состоянии */
-.product-description-wrapper.collapsed::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 40px;
-    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 70%, rgba(255,255,255,1) 100%);
-    pointer-events: none;
-}
-
-/* Характеристики товара */
-.product-specs-card {
-    background: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid #eee;
-}
-
-.specs-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.spec-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.spec-label {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 4px;
-}
-
-.spec-value {
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
-}
-
-/* Описание товара */
-.product-description-card {
-    background: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid #eee;
-    margin-top: 20px;
-}
-
-.description-header {
-    margin-bottom: 15px;
-}
-
-.description-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.description-icon {
-    font-size: 16px;
-}
-
-/* Модальные окна */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-}
-
-.modal-content {
-    background-color: white;
-    margin: 10% auto;
-    padding: 20px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-}
-
-.modal-content .close {
-    position: absolute;
-    right: 15px;
-    top: 10px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    color: #999;
-}
-
-.modal-content .close:hover {
-    color: #333;
-}
-.spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(0, 87, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #0057FF;
-    animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 
 <script>
-// Глобальная переменная для ID товара
-const product_id = {{ product.id }};
+    // Глобальная переменная для ID товара
+    const product_id = {{ product.id }};
 
-// Функции для галереи изображений
-function changeImage(thumb) {
-    const mainImage = document.getElementById('mainImage');
-    if (mainImage) {
-        mainImage.src = thumb.src;
+    // Функции для галереи изображений
+    function changeImage(thumb) {
+        const mainImage = document.getElementById('mainImage');
+        if (mainImage) {
+            mainImage.src = thumb.src;
+        }
+        document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
     }
-    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-    thumb.classList.add('active');
-}
 
-// === МОДАЛЬНЫЕ ОКНА ===
-function showFullPhone() {
-    document.getElementById('phoneModal').style.display = 'block';
-}
-
-function closePhoneModal() {
-    document.getElementById('phoneModal').style.display = 'none';
-}
-
-function reportProduct() {
-    document.getElementById('reportModal').style.display = 'block';
-}
-
-function closeReportModal() {
-    document.getElementById('reportModal').style.display = 'none';
-}
-
-// Модальное окно профиля продавца
-function openSellerProfile(userId) {
-    const modal = document.getElementById('sellerProfileModal');
-    const content = document.getElementById('sellerProfileContent');
-    
-    // Показываем загрузку
-    content.innerHTML = '<div class="spinner">Загрузка...</div>';
-    modal.style.display = 'block';
-    
-    // Загружаем профиль через AJAX
-    fetch(`/user/${userId}/profile?product_id=${product_id}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Ошибка сети');
-            }
-            return response.text();
-        })
-        .then(html => {
-            content.innerHTML = html;
-        })
-        .catch(error => {
-            content.innerHTML = '<div class="text-danger">Ошибка загрузки профиля</div>';
-            console.error('Ошибка:', error);
-        });
-}
-
-function closeSellerProfileModal() {
-    document.getElementById('sellerProfileModal').style.display = 'none';
-}
-
-// === МОДАЛЬНОЕ ОКНО ОТЗЫВОВ ===
-function openReviewsModal(userId) {
-    const modal = document.getElementById('reviewsModal');
-    const content = document.getElementById('reviewsModalContent');
-    content.innerHTML = '<div class="spinner">Загрузка...</div>';
-    modal.style.display = 'block';
-
-    fetch(`/user/${userId}/reviews_content`)
-        .then(response => {
-            if (!response.ok) throw new Error('Ошибка загрузки');
-            return response.text();
-        })
-        .then(html => {
-            content.innerHTML = html;
-        })
-        .catch(err => {
-            content.innerHTML = '<div class="text-danger p-3">Не удалось загрузить отзывы.</div>';
-            console.error(err);
-        });
-}
-
-function closeReviewsModal() {
-    document.getElementById('reviewsModal').style.display = 'none';
-}
-
-
-// Закрытие по клику вне окна
-window.onclick = function(event) {
-    const phoneModal = document.getElementById('phoneModal');
-    const reportModal = document.getElementById('reportModal');
-    const sellerProfileModal = document.getElementById('sellerProfileModal');
-    const reviewsModal = document.getElementById('reviewsModal');
-    const reviewFormModal = document.getElementById('reviewFormModal');
-    
-    if (event.target === phoneModal) phoneModal.style.display = 'none';
-    if (event.target === reportModal) reportModal.style.display = 'none';
-    if (event.target === sellerProfileModal) sellerProfileModal.style.display = 'none';
-    if (event.target === reviewsModal) reviewsModal.style.display = 'none';
-    if (event.target === reviewFormModal) reviewFormModal.style.display = 'none';
-}
-
-// Функции для сворачиваемого описания
-function toggleDescription() {
-    const wrapper = document.getElementById('descriptionWrapper');
-    const toggle = document.getElementById('descriptionToggle');
-    const toggleIcon = toggle.querySelector('.toggle-icon');
-    const toggleText = toggle.querySelector('.toggle-text');
-    
-    if (wrapper.classList.contains('collapsed')) {
-        wrapper.classList.remove('collapsed');
-        wrapper.classList.add('expanded');
-        toggleIcon.classList.remove('collapsed');
-        toggleIcon.classList.add('expanded');
-        toggleText.textContent = 'Показать меньше';
-    } else {
-        wrapper.classList.remove('expanded');
-        wrapper.classList.add('collapsed');
-        toggleIcon.classList.remove('expanded');
-        toggleIcon.classList.add('collapsed');
-        toggleText.textContent = 'Показать больше';
+    // === МОДАЛЬНЫЕ ОКНА ===
+    function showFullPhone() {
+        document.getElementById('phoneModal').style.display = 'block';
     }
-}
 
-function checkDescriptionHeight() {
-    const content = document.getElementById('descriptionContent');
-    const wrapper = document.getElementById('descriptionWrapper');
-    const toggle = document.getElementById('descriptionToggle');
-    
-    if (!content || !wrapper || !toggle) return;
-    
-    // Сбросим высоту, чтобы получить реальную высоту контента
-    wrapper.style.maxHeight = 'none';
-    const contentHeight = content.scrollHeight;
-    wrapper.style.maxHeight = '';
-    
-    // Если высота контента больше 100px (примерно 4 строки), показываем кнопку
-    if (contentHeight > 100) {
-        toggle.style.display = 'block';
-        wrapper.classList.add('collapsed');
-        wrapper.classList.remove('expanded');
-        
+    function closePhoneModal() {
+        document.getElementById('phoneModal').style.display = 'none';
+    }
+
+    function reportProduct() {
+        document.getElementById('reportModal').style.display = 'block';
+    }
+
+    function closeReportModal() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+
+    // Модальное окно профиля продавца
+    function openSellerProfile(userId) {
+        const modal = document.getElementById('sellerProfileModal');
+        const content = document.getElementById('sellerProfileContent');
+
+        // Показываем загрузку
+        content.innerHTML = '<div class="spinner">Загрузка...</div>';
+        modal.style.display = 'block';
+
+        // Загружаем профиль через AJAX
+        fetch(`/user/${userId}/profile?product_id=${product_id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.text();
+            })
+            .then(html => {
+                content.innerHTML = html;
+            })
+            .catch(error => {
+                content.innerHTML = '<div class="text-danger">Ошибка загрузки профиля</div>';
+                console.error('Ошибка:', error);
+            });
+    }
+
+    function closeSellerProfileModal() {
+        document.getElementById('sellerProfileModal').style.display = 'none';
+    }
+
+    // === МОДАЛЬНОЕ ОКНО ОТЗЫВОВ ===
+    function openReviewsModal(userId) {
+        const modal = document.getElementById('reviewsModal');
+        const content = document.getElementById('reviewsModalContent');
+        content.innerHTML = '<div class="spinner">Загрузка...</div>';
+        modal.style.display = 'block';
+
+        fetch(`/user/${userId}/reviews_content`)
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка загрузки');
+                return response.text();
+            })
+            .then(html => {
+                content.innerHTML = html;
+            })
+            .catch(err => {
+                content.innerHTML = '<div class="text-danger p-3">Не удалось загрузить отзывы.</div>';
+                console.error(err);
+            });
+    }
+
+    function closeReviewsModal() {
+        document.getElementById('reviewsModal').style.display = 'none';
+    }
+
+
+    // Закрытие по клику вне окна
+    window.onclick = function (event) {
+        const phoneModal = document.getElementById('phoneModal');
+        const reportModal = document.getElementById('reportModal');
+        const sellerProfileModal = document.getElementById('sellerProfileModal');
+        const reviewsModal = document.getElementById('reviewsModal');
+        const reviewFormModal = document.getElementById('reviewFormModal');
+
+        if (event.target === phoneModal) phoneModal.style.display = 'none';
+        if (event.target === reportModal) reportModal.style.display = 'none';
+        if (event.target === sellerProfileModal) sellerProfileModal.style.display = 'none';
+        if (event.target === reviewsModal) reviewsModal.style.display = 'none';
+        if (event.target === reviewFormModal) reviewFormModal.style.display = 'none';
+    }
+
+    // Функции для сворачиваемого описания
+    function toggleDescription() {
+        const wrapper = document.getElementById('descriptionWrapper');
+        const toggle = document.getElementById('descriptionToggle');
         const toggleIcon = toggle.querySelector('.toggle-icon');
         const toggleText = toggle.querySelector('.toggle-text');
-        toggleIcon.classList.add('collapsed');
-        toggleText.textContent = 'Показать больше';
-    } else {
-        toggle.style.display = 'none';
-        wrapper.classList.remove('collapsed', 'expanded');
-    }
-}
 
-// Автоматическая подгонка размера шрифта цены
-function adjustPriceFontSize() {
-    const priceElements = document.querySelectorAll('.product-price');
-    priceElements.forEach(el => {
-        const container = el.parentElement;
-        const maxWidth = container.clientWidth - 20; // Оставляем немного места
-        let fontSize = 28; // Начальный размер
-        
-        // Создаем временный элемент для проверки
-        const temp = document.createElement('span');
-        temp.style.fontSize = fontSize + 'px';
-        temp.style.fontWeight = '800';
-        temp.style.visibility = 'hidden';
-        temp.style.position = 'absolute';
-        temp.style.whiteSpace = 'nowrap';
-        temp.textContent = el.textContent;
-        document.body.appendChild(temp);
-        
-        // Уменьшаем размер пока не влезет
-        while (temp.scrollWidth > maxWidth && fontSize > 14) {
-            fontSize -= 1;
-            temp.style.fontSize = fontSize + 'px';
-        }
-        
-        document.body.removeChild(temp);
-        
-        // Применяем найденный размер
-        el.style.fontSize = fontSize + 'px';
-        
-        // Если цена все еще не влезает, включаем ellipsis
-        if (el.scrollWidth > container.clientWidth) {
-            el.style.overflow = 'hidden';
-            el.style.textOverflow = 'ellipsis';
+        if (wrapper.classList.contains('collapsed')) {
+            wrapper.classList.remove('collapsed');
+            wrapper.classList.add('expanded');
+            toggleIcon.classList.remove('collapsed');
+            toggleIcon.classList.add('expanded');
+            toggleText.textContent = 'Показать меньше';
         } else {
-            el.style.overflow = 'visible';
-            el.style.textOverflow = 'clip';
+            wrapper.classList.remove('expanded');
+            wrapper.classList.add('collapsed');
+            toggleIcon.classList.remove('expanded');
+            toggleIcon.classList.add('collapsed');
+            toggleText.textContent = 'Показать больше';
         }
-    });
-}
+    }
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    // Обработка ошибок изображений
-    const images = document.querySelectorAll('.product-gallery img');
-    images.forEach(img => {
-        img.addEventListener('error', function() {
-            this.src = '/static/images/no-image.png';
-        });
-    });
-    
-    // Обработчик клика на сердечко (для анимации)
-    const favoriteButtons = document.querySelectorAll('.favorite-icon-btn');
-    favoriteButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const svg = this.querySelector('svg');
-            if (svg.getAttribute('fill') === 'none') {
-                svg.setAttribute('fill', 'red');
-                svg.setAttribute('stroke', 'red');
-                this.classList.add('active');
+    function checkDescriptionHeight() {
+        const content = document.getElementById('descriptionContent');
+        const wrapper = document.getElementById('descriptionWrapper');
+        const toggle = document.getElementById('descriptionToggle');
+
+        if (!content || !wrapper || !toggle) return;
+
+        // Сбросим высоту, чтобы получить реальную высоту контента
+        wrapper.style.maxHeight = 'none';
+        const contentHeight = content.scrollHeight;
+        wrapper.style.maxHeight = '';
+
+        // Если высота контента больше 100px (примерно 4 строки), показываем кнопку
+        if (contentHeight > 100) {
+            toggle.style.display = 'block';
+            wrapper.classList.add('collapsed');
+            wrapper.classList.remove('expanded');
+
+            const toggleIcon = toggle.querySelector('.toggle-icon');
+            const toggleText = toggle.querySelector('.toggle-text');
+            toggleIcon.classList.add('collapsed');
+            toggleText.textContent = 'Показать больше';
+        } else {
+            toggle.style.display = 'none';
+            wrapper.classList.remove('collapsed', 'expanded');
+        }
+    }
+
+    // Автоматическая подгонка размера шрифта цены
+    function adjustPriceFontSize() {
+        const priceElements = document.querySelectorAll('.product-price');
+        priceElements.forEach(el => {
+            const container = el.parentElement;
+            const maxWidth = container.clientWidth - 20; // Оставляем немного места
+            let fontSize = 28; // Начальный размер
+
+            // Создаем временный элемент для проверки
+            const temp = document.createElement('span');
+            temp.style.fontSize = fontSize + 'px';
+            temp.style.fontWeight = '800';
+            temp.style.visibility = 'hidden';
+            temp.style.position = 'absolute';
+            temp.style.whiteSpace = 'nowrap';
+            temp.textContent = el.textContent;
+            document.body.appendChild(temp);
+
+            // Уменьшаем размер пока не влезет
+            while (temp.scrollWidth > maxWidth && fontSize > 14) {
+                fontSize -= 1;
+                temp.style.fontSize = fontSize + 'px';
+            }
+
+            document.body.removeChild(temp);
+
+            // Применяем найденный размер
+            el.style.fontSize = fontSize + 'px';
+
+            // Если цена все еще не влезает, включаем ellipsis
+            if (el.scrollWidth > container.clientWidth) {
+                el.style.overflow = 'hidden';
+                el.style.textOverflow = 'ellipsis';
             } else {
-                svg.setAttribute('fill', 'none');
-                svg.setAttribute('stroke', 'gray');
-                this.classList.remove('active');
+                el.style.overflow = 'visible';
+                el.style.textOverflow = 'clip';
             }
         });
-    });
-    
-    // Проверяем высоту описания
-    setTimeout(checkDescriptionHeight, 100);
-    
-    // Подгонка размера шрифта цены
-    adjustPriceFontSize();
-    
-    // Обработчик изменения размера окна
-    window.addEventListener('resize', function() {
-        adjustPriceFontSize();
-        checkDescriptionHeight();
-    });
-    
-    // Обработчик скролла для липкого блока (только на десктопе)
-    if (window.innerWidth >= 769) {
-        const stickySidebar = document.querySelector('.sticky-sidebar');
-        
-        if (stickySidebar) {
-            window.addEventListener('scroll', function() {
-                if (window.scrollY > 80) {
-                    document.body.classList.add('scrolled');
-                    stickySidebar.style.top = '68px';
+    }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function () {
+        // Обработка ошибок изображений
+        const images = document.querySelectorAll('.product-gallery img');
+        images.forEach(img => {
+            img.addEventListener('error', function () {
+                this.src = '/static/images/no-image.png';
+            });
+        });
+
+        // Обработчик клика на сердечко (для анимации)
+        const favoriteButtons = document.querySelectorAll('.favorite-icon-btn');
+        favoriteButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const svg = this.querySelector('svg');
+                if (svg.getAttribute('fill') === 'none') {
+                    svg.setAttribute('fill', 'red');
+                    svg.setAttribute('stroke', 'red');
+                    this.classList.add('active');
                 } else {
-                    document.body.classList.remove('scrolled');
-                    stickySidebar.style.top = '84px';
+                    svg.setAttribute('fill', 'none');
+                    svg.setAttribute('stroke', 'gray');
+                    this.classList.remove('active');
                 }
             });
-        }
-    }
-});
-
-// === МОДАЛЬНОЕ ОКНО ФОРМЫ ОТЗЫВА ===
-function openReviewFormModal(userId) {
-    const modal = document.getElementById('reviewFormModal');
-    const content = document.getElementById('reviewFormContent');
-    content.innerHTML = '<div class="spinner">Загрузка...</div>';
-    modal.style.display = 'block';
-
-    fetch(`/user/${userId}/review_form`)
-        .then(response => {
-            if (!response.ok) throw new Error('Ошибка загрузки формы');
-            return response.text();
-        })
-        .then(html => {
-            content.innerHTML = html;
-            // Переназначаем обработчик для кнопки "Отмена", если нужно
-        })
-        .catch(err => {
-            content.innerHTML = '<div class="text-danger p-3">Не удалось загрузить форму отзыва.</div>';
-            console.error(err);
         });
-}
 
-function closeReviewFormModal() {
-    document.getElementById('reviewFormModal').style.display = 'none';
-}
+        // Проверяем высоту описания
+        setTimeout(checkDescriptionHeight, 100);
 
-  // === ИНТЕРАКТИВНЫЕ ЗВЁЗДЫ В ФОРМЕ ОТЗЫВА ===
-  let currentRating = 0;
+        // Подгонка размера шрифта цены
+        adjustPriceFontSize();
 
-  function highlightStars(element) {
-      const rating = parseInt(element.getAttribute('data-rating'));
-      document.querySelectorAll('.star-rating .star').forEach((star, idx) => {
-          star.style.color = idx < rating ? '#ffc107' : '#dee2e6';
-      });
-  }
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', function () {
+            adjustPriceFontSize();
+            checkDescriptionHeight();
+        });
 
-  function resetStars() {
-      const selected = currentRating;
-      document.querySelectorAll('.star-rating .star').forEach((star, idx) => {
-          star.style.color = idx < selected ? '#ffc107' : '#dee2e6';
-      });
-  }
+        // Обработчик скролла для липкого блока (только на десктопе)
+        if (window.innerWidth >= 769) {
+            const stickySidebar = document.querySelector('.sticky-sidebar');
 
-  function selectStar(element) {
-      const rating = parseInt(element.getAttribute('data-rating'));
-      currentRating = rating;
-      const hiddenInput = document.getElementById('selectedRating');
-      if (hiddenInput) {
-          hiddenInput.value = rating;
-      }
-      resetStars();
-  }
+            if (stickySidebar) {
+                window.addEventListener('scroll', function () {
+                    if (window.scrollY > 80) {
+                        document.body.classList.add('scrolled');
+                        stickySidebar.style.top = '68px';
+                    } else {
+                        document.body.classList.remove('scrolled');
+                        stickySidebar.style.top = '84px';
+                    }
+                });
+            }
+        }
+    });
+
+    // === МОДАЛЬНОЕ ОКНО ФОРМЫ ОТЗЫВА ===
+    function openReviewFormModal(userId) {
+        const modal = document.getElementById('reviewFormModal');
+        const content = document.getElementById('reviewFormContent');
+        content.innerHTML = '<div class="spinner">Загрузка...</div>';
+        modal.style.display = 'block';
+
+        fetch(`/user/${userId}/review_form`)
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка загрузки формы');
+                return response.text();
+            })
+            .then(html => {
+                content.innerHTML = html;
+                // Переназначаем обработчик для кнопки "Отмена", если нужно
+            })
+            .catch(err => {
+                content.innerHTML = '<div class="text-danger p-3">Не удалось загрузить форму отзыва.</div>';
+                console.error(err);
+            });
+    }
+
+    function closeReviewFormModal() {
+        document.getElementById('reviewFormModal').style.display = 'none';
+    }
+
+    // === ИНТЕРАКТИВНЫЕ ЗВЁЗДЫ В ФОРМЕ ОТЗЫВА ===
+    let currentRating = 0;
+
+    function highlightStars(element) {
+        const rating = parseInt(element.getAttribute('data-rating'));
+        document.querySelectorAll('.star-rating .star').forEach((star, idx) => {
+            star.style.color = idx < rating ? '#ffc107' : '#dee2e6';
+        });
+    }
+
+    function resetStars() {
+        const selected = currentRating;
+        document.querySelectorAll('.star-rating .star').forEach((star, idx) => {
+            star.style.color = idx < selected ? '#ffc107' : '#dee2e6';
+        });
+    }
+
+    function selectStar(element) {
+        const rating = parseInt(element.getAttribute('data-rating'));
+        currentRating = rating;
+        const hiddenInput = document.getElementById('selectedRating');
+        if (hiddenInput) {
+            hiddenInput.value = rating;
+        }
+        resetStars();
+    }
 
 </script>
 

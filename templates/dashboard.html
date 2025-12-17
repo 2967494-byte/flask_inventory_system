@@ -128,7 +128,7 @@
                     <div class="product-info">
                         <h3 class="product-title">{{ product.title }}</h3>
                         <p class="product-price">
-                            {{ "%.2f"|format(product.price) }} ₽
+                            {{ product.price|format_price }} ₽
                             {% if product.vat_included %}
                             <span class="vat-label vat-included">С НДС</span>
                             {% else %}
