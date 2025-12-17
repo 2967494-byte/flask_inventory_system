@@ -28,4 +28,41 @@ Thumbs.db
 
 # Uploads (если файлы большие)
 # static/uploads/
+
+# Environment variables - КРИТИЧЕСКИ ВАЖНО!
+.env
+.env.*
+!.env.example
+
+# Backup files
+backup*.sql
+backup*.dump
+*.backup
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Production specific
+/config_production.py
+/config_local.py
+
+# Large media files
+/media/
+/static/uploads/*.jpg
+/static/uploads/*.png
+/static/uploads/*.jpeg
+/static/uploads/*.gif
+!/static/uploads/.gitkeep  # сохраняем пустой файл для структуры
+
+# Session files
+flask_session/
+
+# SSL certificates
+*.pem
+*.key
 EOF
