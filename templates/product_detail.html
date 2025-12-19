@@ -98,8 +98,16 @@
 
                         <div class="spec-item">
                             <span class="spec-label">Категория</span>
-                            <span class="spec-value">{{ product.product_category.name if product.product_category else
-                                'Не указана' }}</span>
+                            <span class="spec-value">
+                                {% if product.product_category %}
+                                {% for category in product.product_category.get_ancestors() %}
+                                {{ category.name }}
+                                {% if not loop.last %} > {% endif %}
+                                {% endfor %}
+                                {% else %}
+                                Не указана
+                                {% endif %}
+                            </span>
                         </div>
 
                         <div class="spec-item">
