@@ -37,7 +37,8 @@ def admin_categories():
                 new_category = Category(
                     name=name,
                     description=description,
-                    parent_id=parent_id
+                    parent_id=parent_id,
+                    color=request.form.get('color', '#000000')
                 )
                 db.session.add(new_category)
                 db.session.commit()
@@ -76,6 +77,7 @@ def admin_categories():
                 category.name = name
                 category.description = description
                 category.parent_id = parent_id
+                category.color = request.form.get('color', '#000000')
                 
                 # Обработка изображения
                 if remove_image and category.image:

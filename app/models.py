@@ -105,6 +105,7 @@ class Category(db.Model):
     description = db.Column(db.Text)
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
     image = db.Column(db.String(255))  # путь к файлу или URL
+    color = db.Column(db.String(20), default='#000000')
 
     category_products = db.relationship('Product', backref='product_category', lazy=True)
     

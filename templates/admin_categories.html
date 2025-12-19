@@ -85,7 +85,7 @@
 
                                 <div class="node-actions">
                                     <button class="node-action-btn" title="Редактировать"
-                                        onclick="editCategory({{ category.id }}, '{{ category.name }}', '{{ category.description if category.description else '' }}', {{ category.parent_id or 'null' }}, {% if category.image %}'{{ category.image }}'{% else %}null{% endif %})">
+                                        onclick="editCategory({{ category.id }}, '{{ category.name }}', '{{ category.description if category.description else '' }}', {{ category.parent_id or 'null' }}, {% if category.image %}'{{ category.image }}'{% else %}null{% endif %}, '{{ category.color or '#000000' }}')">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2">
                                             <path d="M11 4H4v7h7V4z"></path>
@@ -179,7 +179,7 @@
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-5">
                                     <label class="form-label small">Изображение категории:</label>
                                     <div class="file-input-wrapper">
                                         <input type="file" name="category_image" id="categoryImageInput"
@@ -193,11 +193,19 @@
                                     <small class="form-text text-muted">JPG, PNG, WebP. Макс: 5MB</small>
                                 </div>
 
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-5">
                                     <label class="form-label small">Описание:</label>
                                     <textarea name="description" id="categoryDescription"
                                         class="form-control form-control-sm" rows="1" placeholder="Описание"
                                         style="height: 48px;"></textarea>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label class="form-label small">Цвет:</label>
+                                    <input type="color" name="color" id="categoryColor"
+                                        class="form-control form-control-sm form-control-color" value="#000000"
+                                        title="Выберите цвет категории"
+                                        style="width: 100%; height: 48px; padding: 4px;">
                                 </div>
                             </div>
 
@@ -1047,11 +1055,12 @@
     }
 
     // Функция для редактирования категории
-    function editCategory(id, name, description, parentId, image) {
+    function editCategory(id, name, description, parentId, image, color) {
         document.getElementById('editCategoryId').value = id;
         document.getElementById('categoryName').value = name;
         document.getElementById('categoryDescription').value = description || '';
         document.getElementById('categoryParent').value = parentId || '';
+        document.getElementById('categoryColor').value = color || '#000000';
 
         // Обновляем заголовок формы
         document.getElementById('formTitle').textContent = '✏️ Редактировать категорию';
@@ -1103,6 +1112,7 @@
 
         // Сбрасываем форму
         document.getElementById('addCategoryForm').reset();
+        document.getElementById('categoryColor').value = '#000000';
 
         // Возвращаем action на добавление
         document.getElementById('formAction').value = 'add_category';
