@@ -48,7 +48,21 @@ def index():
     location = request.args.get('location', '').strip()
     query = Product.query.filter_by(status=Product.STATUS_PUBLISHED)
     if category_id and category_id.isdigit():
-        query = query.filter_by(category_id=int(category_id))
+        cat_id = int(category_id)
+        # Recursive category filtering
+        category = Category.query.get(cat_id)
+        if category:
+            all_cat_ids = [cat_id]
+            # Collecting all descendants
+            stack = [category]
+            while stack:
+                curr = stack.pop()
+                for child in curr.children:
+                    all_cat_ids.append(child.id)
+                    stack.append(child)
+            query = query.filter(Product.category_id.in_(all_cat_ids))
+        else:
+            query = query.filter_by(category_id=cat_id)
     if search_term:
         query = query.filter(
             Product.title.ilike(f'%{search_term}%') | 
