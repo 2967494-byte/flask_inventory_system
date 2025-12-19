@@ -19,11 +19,7 @@ app = create_app()
 
 # ПРИНУДИТЕЛЬНОЕ СОЗДАНИЕ ТАБЛИЦ ПРИ ЗАПУСКЕ
 with app.app_context():
-    try:
-        print("Создание таблиц в базе данных...")
-        db.create_all()
-        print("Таблицы созданы успешно!")
-        
+    try:        
         # Проверяем что таблицы существуют
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
