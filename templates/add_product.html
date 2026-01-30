@@ -3,7 +3,9 @@
 {% block title %}Добавить товар - Система{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 2rem auto;">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+
+<div style="max-width: 1200px; margin: 2rem auto;">
     <div class="card" style="padding: 2.5rem; transition: none;">
         <div style="text-align: center; margin-bottom: 2.5rem;">
             <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Добавить товар</h1>
@@ -14,183 +16,190 @@
             id="addProductForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <!-- Основная информация -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-info-circle" style="color: var(--primary);"></i>
-                    Основная информация
-                </h3>
+            <!-- Two Column Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
 
-                <div style="display: grid; gap: 1.5rem;">
-                    <div class="form-group">
-                        <label class="form-label" for="title">Название товара <span
-                                style="color: var(--danger);">*</span></label>
-                        <input type="text" name="title" id="title" class="contact-form-control"
-                            style="margin-bottom: 0;" placeholder="Например: Офисные стулья Herman Miller" required>
-                    </div>
+                <!-- LEFT COLUMN -->
+                <div style="border-right: 2px dashed var(--gray-200); padding-right: 2.5rem;">
+                    <!-- Основная информация -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-info-circle" style="color: var(--primary);"></i>
+                            Основная информация
+                        </h3>
 
-                    <div class="form-group">
-                        <label class="form-label">Категория <span style="color: var(--danger);">*</span></label>
-                        <div id="category-container" style="display: grid; gap: 0.75rem;">
-                            <select class="contact-form-control" style="margin-bottom: 0;"
-                                onchange="handleCategoryChange(this)" data-level="0">
-                                <option value="">-- Выберите категорию --</option>
-                                {% for category in categories %}
-                                <option value="{{ category.id }}">{{ category.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <input type="hidden" name="category_id" id="category_id_hidden" required>
-                        <p style="font-size: 0.8125rem; color: var(--gray-500); margin-top: 0.5rem;">Выберите категорию
-                            верхнего уровня, затем уточняющие подкатегории</p>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 120px; gap: 1.5rem;">
-                        <div class="form-group">
-                            <label class="form-label" for="manufacturer">Производитель</label>
-                            <input type="text" name="manufacturer" id="manufacturer" class="contact-form-control"
-                                style="margin-bottom: 0;" placeholder="Напр. IKEA, Xiaomi">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="quantity">Количество</label>
-                            <input type="number" name="quantity" id="quantity" class="contact-form-control"
-                                style="margin-bottom: 0;" value="1" min="1" step="1">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Цена (руб.)</label>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <select class="contact-form-control" name="price_type"
-                                style="width: 120px; margin-bottom: 0; flex-shrink: 0;">
-                                <option value="fixed">Равная</option>
-                                <option value="from">От</option>
-                            </select>
-                            <div style="position: relative; flex: 1;">
-                                <input type="number" name="price" id="price" class="contact-form-control"
-                                    style="margin-bottom: 0; padding-right: 2rem;" step="0.01" min="0"
-                                    placeholder="0.00">
-                                <span
-                                    style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-400);">₽</span>
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="title">Название товара <span
+                                        style="color: var(--danger);">*</span></label>
+                                <input type="text" name="title" id="title" class="contact-form-control"
+                                    style="margin-bottom: 0;" placeholder="Например: Офисные стулья Herman Miller"
+                                    required>
                             </div>
-                            <div
-                                style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem; white-space: nowrap;">
-                                <input type="checkbox" name="vat_included" id="vat_included"
-                                    style="width: 1.125rem; height: 1.125rem; border-radius: 4px; border: 1px solid var(--gray-300); cursor: pointer;">
-                                <label for="vat_included"
-                                    style="font-size: 0.875rem; color: var(--gray-700); cursor: pointer;">с НДС</label>
+
+                            <div class="form-group">
+                                <label class="form-label">Категория <span style="color: var(--danger);">*</span></label>
+                                <div id="category-container" style="display: grid; gap: 0.75rem;">
+                                    <select class="contact-form-control" style="margin-bottom: 0;"
+                                        onchange="handleCategoryChange(this)" data-level="0">
+                                        <option value="">-- Выберите категорию --</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <input type="hidden" name="category_id" id="category_id_hidden" required>
+                                <p style="font-size: 0.8125rem; color: var(--gray-500); margin-top: 0.5rem;">Выберите
+                                    категорию
+                                    верхнего уровня, затем уточняющие подкатегории</p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 120px; gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label class="form-label" for="manufacturer">Производитель</label>
+                                    <input type="text" name="manufacturer" id="manufacturer"
+                                        class="contact-form-control" style="margin-bottom: 0;"
+                                        placeholder="Напр. IKEA, Xiaomi">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="quantity">Количество</label>
+                                    <input type="number" name="quantity" id="quantity" class="contact-form-control"
+                                        style="margin-bottom: 0;" value="1" min="1" step="1">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Цена (руб.)</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <select class="contact-form-control" name="price_type"
+                                        style="width: 120px; margin-bottom: 0; flex-shrink: 0;">
+                                        <option value="fixed">Равная</option>
+                                        <option value="from">От</option>
+                                    </select>
+                                    <div style="position: relative; flex: 1;">
+                                        <input type="number" name="price" id="price" class="contact-form-control"
+                                            style="margin-bottom: 0; padding-right: 2rem;" step="0.01" min="0"
+                                            placeholder="0.00">
+                                        <span
+                                            style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-400);">₽</span>
+                                    </div>
+                                    <div
+                                        style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem; white-space: nowrap;">
+                                        <input type="checkbox" name="vat_included" id="vat_included"
+                                            style="width: 1.125rem; height: 1.125rem; border-radius: 4px; border: 1px solid var(--gray-300); cursor: pointer;">
+                                        <label for="vat_included"
+                                            style="font-size: 0.875rem; color: var(--gray-700); cursor: pointer;">с
+                                            НДС</label>
+                                    </div>
+                                </div>
+                                <p style="font-size: 0.8125rem; color: var(--gray-500); margin-top: 0.5rem;">Оставьте
+                                    пустым,
+                                    чтобы указать "Договорная"</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Состояние</label>
+                                <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="radio" name="condition" value="new" checked
+                                            style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                        <span style="font-size: 0.9375rem; color: var(--gray-700);">Новое</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="radio" name="condition" value="used"
+                                            style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                        <span style="font-size: 0.9375rem; color: var(--gray-700);">Б/у</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                        <p style="font-size: 0.8125rem; color: var(--gray-500); margin-top: 0.5rem;">Оставьте пустым,
-                            чтобы указать "Договорная"</p>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Состояние</label>
-                        <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="radio" name="condition" value="new" checked
-                                    style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
-                                <span style="font-size: 0.9375rem; color: var(--gray-700);">Новое</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="radio" name="condition" value="used"
-                                    style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
-                                <span style="font-size: 0.9375rem; color: var(--gray-700);">Б/у</span>
-                            </label>
+                    <!-- Изображения -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-camera" style="color: var(--primary);"></i>
+                            Изображения
+                        </h3>
+
+                        <div style="background: var(--gray-50); border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 3rem; text-align: center; position: relative; transition: border-color 0.2s;"
+                            ondragover="this.style.borderColor='var(--primary)'"
+                            ondragleave="this.style.borderColor='var(--gray-200)'">
+                            <input type="file" name="image_files" id="image_files" multiple accept="image/*"
+                                style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2;">
+                            <i class="fas fa-cloud-upload-alt fa-3x"
+                                style="color: var(--gray-300); margin-bottom: 1rem;"></i>
+                            <p style="font-weight: 600; color: var(--gray-900); margin-bottom: 0.25rem;">Нажмите или
+                                перетащите
+                                файлы для загрузки</p>
+                            <p style="font-size: 0.8125rem; color: var(--gray-500);">Поддерживаются JPG, PNG, WEBP. До 4
+                                изображений.</p>
+                        </div>
+
+                        <div id="image-preview"
+                            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.5rem;">
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <!-- RIGHT COLUMN -->
+                <div>
+                    <!-- Местоположение -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
+                            Местоположение
+                        </h3>
+
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="region_id">Субъект РФ <span
+                                        style="color: var(--danger);">*</span></label>
+                                <select class="contact-form-control" style="margin-bottom: 0;" id="region_id"
+                                    name="region_id" required>
+                                    <option value="">Выберите субъект РФ</option>
+                                    {% for region in regions %}
+                                    <option value="{{ region.id }}">{{ region.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="city_id">Город <span
+                                        style="color: var(--danger);">*</span></label>
+                                <select class="contact-form-control" style="margin-bottom: 0;" id="city_id"
+                                    name="city_id" required disabled>
+                                    <option value="">Сначала выберите область</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
+                            <input type="checkbox" name="delivery" id="delivery"
+                                style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                            <label for="delivery"
+                                style="font-size: 0.9375rem; color: var(--gray-700); cursor: pointer;">Возможна
+                                доставка</label>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Местоположение -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
-                    Местоположение
-                </h3>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div class="form-group">
-                        <label class="form-label" for="region_id">Субъект РФ <span
-                                style="color: var(--danger);">*</span></label>
-                        <select class="contact-form-control" style="margin-bottom: 0;" id="region_id" name="region_id"
-                            required>
-                            <option value="">Выберите субъект РФ</option>
-                            {% for region in regions %}
-                            <option value="{{ region.id }}">{{ region.name }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Описание -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-align-left" style="color: var(--primary);"></i>
+                            Описание
+                        </h3>
+                        <div class="form-group">
+                            <textarea name="description" id="description" class="contact-form-control" rows="12"
+                                style="margin-bottom: 0;"
+                                placeholder="Опишите состояние, характеристики и особенности товара..."></textarea>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="city_id">Город <span
-                                style="color: var(--danger);">*</span></label>
-                        <select class="contact-form-control" style="margin-bottom: 0;" id="city_id" name="city_id"
-                            required disabled>
-                            <option value="">Сначала выберите область</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
-                    <input type="checkbox" name="delivery" id="delivery"
-                        style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
-                    <label for="delivery"
-                        style="font-size: 0.9375rem; color: var(--gray-700); cursor: pointer;">Возможна доставка</label>
-                </div>
-            </div>
-
-            <!-- Описание -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-align-left" style="color: var(--primary);"></i>
-                    Описание
-                </h3>
-                <div class="form-group">
-                    <textarea name="description" id="description" class="contact-form-control" rows="6"
-                        style="margin-bottom: 0;"
-                        placeholder="Опишите состояние, характеристики и особенности товара..."></textarea>
-                </div>
-            </div>
-
-            <!-- Изображения -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-camera" style="color: var(--primary);"></i>
-                    Изображения
-                </h3>
-
-                <div style="background: var(--gray-50); border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 3rem; text-align: center; position: relative; transition: border-color 0.2s;"
-                    ondragover="this.style.borderColor='var(--primary)'"
-                    ondragleave="this.style.borderColor='var(--gray-200)'">
-                    <input type="file" name="image_files" id="image_files" multiple accept="image/*"
-                        style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2;">
-                    <i class="fas fa-cloud-upload-alt fa-3x" style="color: var(--gray-300); margin-bottom: 1rem;"></i>
-                    <p style="font-weight: 600; color: var(--gray-900); margin-bottom: 0.25rem;">Нажмите или перетащите
-                        файлы для загрузки</p>
-                    <p style="font-size: 0.8125rem; color: var(--gray-500);">Поддерживаются JPG, PNG, WEBP. До 4
-                        изображений.</p>
-                </div>
-
-                <div id="image-preview"
-                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.5rem;"></div>
-
-                <div style="margin: 2rem 0; display: flex; align-items: center; gap: 1rem;">
-                    <div style="height: 1px; background: var(--gray-200); flex: 1;"></div>
-                    <span
-                        style="font-size: 0.75rem; font-weight: 600; color: var(--gray-400); text-transform: uppercase;">или
-                        по ссылке</span>
-                    <div style="height: 1px; background: var(--gray-200); flex: 1;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="image_urls">URL изображений</label>
-                    <input type="text" name="image_urls" id="image_urls" class="contact-form-control"
-                        style="margin-bottom: 0;" placeholder="https://example.com/image.jpg, ...">
                 </div>
             </div>
 
@@ -209,7 +218,67 @@
     </div>
 </div>
 
+<!-- Image Cropper Modal -->
+<div id="cropperModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+        style="background: white; border-radius: var(--radius-lg); max-width: 800px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+        <!-- Header -->
+        <div
+            style="padding: 1.5rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin: 0;">Редактировать изображение</h3>
+            <button type="button" onclick="closeCropperModal()"
+                style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray-400); padding: 0; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Image Container -->
+        <div
+            style="height: 500px; overflow: hidden; padding: 2rem; display: flex; align-items: center; justify-content: center; background: var(--gray-50);">
+            <div style="max-width: 100%; max-height: 100%; width: auto; height: auto;">
+                <img id="cropperImage"
+                    style="max-width: 100%; max-height: 450px; height: auto; width: auto; display: block;">
+            </div>
+        </div>
+
+        <!-- Aspect Ratio Controls -->
+        <div
+            style="padding: 1rem 1.5rem; border-top: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200); background: white;">
+            <label
+                style="font-size: 0.875rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem; display: block;">Соотношение
+                сторон:</label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" onclick="setCropAspectRatio(NaN)" class="aspect-btn"
+                    style="padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">Свободное</button>
+                <button type="button" onclick="setCropAspectRatio(1)" class="aspect-btn"
+                    style="padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">1:1</button>
+                <button type="button" onclick="setCropAspectRatio(4/3)" class="aspect-btn"
+                    style="padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">4:3</button>
+                <button type="button" onclick="setCropAspectRatio(16/9)" class="aspect-btn"
+                    style="padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">16:9</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" onclick="closeCropperModal()" class="btn-secondary" style="padding: 0.75rem 1.5rem;">
+                Отмена
+            </button>
+            <button type="button" onclick="applyCrop()" class="btn-primary" style="padding: 0.75rem 1.5rem;">
+                <i class="fas fa-check"></i>
+                Применить
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
+    let cropper = null;
+    let currentImageIndex = -1;
+    let imageData = []; // Array to store {file, croppedBlob, previewUrl}
+
     function handleCategoryChange(selectElement) {
         const container = document.getElementById('category-container');
         const hiddenInput = document.getElementById('category_id_hidden');
@@ -292,24 +361,197 @@
             });
     });
 
-    // Simple image preview
+    // Image upload and preview with cropping
     document.getElementById('image_files').addEventListener('change', function (e) {
-        const preview = document.getElementById('image-preview');
-        preview.innerHTML = '';
         const files = Array.from(e.target.files).slice(0, 4);
-        files.forEach(file => {
+
+        files.forEach((file, index) => {
             const reader = new FileReader();
             reader.onload = (re) => {
-                const div = document.createElement('div');
-                div.style.aspectRatio = '1/1';
-                div.style.borderRadius = 'var(--radius-md)';
-                div.style.overflow = 'hidden';
-                div.style.border = '1px solid var(--gray-200)';
-                div.innerHTML = `<img src="${re.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
-                preview.appendChild(div);
+                imageData.push({
+                    file: file,
+                    croppedBlob: null,
+                    previewUrl: re.target.result
+                });
+                renderImagePreviews();
             };
             reader.readAsDataURL(file);
         });
+    });
+
+    function renderImagePreviews() {
+        const preview = document.getElementById('image-preview');
+        preview.innerHTML = '';
+
+        imageData.forEach((data, index) => {
+            const div = document.createElement('div');
+            div.style.position = 'relative';
+            div.style.aspectRatio = '1/1';
+            div.style.borderRadius = 'var(--radius-md)';
+            div.style.overflow = 'hidden';
+            div.style.border = '1px solid var(--gray-200)';
+
+            const img = document.createElement('img');
+            img.src = data.croppedBlob ? URL.createObjectURL(data.croppedBlob) : data.previewUrl;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+
+            // Overlay with buttons
+            const overlay = document.createElement('div');
+            overlay.style.position = 'absolute';
+            overlay.style.inset = '0';
+            overlay.style.background = 'rgba(0, 0, 0, 0.5)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.gap = '0.5rem';
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.2s';
+            overlay.onmouseenter = () => overlay.style.opacity = '1';
+            overlay.onmouseleave = () => overlay.style.opacity = '0';
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.innerHTML = '<i class="fas fa-crop"></i>';
+            editBtn.style.background = 'white';
+            editBtn.style.border = 'none';
+            editBtn.style.borderRadius = 'var(--radius-md)';
+            editBtn.style.padding = '0.5rem 0.75rem';
+            editBtn.style.cursor = 'pointer';
+            editBtn.style.fontSize = '0.875rem';
+            editBtn.title = 'Обрезать';
+            editBtn.onclick = () => openCropperModal(index);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteBtn.style.background = 'var(--danger)';
+            deleteBtn.style.color = 'white';
+            deleteBtn.style.border = 'none';
+            deleteBtn.style.borderRadius = 'var(--radius-md)';
+            deleteBtn.style.padding = '0.5rem 0.75rem';
+            deleteBtn.style.cursor = 'pointer';
+            deleteBtn.style.fontSize = '0.875rem';
+            deleteBtn.title = 'Удалить';
+            deleteBtn.onclick = () => deleteImage(index);
+
+            overlay.appendChild(editBtn);
+            overlay.appendChild(deleteBtn);
+
+            div.appendChild(img);
+            div.appendChild(overlay);
+            preview.appendChild(div);
+        });
+    }
+
+    function openCropperModal(index) {
+        currentImageIndex = index;
+        const modal = document.getElementById('cropperModal');
+        const img = document.getElementById('cropperImage');
+
+        img.src = imageData[index].previewUrl;
+        modal.style.display = 'flex';
+
+        // Initialize cropper
+        setTimeout(() => {
+            if (cropper) {
+                cropper.destroy();
+            }
+            cropper = new Cropper(img, {
+                aspectRatio: NaN,
+                viewMode: 1,
+                autoCropArea: 0.8,
+                responsive: true,
+                restore: true,
+                center: true,
+                highlight: true,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+                minContainerWidth: 200,
+                minContainerHeight: 200,
+            });
+        }, 100);
+    }
+
+    function closeCropperModal() {
+        const modal = document.getElementById('cropperModal');
+        modal.style.display = 'none';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        currentImageIndex = -1;
+    }
+
+    function setCropAspectRatio(ratio) {
+        if (cropper) {
+            cropper.setAspectRatio(ratio);
+        }
+
+        // Update button styles
+        document.querySelectorAll('.aspect-btn').forEach(btn => {
+            btn.style.background = 'white';
+            btn.style.borderColor = 'var(--gray-300)';
+            btn.style.color = 'inherit';
+        });
+        event.target.style.background = 'var(--primary)';
+        event.target.style.borderColor = 'var(--primary)';
+        event.target.style.color = 'white';
+    }
+
+    function applyCrop() {
+        if (cropper && currentImageIndex >= 0) {
+            cropper.getCroppedCanvas().toBlob((blob) => {
+                imageData[currentImageIndex].croppedBlob = blob;
+                renderImagePreviews();
+                closeCropperModal();
+            });
+        }
+    }
+
+    function deleteImage(index) {
+        imageData.splice(index, 1);
+        renderImagePreviews();
+    }
+
+    // Form submission - replace file input with cropped images
+    document.getElementById('addProductForm').addEventListener('submit', function (e) {
+        if (imageData.length > 0) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            // Remove original file input
+            formData.delete('image_files');
+
+            // Add cropped images
+            imageData.forEach((data, index) => {
+                const blob = data.croppedBlob || data.file;
+                const filename = data.file.name;
+                formData.append('image_files', blob, filename);
+            });
+
+            // Submit form
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = response.url;
+                    } else {
+                        return response.text().then(text => {
+                            throw new Error(text);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при отправке формы');
+                });
+        }
     });
 </script>
 
@@ -320,6 +562,23 @@
         font-weight: 600;
         color: var(--gray-900);
         margin-bottom: 0.5rem;
+    }
+
+    /* Responsive layout */
+    @media (max-width: 768px) {
+        #addProductForm>div:first-of-type {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* Remove border on mobile */
+        #addProductForm>div:first-of-type>div:first-child {
+            border-right: none !important;
+            padding-right: 0 !important;
+        }
+
+        #image-preview {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
     }
 </style>
 {% endblock %}
