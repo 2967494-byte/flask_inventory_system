@@ -268,36 +268,68 @@
     </div>
 </div>
 
-</script>
-<script>
-    const INITIAL_PATH = [
-        {% for cat in category_path %}
-    { id: { { cat.id } }, name: { { cat.name | tojson } } },
+<script id="initial-path-data" type="application/json">
+[
+    {% for cat in category_path or [] %}
+    { "id": {{ cat.id }}, "name": {{ cat.name | tojson }} }
+    {% if not loop.last %},{% endif %}
     {% endfor %}
-    ];
+]
+</script>
 
+<script>
     document.addEventListener('DOMContentLoaded', async function () {
-        // Load Categories
-        for (let i = 0; i < INITIAL_PATH.length - 1; i++) {
-            await loadNextLevel(INITIAL_PATH[i].id, i + 1, INITIAL_PATH[i + 1].id);
-        }
-        if (INITIAL_PATH.length > 0) {
-            await loadNextLevel(INITIAL_PATH[INITIAL_PATH.length - 1].id, INITIAL_PATH.length, null);
+        console.log("Edit Product Page Loaded");
+
+        // Parse Initial Data safely
+        let INITIAL_PATH = [];
+        try {
+            const dataEl = document.getElementById('initial-path-data');
+            if (dataEl) {
+                INITIAL_PATH = JSON.parse(dataEl.textContent);
+            }
+        } catch (e) {
+            console.error("Error parsing initial data:", e);
         }
 
-        // Initialize Image Listeners
-        const imageInput = document.getElementById('image_files');
-        if (imageInput) {
-            imageInput.addEventListener('change', handleFileSelect);
+        // 1. Initialize Image Listeners FIRST (Critical priority)
+        try {
+            const imageInput = document.getElementById('image_files');
+            if (imageInput) {
+                console.log("Attaching change listener to image_files");
+                imageInput.addEventListener('change', handleFileSelect);
+            } else {
+                console.warn("image_files input not found");
+            }
+
+            console.log("Attaching paste listener");
+            document.addEventListener('paste', handlePaste);
+
+            const form = document.getElementById('editProductForm');
+            if (form) {
+                console.log("Attaching submit listener to form");
+                form.addEventListener('submit', handleFormSubmit);
+            } else {
+                console.warn("editProductForm not found");
+            }
+        } catch (e) {
+            console.error("Error initializing listeners:", e);
         }
 
-        document.addEventListener('paste', handlePaste);
-
-        const form = document.getElementById('editProductForm');
-        if (form) {
-            form.addEventListener('submit', handleFormSubmit);
+        // 2. Load Categories (secondary)
+        try {
+            for (let i = 0; i < INITIAL_PATH.length - 1; i++) {
+                await loadNextLevel(INITIAL_PATH[i].id, i + 1, INITIAL_PATH[i + 1].id);
+            }
+            if (INITIAL_PATH.length > 0) {
+                await loadNextLevel(INITIAL_PATH[INITIAL_PATH.length - 1].id, INITIAL_PATH.length, null);
+            }
+        } catch (e) {
+            console.error("Error loading categories:", e);
         }
     });
+
+
 
     // --- Category Logic ---
     async function loadNextLevel(parentId, level, selectedId) {
@@ -382,24 +414,24 @@
     function processFiles(files) {
         files.forEach(file => {
             if (newImageData.length >= 4) {
-                // Optional: Alert user
+                alert('Максимум 4 изображения');
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onload = (re) => {
-                newImageData.push({
-                    file: file,
-                    previewUrl: re.target.result
-                });
-                renderNewImagePreviews();
-            };
-            reader.readAsDataURL(file);
+            // Use createObjectURL for immediate preview
+            const url = URL.createObjectURL(file);
+            newImageData.push({
+                file: file,
+                previewUrl: url
+            });
         });
+        renderNewImagePreviews();
     }
 
     function renderNewImagePreviews() {
         const preview = document.getElementById('image-preview');
+        if (!preview) return;
+
         preview.innerHTML = '';
 
         newImageData.forEach((data, index) => {
@@ -409,11 +441,12 @@
             div.style.borderRadius = 'var(--radius-md)';
             div.style.overflow = 'hidden';
             div.style.border = '1px solid var(--gray-200)';
+            div.style.backgroundColor = 'var(--gray-50)';
 
             div.innerHTML = `
-                <img src="${data.previewUrl}" style="width:100%; height:100%; object-fit:cover;">
+                <img src="${data.previewUrl}" style="width:100%; height:100%; object-fit:cover; display:block;">
                 <button type="button" onclick="removeNewImage(${index})"
-                    style="position: absolute; top: 0.25rem; right: 0.25rem; background: var(--danger); color: white; border: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                    style="position: absolute; top: 0.25rem; right: 0.25rem; background: var(--danger); color: white; border: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; z-index: 10;">
                     <i class="fas fa-times"></i>
                 </button>
             `;
@@ -423,6 +456,10 @@
 
     // Make accessible globally
     window.removeNewImage = function (index) {
+        // Revoke URL to avoid memory leak
+        if (newImageData[index].previewUrl) {
+            URL.revokeObjectURL(newImageData[index].previewUrl);
+        }
         newImageData.splice(index, 1);
         renderNewImagePreviews();
     };
