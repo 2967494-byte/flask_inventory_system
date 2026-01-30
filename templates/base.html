@@ -59,6 +59,48 @@
             color: #5c67f2 !important;
         }
 
+        /* Wave Animation */
+        @keyframes logoWave {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.4);
+            }
+        }
+
+        .logo:hover span {
+            display: inline-block;
+            animation: logoWave 0.6s ease-in-out;
+        }
+
+        .logo:hover .logo-l1 {
+            animation-delay: 0.0s;
+        }
+
+        .logo:hover .logo-l2 {
+            animation-delay: 0.1s;
+        }
+
+        .logo:hover .logo-l3 {
+            animation-delay: 0.2s;
+        }
+
+        .logo:hover .logo-l4 {
+            animation-delay: 0.3s;
+        }
+
+        .logo:hover .logo-l5 {
+            animation-delay: 0.4s;
+        }
+
+        .logo:hover .logo-l6 {
+            animation-delay: 0.5s;
+        }
+
         .btn-primary {
             background-color: var(--primary) !important;
             box-shadow: 0 4px 12px rgba(92, 103, 242, 0.2) !important;

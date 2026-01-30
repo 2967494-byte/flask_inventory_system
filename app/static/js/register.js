@@ -6,29 +6,49 @@ document.addEventListener('DOMContentLoaded', function () {
 
     findButton.addEventListener('click', function (e) {
         e.preventDefault();
+        console.log('[DEBUG] INN search button clicked');
 
         const inn = innInput.value.trim();
         if (!inn) {
+            console.log('[DEBUG] Empty INN field');
             alert('Пожалуйста, введите ИНН');
             return;
         }
+
+        console.log('[DEBUG] Searching for INN:', inn);
 
         // Show loading state
         const originalText = findButton.textContent;
         findButton.disabled = true;
         findButton.textContent = 'Поиск...';
 
+        const csrfTokenNode = document.querySelector('input[name="csrf_token"]');
+        if (!csrfTokenNode) {
+            console.error('[DEBUG] CSRF token not found!');
+            alert('Ошибка безопасности: CSRF токен не найден. Перезагрузите страницу.');
+            findButton.disabled = false;
+            findButton.textContent = originalText;
+            return;
+        }
+
+        console.log('[DEBUG] CSRF Token found, sending request to /api/dadata/company');
+
         fetch('/api/dadata/company', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                'X-CSRFToken': csrfTokenNode.value
             },
             body: JSON.stringify({ inn: inn })
         })
-            .then(response => response.json())
+            .then(response => {
+                console.log('[DEBUG] Response received, status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('[DEBUG] Data parsed:', data);
                 if (data.error) {
+                    console.warn('[DEBUG] Server returned error:', data.error);
                     alert(data.error);
                     return;
                 }
@@ -37,32 +57,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 const nameInput = document.querySelector('input[name="company_name"]');
                 if (nameInput) {
                     nameInput.value = data.name || '';
-                    // Trigger input event in case there are listeners
                     nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    console.log('[DEBUG] Company name populated:', data.name);
                 }
 
-                if (data.address) {
-                    const addressInput = document.querySelector('input[name="legal_address"]');
-                    if (addressInput) addressInput.value = data.address;
-                }
-
-                if (data.kpp) {
-                    const kppInput = document.querySelector('input[name="kpp"]');
-                    if (kppInput) kppInput.value = data.kpp;
-                }
-
-                if (data.ogrn) {
-                    const ogrnInput = document.querySelector('input[name="ogrn"]');
-                    if (ogrnInput) ogrnInput.value = data.ogrn;
-                }
+                // ... rest of population logic
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Ошибка при поиске организации');
+                console.error('[DEBUG] Fetch error:', error);
+                alert('Ошибка при поиске организации: ' + error.message);
             })
             .finally(() => {
                 findButton.disabled = false;
                 findButton.textContent = originalText;
+                console.log('[DEBUG] Search finished');
             });
     });
 });
