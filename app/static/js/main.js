@@ -12,16 +12,13 @@ function removeEmojis(string) {
 }
 
 // === ОСНОВНЫЕ ФУНКЦИИ ===
-function applyFilters(categoryId = '', searchTerm = '') {
-    let url = '/';
-    const params = new URLSearchParams();
-    if (categoryId) params.append('category_id', categoryId);
-    if (searchTerm) params.append('search', searchTerm);
-    if (currentLocation && currentLocation !== 'Все регионы') {
-        params.append('location', currentLocation);
+function applyFilters() {
+    const searchForm = document.getElementById('searchForm');
+    if (searchForm) {
+        searchForm.submit();
+    } else {
+        window.location.href = '/';
     }
-    if (params.toString()) url += '?' + params.toString();
-    window.location.href = url;
 }
 
 // === ФУНКЦИИ ДЛЯ КАТЕГОРИЙ ===
@@ -57,9 +54,7 @@ function selectCategory(categoryElement, categoryId) {
     }
 
     // Применяем фильтры
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput ? searchInput.value.trim() : '';
-    applyFilters(categoryId, searchTerm);
+    applyFilters();
 }
 
 // === ФУНКЦИИ ДЛЯ МОДАЛЬНОГО ОКНА ===
@@ -248,14 +243,15 @@ function debounceSearch() {
 function setLocation(location) {
     currentLocation = location.trim();
     localStorage.setItem('userLocation', currentLocation);
-    document.getElementById('locationText').textContent = currentLocation;
+
+    const locationText = document.getElementById('locationText');
+    if (locationText) locationText.textContent = currentLocation;
+
+    const locationInputHidden = document.getElementById('locationInputHidden');
+    if (locationInputHidden) locationInputHidden.value = currentLocation;
+
     closeLocationModal();
-    // Применяем фильтры с новым местоположением
-    const categorySelect = document.getElementById('categoryFilter');
-    const searchInput = document.getElementById('searchInput');
-    const categoryId = categorySelect ? categorySelect.value : '';
-    const searchTerm = searchInput ? searchInput.value.trim() : '';
-    applyFilters(categoryId, searchTerm);
+    applyFilters();
 }
 
 // === ИНИЦИАЛИЗАЦИЯ ===
@@ -330,13 +326,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.querySelector('.search-btn');
 
-    if (searchBtn) {
-        searchBtn.addEventListener('click', function () {
-            const categoryId = categorySelect ? categorySelect.value : '';
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            applyFilters(categoryId, searchTerm);
-        });
-    }
+
 
     if (categorySelect) {
         categorySelect.addEventListener('change', function () {

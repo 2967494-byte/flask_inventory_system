@@ -1,0 +1,91 @@
+<div id="filterModal" class="filter-modal-overlay">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h3>Параметры поиска</h3>
+            <button type="button" class="filter-modal-close" id="closeFilters">&times;</button>
+        </div>
+
+        <div class="filter-modal-body">
+            <!-- Region & City -->
+            <div class="filter-group">
+                <label class="filter-label">Местоположение</label>
+                <select name="region_id" id="modalRegion" class="contact-form-control mb-2">
+                    <option value="">Все регионы</option>
+                    {% for region in regions %}
+                    <option value="{{ region.id }}" {% if request.args.get('region_id')|int==region.id %}selected{%
+                        endif %}>{{ region.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="city_id" id="modalCity" class="contact-form-control">
+                    <option value="">Любой город</option>
+                    <!-- Cities will be loaded via JS based on region -->
+                </select>
+            </div>
+
+            <!-- Price Range -->
+            <div class="filter-group">
+                <label class="filter-label">Цена (₽)</label>
+                <div class="d-flex gap-2">
+                    <input type="number" name="price_min" placeholder="От"
+                        value="{{ request.args.get('price_min', '') }}" class="contact-form-control">
+                    <input type="number" name="price_max" placeholder="До"
+                        value="{{ request.args.get('price_max', '') }}" class="contact-form-control">
+                </div>
+            </div>
+
+            <!-- Checks -->
+            <div class="filter-group">
+                <div class="d-flex flex-column gap-3">
+                    <label class="custom-checkbox-container">
+                        <input type="checkbox" name="with_vat" {% if request.args.get('with_vat')=='on' %}checked{%
+                            endif %}>
+                        <span class="checkmark"></span>
+                        <span class="label-text">Только с НДС</span>
+                    </label>
+                    <label class="custom-checkbox-container">
+                        <input type="checkbox" name="with_delivery" {% if request.args.get('with_delivery')=='on'
+                            %}checked{% endif %}>
+                        <span class="checkmark"></span>
+                        <span class="label-text">С доставкой</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Condition -->
+            <div class="filter-group">
+                <label class="filter-label">Состояние</label>
+                <div class="filter-radio-group">
+                    <input type="radio" name="condition" value="" id="cond_any" {% if not request.args.get('condition')
+                        %}checked{% endif %}>
+                    <label for="cond_any">Любое</label>
+                    <input type="radio" name="condition" value="new" id="cond_new" {% if
+                        request.args.get('condition')=='new' %}checked{% endif %}>
+                    <label for="cond_new">Новое</label>
+                    <input type="radio" name="condition" value="used" id="cond_used" {% if
+                        request.args.get('condition')=='used' %}checked{% endif %}>
+                    <label for="cond_used">Б/У</label>
+                </div>
+            </div>
+
+            <!-- Sorting -->
+            <div class="filter-group">
+                <label class="filter-label">Сортировка</label>
+                <select name="sort_by" class="contact-form-control">
+                    <option value="newest" {% if request.args.get('sort_by')=='newest' %}selected{% endif %}>По дате
+                        (сначала новые)</option>
+                    <option value="cheapest" {% if request.args.get('sort_by')=='cheapest' %}selected{% endif %}>Сначала
+                        дешевле</option>
+                    <option value="expensive" {% if request.args.get('sort_by')=='expensive' %}selected{% endif %}>
+                        Сначала дороже</option>
+                    <option value="distance" {% if request.args.get('sort_by')=='distance' %}selected{% endif %}>По
+                        удаленности</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-modal-footer">
+            <button type="button" class="btn-secondary" id="resetModalFilters">Сбросить</button>
+            <button type="submit" class="btn-primary">Применить</button>
+        </div>
+    </div>
+</div>

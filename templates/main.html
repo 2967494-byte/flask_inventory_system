@@ -7,40 +7,47 @@
 <div class="main-search-sticky">
     <div class="container">
         <form method="GET" action="{{ url_for('main.index') }}" id="searchForm" class="main-search-form">
-            <!-- Category Filter -->
-            <div class="main-category-filter">
-                <select name="category_id" id="categoryFilter" onchange="this.form.submit()"
-                    class="contact-form-control">
-                    <option value="">Все категории</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id }}" {% if request.args.get('category_id')==cat.id|string %}selected{% endif
-                        %}>
-                        {{ cat.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+            <div class="main-search-row">
+                <!-- Category Filter -->
+                <div class="main-category-filter">
+                    <select name="category_id" id="categoryFilter" onchange="this.form.submit()"
+                        class="contact-form-control">
+                        <option value="">Все категории</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if request.args.get('category_id')==cat.id|string %}selected{%
+                            endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Search Input Wrapper -->
+                <div class="main-search-input-wrapper">
+                    <i class="fas fa-search search-input-icon"></i>
+                    <input type="text" name="search" id="searchInput" placeholder="Поиск по товарам, производителям..."
+                        value="{{ request.args.get('search', '') }}" class="main-search-input">
+                    <button type="button" class="main-filter-btn" id="openFilters" title="Параметры поиска">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                </div>
+
+                <!-- Location Selector -->
+                <input type="hidden" name="location" id="locationInputHidden"
+                    value="{{ request.args.get('location', '') }}">
+                <div id="locationDisplay" class="main-location-selector" title="Выбрать регион">
+                    <span id="locationText">{{ request.args.get('location') or 'Все регионы' }}</span>
+                    <i class="fas fa-chevron-down main-loc-chevron"></i>
+                </div>
+
+                <button type="submit" class="btn-primary main-search-btn">Найти</button>
             </div>
 
-            <!-- Search Input -->
-            <div class="main-search-input-wrapper">
-                <input type="text" name="search" id="searchInput" placeholder="Поиск по товарам, производителям..."
-                    value="{{ request.args.get('search', '') }}" class="contact-form-control main-search-input">
-                <button type="submit" class="btn-primary main-search-btn search-btn">Найти</button>
+            <div class="mobile-search-btn-container">
+                <button type="submit" class="btn-primary w-100 py-3 mt-2">Найти товары</button>
             </div>
 
-            <!-- Location Selector -->
-            <input type="hidden" name="location" id="locationInputHidden"
-                value="{{ request.args.get('location', '') }}">
-            <div id="locationDisplay" class="main-location-selector" title="Выбрать регион">
-                <span id="locationText">Все регионы</span>
-                <i class="fas fa-chevron-down main-loc-chevron"></i>
-            </div>
-
-            {% if request.args.get('search') or request.args.get('category_id') or request.args.get('location') %}
-            <a href="{{ url_for('main.index') }}" class="btn-secondary main-search-clear">
-                <i class="fas fa-times"></i>
-            </a>
-            {% endif %}
+            {% include 'partials/filter_modal.html' %}
         </form>
     </div>
 </div>
@@ -237,6 +244,70 @@
             }
         }
 
+        // Filter Modal Logic
+        const filterModal = document.getElementById('filterModal');
+        const openFiltersBtn = document.getElementById('openFilters');
+        const closeFiltersBtn = document.getElementById('closeFilters');
+        const resetFiltersBtn = document.getElementById('resetModalFilters');
+
+        if (openFiltersBtn) {
+            openFiltersBtn.addEventListener('click', () => {
+                filterModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        if (closeFiltersBtn) {
+            closeFiltersBtn.addEventListener('click', () => {
+                filterModal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+
+        // Close on outside click
+        if (filterModal) {
+            filterModal.addEventListener('click', (e) => {
+                if (e.target === filterModal) {
+                    filterModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        if (resetFiltersBtn) {
+            resetFiltersBtn.addEventListener('click', () => {
+                const inputs = filterModal.querySelectorAll('input:not([type="radio"]), select');
+                inputs.forEach(input => input.value = '');
+                const radios = filterModal.querySelectorAll('input[type="radio"]');
+                radios.forEach(radio => radio.checked = radio.value === '');
+                const checks = filterModal.querySelectorAll('input[type="checkbox"]');
+                checks.forEach(check => check.checked = false);
+            });
+        }
+
+        // Modal Regions/Cities loading
+        const modalRegion = document.getElementById('modalRegion');
+        const modalCity = document.getElementById('modalCity');
+
+        if (modalRegion) {
+            modalRegion.addEventListener('change', function () {
+                const regionId = this.value;
+                modalCity.innerHTML = '<option value="">Любой город</option>';
+                if (!regionId) return;
+
+                fetch(`/api/cities?region_id=${regionId}`)
+                    .then(r => r.json())
+                    .then(cities => {
+                        cities.forEach(city => {
+                            const opt = document.createElement('option');
+                            opt.value = city.id;
+                            opt.textContent = city.name;
+                            modalCity.appendChild(opt);
+                        });
+                    });
+            });
+        }
+
         const viewBtns = document.querySelectorAll('.main-view-btn');
         viewBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -310,8 +381,15 @@
 
     .main-search-form {
         display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .main-search-row {
+        display: flex;
         gap: 0.75rem;
         align-items: stretch;
+        width: 100%;
     }
 
     .main-category-filter {
@@ -322,26 +400,63 @@
         flex: 1;
         position: relative;
         display: flex;
-        gap: 0.5rem;
+        align-items: center;
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        padding: 0 1rem;
+        transition: border-color 0.2s;
+    }
+
+    .main-search-input-wrapper:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(92, 103, 242, 0.1);
     }
 
     .main-search-input {
+        flex: 1;
+        border: none !important;
+        padding-left: 0.5rem !important;
         margin-bottom: 0 !important;
-        padding-left: 3rem !important;
-        border-color: var(--gray-200) !important;
+        height: 100%;
+        background: transparent !important;
     }
 
-    .main-search-icon {
-        position: absolute;
-        left: 1.25rem;
-        top: 50%;
-        transform: translateY(-50%);
+    .main-search-input:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    .search-input-icon {
         color: var(--gray-400);
+        font-size: 1rem;
+    }
+
+    .main-filter-btn {
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        color: var(--gray-600);
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .main-filter-btn:hover {
+        background: var(--primary-light);
+        color: var(--primary);
+        border-color: var(--primary);
     }
 
     .main-search-btn {
         padding: 0 2rem;
         border-radius: var(--radius-md);
+        font-weight: 700;
     }
 
     .main-search-clear {
@@ -368,6 +483,172 @@
         color: var(--gray-700);
         white-space: nowrap;
         min-width: 180px;
+    }
+
+    .mobile-search-btn-container {
+        display: none;
+    }
+
+    @media (max-width: 991px) {
+
+        .main-category-filter,
+        .main-location-selector,
+        .main-search-btn {
+            display: none !important;
+        }
+
+        .mobile-search-btn-container {
+            display: block;
+        }
+
+        .main-search-input-wrapper {
+            height: 50px;
+        }
+    }
+
+    /* Filter Modal */
+    .filter-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 1rem;
+    }
+
+    .filter-modal-overlay.active {
+        display: flex;
+    }
+
+    .filter-modal-content {
+        background: white;
+        width: 100%;
+        max-width: 480px;
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        animation: modalFadeIn 0.3s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .filter-modal-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .filter-modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 800;
+    }
+
+    .filter-modal-close {
+        background: var(--gray-100);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--gray-500);
+    }
+
+    .filter-modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+
+    .filter-group {
+        margin-bottom: 1.75rem;
+    }
+
+    .filter-label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--gray-900);
+        font-size: 0.95rem;
+    }
+
+    .filter-modal-footer {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid var(--gray-100);
+        display: flex;
+        gap: 1rem;
+    }
+
+    /* Custom Checkbox */
+    .custom-checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.9375rem;
+    }
+
+    .custom-checkbox-container input {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    /* Radio Group */
+    .filter-radio-group {
+        display: flex;
+        background: var(--gray-100);
+        padding: 0.25rem;
+        border-radius: 10px;
+        gap: 0.25rem;
+    }
+
+    .filter-radio-group label {
+        flex: 1;
+        text-align: center;
+        padding: 0.625rem;
+        cursor: pointer;
+        font-weight: 700;
+        border-radius: 8px;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .filter-radio-group input {
+        display: none;
+    }
+
+    .filter-radio-group input:checked+label {
+        background: white;
+        color: var(--primary);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .main-location-selector:hover {

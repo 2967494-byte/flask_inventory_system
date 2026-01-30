@@ -46,7 +46,19 @@ def index():
     category_id = request.args.get('category_id')
     search_term = request.args.get('search', '').strip()
     location = request.args.get('location', '').strip()
+    
+    # Advanced filters
+    region_id = request.args.get('region_id', type=int)
+    city_id = request.args.get('city_id', type=int)
+    price_min = request.args.get('price_min', type=float)
+    price_max = request.args.get('price_max', type=float)
+    with_vat = request.args.get('with_vat') == 'on'
+    with_delivery = request.args.get('with_delivery') == 'on'
+    condition = request.args.get('condition')
+    sort_by = request.args.get('sort_by', 'newest')
+
     query = Product.query.filter_by(status=Product.STATUS_PUBLISHED)
+    
     if category_id and category_id.isdigit():
         cat_id = int(category_id)
         # Recursive category filtering
@@ -63,18 +75,45 @@ def index():
             query = query.filter(Product.category_id.in_(all_cat_ids))
         else:
             query = query.filter_by(category_id=cat_id)
+            
     if search_term:
         query = query.filter(
             Product.title.ilike(f'%{search_term}%') | 
             Product.description.ilike(f'%{search_term}%')
         )
+        
     if location and location != 'Все регионы':
         query = query.filter(
             (Product.region == location) | 
             (Product.city == location)
         )
+    
+    # Apply new filters
+    if region_id:
+        query = query.filter_by(region_id=region_id)
+    if city_id:
+        query = query.filter_by(city_id=city_id)
+    if price_min is not None:
+        query = query.filter(Product.price >= price_min)
+    if price_max is not None:
+        query = query.filter(Product.price <= price_max)
+    if with_vat:
+        query = query.filter_by(vat_included=True)
+    if with_delivery:
+        query = query.filter_by(delivery=True)
+    if condition:
+        query = query.filter_by(condition=condition)
+
+    # Sorting
+    if sort_by == 'cheapest':
+        query = query.order_by(Product.price.asc())
+    elif sort_by == 'expensive':
+        query = query.order_by(Product.price.desc())
+    else: # newest
+        query = query.order_by(Product.created_at.desc())
+
     query = query.options(joinedload(Product.product_category))
-    products = query.order_by(Product.created_at.desc()).all()
+    products = query.all()
     
     # Используем иерархический список категорий (список словарей)
     from app.utils import get_category_choices
@@ -82,6 +121,9 @@ def index():
     
     # Для плиток категорий (только верхний уровень)
     root_categories = Category.query.filter_by(parent_id=None).order_by(Category.name).all()
+    
+    # For filter modal
+    all_regions = Region.query.order_by(Region.name).all()
     
     # Check for sidebar banner
     sidebar_banner = None
@@ -97,7 +139,8 @@ def index():
                          categories=categories,
                          root_categories=root_categories,
                          search_term=search_term,
-                         sidebar_banner=sidebar_banner)
+                         sidebar_banner=sidebar_banner,
+                         regions=all_regions)
 
 @main.route('/dashboard')
 @login_required

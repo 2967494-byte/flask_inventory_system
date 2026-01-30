@@ -270,3 +270,10 @@ def get_cities_by_region(region_id):
         mimetype='application/json; charset=utf-8'
     )
     return response
+@api_bp.route('/api/cities')
+def get_cities():
+    region_id = request.args.get('region_id', type=int)
+    if not region_id:
+        return jsonify([])
+    cities = City.query.filter_by(region_id=region_id).order_by(City.name).all()
+    return jsonify([{'id': c.id, 'name': c.name} for c in cities])
