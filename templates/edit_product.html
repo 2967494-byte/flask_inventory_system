@@ -3,7 +3,7 @@
 {% block title %}Редактировать товар - Система{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 2rem auto;">
+<div style="max-width: 1200px; margin: 2rem auto;">
     <div class="card" style="padding: 2.5rem; transition: none;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem;">
             <div>
@@ -20,191 +20,236 @@
         <form method="POST" enctype="multipart/form-data" id="editProductForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <!-- Основная информация -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-info-circle" style="color: var(--primary);"></i>
-                    Основная информация
-                </h3>
+            <!-- Two Column Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
 
-                <div style="display: grid; gap: 1.5rem;">
-                    <div class="form-group">
-                        <label class="form-label" for="title">Название товара <span
-                                style="color: var(--danger);">*</span></label>
-                        <input type="text" name="title" id="title" class="contact-form-control"
-                            style="margin-bottom: 0;" value="{{ product.title }}" required>
+                <!-- LEFT COLUMN -->
+                <div style="border-right: 2px dashed var(--gray-200); padding-right: 2.5rem;">
+                    <!-- Основная информация -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-info-circle" style="color: var(--primary);"></i>
+                            Основная информация
+                        </h3>
+
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="title">Название товара <span
+                                        style="color: var(--danger);">*</span></label>
+                                <input type="text" name="title" id="title" class="contact-form-control"
+                                    style="margin-bottom: 0;" value="{{ product.title }}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Категория <span style="color: var(--danger);">*</span></label>
+                                <div id="category-container" style="display: grid; gap: 0.75rem;">
+                                    <select class="contact-form-control" style="margin-bottom: 0;"
+                                        onchange="handleCategoryChange(this)" data-level="0">
+                                        <option value="">-- Выберите категорию --</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if category_path|length>0 and
+                                            category_path[0].id
+                                            == category.id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <input type="hidden" name="category_id" id="category_id_hidden"
+                                    value="{{ product.category_id }}" required>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 120px; gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label class="form-label" for="manufacturer">Производитель</label>
+                                    <input type="text" name="manufacturer" id="manufacturer"
+                                        class="contact-form-control" style="margin-bottom: 0;"
+                                        value="{{ product.manufacturer or '' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="quantity">Количество</label>
+                                    <input type="number" name="quantity" id="quantity" class="contact-form-control"
+                                        style="margin-bottom: 0;" value="{{ product.quantity or 1 }}" min="1">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Цена (руб.)</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <select class="contact-form-control" name="price_type"
+                                        style="width: 120px; margin-bottom: 0; flex-shrink: 0;">
+                                        <option value="fixed" {% if product.price_type=='fixed' or not
+                                            product.price_type %}selected{% endif %}>Равная</option>
+                                        <option value="from" {% if product.price_type=='from' %}selected{% endif %}>От
+                                        </option>
+                                    </select>
+                                    <div style="position: relative; flex: 1;">
+                                        <input type="number" name="price" id="price" class="contact-form-control"
+                                            style="margin-bottom: 0; padding-right: 2rem;"
+                                            value="{{ product.price if product.price is not none else '' }}"
+                                            step="0.01">
+                                        <span
+                                            style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-400);">₽</span>
+                                    </div>
+                                    <div
+                                        style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem; white-space: nowrap;">
+                                        <input type="checkbox" name="vat_included" id="vat_included"
+                                            style="width: 1.125rem; height: 1.125rem;" {% if product.vat_included
+                                            %}checked{% endif %}>
+                                        <label for="vat_included" style="font-size: 0.875rem; color: var(--gray-700);">с
+                                            НДС</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Состояние</label>
+                                <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="radio" name="condition" value="new" {% if product.condition=='new'
+                                            or not product.condition %}checked{% endif %}
+                                            style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                        <span style="font-size: 0.9375rem; color: var(--gray-700);">Новое</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="radio" name="condition" value="used" {% if
+                                            product.condition=='used' %}checked{% endif %}
+                                            style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                        <span style="font-size: 0.9375rem; color: var(--gray-700);">Б/у</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Категория <span style="color: var(--danger);">*</span></label>
-                        <div id="category-container" style="display: grid; gap: 0.75rem;">
-                            <select class="contact-form-control" style="margin-bottom: 0;"
-                                onchange="handleCategoryChange(this)" data-level="0">
-                                <option value="">-- Выберите категорию --</option>
-                                {% for category in categories %}
-                                <option value="{{ category.id }}" {% if category_path|length> 0 and category_path[0].id
-                                    == category.id %}selected{% endif %}>
-                                    {{ category.name }}
+                    <!-- Изображения -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-camera" style="color: var(--primary);"></i>
+                            Изображения
+                        </h3>
+
+                        {% if product_images %}
+                        <div
+                            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                            {% for image in product_images %}
+                            <div id="existing-image-{{ loop.index0 }}"
+                                style="position: relative; aspect-ratio: 1/1; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--gray-200);">
+                                <img src="{{ url_for('main.serve_uploaded_file', filename=image) }}"
+                                    style="width: 100%; height: 100%; object-fit: cover;">
+                                <button type="button" onclick="removeExistingImage('{{ image }}', {{ loop.index0 }})"
+                                    style="position: absolute; top: 0.25rem; right: 0.25rem; background: var(--danger); color: white; border: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="removed_images" id="removed_images" value="">
+                        {% endif %}
+
+                        <div
+                            style="background: var(--gray-50); border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 3rem; text-align: center; position: relative; transition: border-color 0.2s;">
+                            <input type="file" name="image_files" id="image_files" multiple accept="image/*"
+                                style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2;">
+                            <i class="fas fa-cloud-upload-alt fa-3x"
+                                style="color: var(--gray-300); margin-bottom: 1rem;"></i>
+                            <p style="font-weight: 600; color: var(--gray-900); margin-bottom: 0.25rem;">Нажмите или
+                                перетащите файлы для загрузки</p>
+                            <p style="font-size: 0.8125rem; color: var(--gray-500);">Поддерживаются JPG, PNG, WEBP. До 4
+                                изображений.</p>
+                            <p style="font-size: 0.8125rem; color: var(--primary); margin-top: 0.5rem;">
+                                <i class="fas fa-paste"></i> Или вставьте изображение из буфера обмена (Ctrl+V)
+                            </p>
+                        </div>
+                        <div id="image-preview"
+                            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.5rem;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div>
+                    <!-- Местоположение -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
+                            Местоположение
+                        </h3>
+
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="region_id">Субъект РФ <span
+                                        style="color: var(--danger);">*</span></label>
+                                <select class="contact-form-control" style="margin-bottom: 0;" id="region_id"
+                                    name="region_id" required>
+                                    <option value="">Выберите субъект РФ</option>
+                                    {% for region in regions %}
+                                    <option value="{{ region.id }}" {% if product.region_id==region.id %}selected{%
+                                        endif %}>{{
+                                        region.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="city_id">Город <span
+                                        style="color: var(--danger);">*</span></label>
+                                <select class="contact-form-control" style="margin-bottom: 0;" id="city_id"
+                                    name="city_id" required>
+                                    <option value="">Выберите город</option>
+                                    {% for city in cities %}
+                                    <option value="{{ city.id }}" {% if product.city_id==city.id %}selected{% endif %}>
+                                        {{
+                                        city.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
+                            <input type="checkbox" name="delivery" id="delivery"
+                                style="width: 1.125rem; height: 1.125rem; cursor: pointer;" {% if product.delivery
+                                %}checked{% endif %}>
+                            <label for="delivery"
+                                style="font-size: 0.9375rem; color: var(--gray-700); cursor: pointer;">Возможна
+                                доставка</label>
+                        </div>
+                    </div>
+
+                    <!-- Описание -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-align-left" style="color: var(--primary);"></i>
+                            Описание
+                        </h3>
+                        <div class="form-group">
+                            <textarea name="description" id="description" class="contact-form-control" rows="12"
+                                style="margin-bottom: 0;"
+                                placeholder="Опишите состояние, характеристики и особенности товара...">{{ product.description or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Статус -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3
+                            style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-toggle-on" style="color: var(--primary);"></i>
+                            Статус
+                        </h3>
+                        <div class="form-group">
+                            <label class="form-label" for="status">Статус объявления</label>
+                            <select class="contact-form-control" style="margin-bottom: 0;" id="status" name="status"
+                                required>
+                                <option value="1" {% if product.status==1 %}selected{% endif %}>Опубликовано</option>
+                                <option value="4" {% if product.status==4 %}selected{% endif %}>Снято с публикации
                                 </option>
-                                {% endfor %}
+                                <option value="3" {% if product.status==3 %}selected{% endif %}>Истек срок</option>
                             </select>
                         </div>
-                        <input type="hidden" name="category_id" id="category_id_hidden"
-                            value="{{ product.category_id }}" required>
                     </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 120px; gap: 1.5rem;">
-                        <div class="form-group">
-                            <label class="form-label" for="manufacturer">Производитель</label>
-                            <input type="text" name="manufacturer" id="manufacturer" class="contact-form-control"
-                                style="margin-bottom: 0;" value="{{ product.manufacturer or '' }}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="quantity">Количество</label>
-                            <input type="number" name="quantity" id="quantity" class="contact-form-control"
-                                style="margin-bottom: 0;" value="{{ product.quantity or 1 }}" min="1">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Цена (руб.)</label>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <select class="contact-form-control" name="price_type"
-                                style="width: 120px; margin-bottom: 0; flex-shrink: 0;">
-                                <option value="fixed" {% if product.price_type=='fixed' or not product.price_type
-                                    %}selected{% endif %}>Равная</option>
-                                <option value="from" {% if product.price_type=='from' %}selected{% endif %}>От</option>
-                            </select>
-                            <div style="position: relative; flex: 1;">
-                                <input type="number" name="price" id="price" class="contact-form-control"
-                                    style="margin-bottom: 0; padding-right: 2rem;"
-                                    value="{{ product.price if product.price is not none else '' }}" step="0.01">
-                                <span
-                                    style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-400);">₽</span>
-                            </div>
-                            <div
-                                style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem; white-space: nowrap;">
-                                <input type="checkbox" name="vat_included" id="vat_included"
-                                    style="width: 1.125rem; height: 1.125rem;" {% if product.vat_included %}checked{%
-                                    endif %}>
-                                <label for="vat_included" style="font-size: 0.875rem; color: var(--gray-700);">с
-                                    НДС</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Состояние</label>
-                        <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="radio" name="condition" value="new" {% if product.condition=='new' or not
-                                    product.condition %}checked{% endif %} style="width: 1.125rem; height: 1.125rem;">
-                                <span style="font-size: 0.9375rem; color: var(--gray-700);">Новое</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="radio" name="condition" value="used" {% if product.condition=='used'
-                                    %}checked{% endif %} style="width: 1.125rem; height: 1.125rem;">
-                                <span style="font-size: 0.9375rem; color: var(--gray-700);">Б/у</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Местоположение -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
-                    Местоположение
-                </h3>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div class="form-group">
-                        <label class="form-label" for="region_id">Субъект РФ <span
-                                style="color: var(--danger);">*</span></label>
-                        <select class="contact-form-control" style="margin-bottom: 0;" id="region_id" name="region_id"
-                            required>
-                            <option value="">Выберите субъект РФ</option>
-                            {% for region in regions %}
-                            <option value="{{ region.id }}" {% if product.region_id==region.id %}selected{% endif %}>{{
-                                region.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="city_id">Город <span
-                                style="color: var(--danger);">*</span></label>
-                        <select class="contact-form-control" style="margin-bottom: 0;" id="city_id" name="city_id"
-                            required>
-                            <option value="">Выберите город</option>
-                            {% for city in cities %}
-                            <option value="{{ city.id }}" {% if product.city_id==city.id %}selected{% endif %}>{{
-                                city.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
-                    <input type="checkbox" name="delivery" id="delivery" style="width: 1.125rem; height: 1.125rem;" {%
-                        if product.delivery %}checked{% endif %}>
-                    <label for="delivery" style="font-size: 0.9375rem; color: var(--gray-700);">Возможна
-                        доставка</label>
-                </div>
-            </div>
-
-            <!-- Изображения -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-camera" style="color: var(--primary);"></i>
-                    Изображения
-                </h3>
-
-                {% if product_images %}
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                    {% for image in product_images %}
-                    <div id="existing-image-{{ loop.index0 }}"
-                        style="position: relative; aspect-ratio: 1/1; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--gray-200);">
-                        <img src="{{ url_for('main.serve_uploaded_file', filename=image) }}"
-                            style="width: 100%; height: 100%; object-fit: cover;">
-                        <button type="button" onclick="removeExistingImage('{{ image }}', {{ loop.index0 }})"
-                            style="position: absolute; top: 0.25rem; right: 0.25rem; background: var(--danger); color: white; border: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    {% endfor %}
-                </div>
-                <input type="hidden" name="removed_images" id="removed_images" value="">
-                {% endif %}
-
-                <div
-                    style="background: var(--gray-50); border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 2rem; text-align: center; position: relative; transition: border-color 0.2s;">
-                    <input type="file" name="image_files" id="image_files" multiple accept="image/*"
-                        style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2;">
-                    <i class="fas fa-plus fa-2x" style="color: var(--gray-300); margin-bottom: 0.5rem;"></i>
-                    <p style="font-weight: 600; color: var(--gray-900); font-size: 0.875rem;">Добавить фотографии</p>
-                </div>
-                <div id="image-preview"
-                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1rem;"></div>
-            </div>
-
-            <!-- Статус -->
-            <div style="margin-bottom: 3rem;">
-                <h3
-                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fas fa-toggle-on" style="color: var(--primary);"></i>
-                    Статус
-                </h3>
-                <div class="form-group">
-                    <label class="form-label" for="status">Статус объявления</label>
-                    <select class="contact-form-control" style="margin-bottom: 0;" id="status" name="status" required>
-                        <option value="1" {% if product.status==1 %}selected{% endif %}>Опубликовано</option>
-                        <option value="4" {% if product.status==4 %}selected{% endif %}>Снято с публикации</option>
-                        <option value="3" {% if product.status==3 %}selected{% endif %}>Истек срок</option>
-                    </select>
                 </div>
             </div>
 
@@ -295,10 +340,45 @@
     }
 
     // New image preview
+    let newImageFiles = [];
+
     document.getElementById('image_files').addEventListener('change', function (e) {
+        newImageFiles = Array.from(e.target.files).slice(0, 4);
+        renderNewImagePreviews();
+    });
+
+    // Paste from clipboard
+    document.addEventListener('paste', function (e) {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                e.preventDefault();
+                const blob = items[i].getAsFile();
+
+                if (newImageFiles.length >= 4) {
+                    alert('Максимум 4 изображения');
+                    return;
+                }
+
+                newImageFiles.push(blob);
+                renderNewImagePreviews();
+                break;
+            }
+        }
+    });
+
+    function renderNewImagePreviews() {
         const preview = document.getElementById('image-preview');
         preview.innerHTML = '';
-        Array.from(e.target.files).slice(0, 4).forEach(file => {
+
+        // Update file input with new files
+        const dataTransfer = new DataTransfer();
+        newImageFiles.forEach(file => dataTransfer.items.add(file));
+        document.getElementById('image_files').files = dataTransfer.files;
+
+        newImageFiles.forEach(file => {
             const reader = new FileReader();
             reader.onload = (re) => {
                 const div = document.createElement('div');
@@ -311,7 +391,8 @@
             };
             reader.readAsDataURL(file);
         });
-    });
+    }
+
 
     // Region/City dependency
     document.getElementById('region_id').addEventListener('change', function () {
@@ -347,6 +428,26 @@
         font-weight: 600;
         color: var(--gray-900);
         margin-bottom: 0.5rem;
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+
+        /* Switch to single column layout */
+        div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* Remove border separator on mobile */
+        div[style*="border-right: 2px dashed"] {
+            border-right: none !important;
+            padding-right: 0 !important;
+        }
+
+        /* Adjust image grid for mobile */
+        div[style*="grid-template-columns: repeat(2, 1fr)"] {
+            grid-template-columns: 1fr !important;
+        }
     }
 </style>
 {% endblock %}

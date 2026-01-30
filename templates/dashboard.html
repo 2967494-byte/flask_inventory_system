@@ -7,22 +7,28 @@
     <div class="db-layout">
         <!-- Sidebar -->
         <aside class="db-sidebar">
-            <div class="card db-sidebar-card">
+            <div class="card" style="padding: 1.5rem; transition: none;">
                 <nav>
-                    <ul class="db-nav">
-                        <li class="db-nav-item">
-                            <a href="{{ url_for('main.dashboard') }}" class="db-nav-link active">
-                                <i class="fas fa-box"></i> Мои объявления
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="{{ url_for('main.dashboard') }}" class="nav-link"
+                                style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem; border-radius: var(--radius-md); text-decoration: none; background: var(--primary-light); color: var(--primary); font-weight: 600; transition: all 0.2s;">
+                                <i class="fas fa-box" style="width: 20px; font-size: 1.125rem;"></i>
+                                Мои объявления
                             </a>
                         </li>
-                        <li class="db-nav-item">
-                            <a href="{{ url_for('main.favorites') }}" class="db-nav-link">
-                                <i class="far fa-heart"></i> Избранное
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="{{ url_for('main.favorites') }}" class="nav-link"
+                                style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem; border-radius: var(--radius-md); text-decoration: none; color: var(--gray-600); font-weight: 500; transition: all 0.2s;">
+                                <i class="far fa-heart" style="width: 20px; font-size: 1.125rem;"></i>
+                                Избранное
                             </a>
                         </li>
-                        <li class="db-nav-item">
-                            <a href="{{ url_for('main.profile') }}" class="db-nav-link">
-                                <i class="far fa-user"></i> Профиль
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="{{ url_for('main.profile') }}" class="nav-link"
+                                style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem; border-radius: var(--radius-md); text-decoration: none; color: var(--gray-600); font-weight: 500; transition: all 0.2s;">
+                                <i class="far fa-user" style="width: 20px; font-size: 1.125rem;"></i>
+                                Профиль
                             </a>
                         </li>
                     </ul>
@@ -402,6 +408,11 @@
 
     .db-empty-btn {
         margin-top: 2rem;
+    }
+
+    .nav-link:hover {
+        background: var(--gray-50);
+        color: var(--primary) !important;
     }
 </style>
 {% endblock %}

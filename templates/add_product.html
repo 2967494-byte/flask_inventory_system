@@ -136,6 +136,9 @@
                                 файлы для загрузки</p>
                             <p style="font-size: 0.8125rem; color: var(--gray-500);">Поддерживаются JPG, PNG, WEBP. До 4
                                 изображений.</p>
+                            <p style="font-size: 0.8125rem; color: var(--primary); margin-top: 0.5rem;">
+                                <i class="fas fa-paste"></i> Или вставьте изображение из буфера обмена (Ctrl+V)
+                            </p>
                         </div>
 
                         <div id="image-preview"
@@ -378,6 +381,37 @@
             reader.readAsDataURL(file);
         });
     });
+
+    // Paste from clipboard
+    document.addEventListener('paste', function (e) {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                e.preventDefault();
+                const blob = items[i].getAsFile();
+
+                if (imageData.length >= 4) {
+                    alert('Максимум 4 изображения');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    imageData.push({
+                        file: blob,
+                        croppedBlob: null,
+                        previewUrl: re.target.result
+                    });
+                    renderImagePreviews();
+                };
+                reader.readAsDataURL(blob);
+                break;
+            }
+        }
+    });
+
 
     function renderImagePreviews() {
         const preview = document.getElementById('image-preview');
