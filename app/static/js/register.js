@@ -61,7 +61,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log('[DEBUG] Company name populated:', data.name);
                 }
 
-                // ... rest of population logic
+                if (data.address) {
+                    const addressInput = document.querySelector('input[name="legal_address"]');
+                    if (addressInput) {
+                        addressInput.value = data.address;
+                        console.log('[DEBUG] Address updated');
+                    }
+                }
+
+                if (data.kpp) {
+                    const kppInput = document.querySelector('input[name="kpp"]');
+                    if (kppInput) {
+                        kppInput.value = data.kpp;
+                        console.log('[DEBUG] KPP updated');
+                    }
+                }
+
+                if (data.ogrn) {
+                    const ogrnInput = document.querySelector('input[name="ogrn"]');
+                    if (ogrnInput) {
+                        ogrnInput.value = data.ogrn;
+                        console.log('[DEBUG] OGRN updated');
+                    }
+                }
             })
             .catch(error => {
                 console.error('[DEBUG] Fetch error:', error);
