@@ -74,6 +74,20 @@
                 </label>
             </div>
 
+            <div class="auth-form-group" style="margin-bottom: 2rem;">
+                <label class="auth-label">Код с картинки *</label>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="text" name="captcha" class="contact-form-control auth-input"
+                        placeholder="Введите символы" required autocomplete="off" style="max-width: 180px;">
+                    <div style="position: relative; flex-shrink: 0;">
+                        <img src="{{ url_for('auth.register_captcha') }}" alt="Captcha" class="reg-captcha-img"
+                            style="height: 48px; border-radius: var(--radius-md); cursor: pointer;"
+                            onclick="this.src='{{ url_for('auth.register_captcha') }}?' + Math.random()"
+                            title="Нажмите, чтобы обновить">
+                    </div>
+                </div>
+            </div>
+
             <button type="submit" class="btn-primary auth-submit">
                 Зарегистрировать организацию
             </button>
@@ -90,17 +104,7 @@
     </div>
 </div>
 
-<script>
-    document.getElementById('inn-search-btn').addEventListener('click', async function () {
-        const innInput = document.getElementById('inn-field');
-        const inn = innInput.value;
-        if (!inn) return;
 
-        this.textContent = 'Поиск...';
-        this.disabled = true;
-        // Logic handled by register.js
-    });
-</script>
 <script src="{{ url_for('static', filename='js/register.js') }}"></script>
 {% endblock %}
 

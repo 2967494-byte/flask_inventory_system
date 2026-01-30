@@ -268,6 +268,7 @@
     </div>
 </div>
 
+</script>
 <script>
     const INITIAL_PATH = [
         {% for cat in category_path %}
@@ -276,14 +277,29 @@
     ];
 
     document.addEventListener('DOMContentLoaded', async function () {
+        // Load Categories
         for (let i = 0; i < INITIAL_PATH.length - 1; i++) {
             await loadNextLevel(INITIAL_PATH[i].id, i + 1, INITIAL_PATH[i + 1].id);
         }
         if (INITIAL_PATH.length > 0) {
             await loadNextLevel(INITIAL_PATH[INITIAL_PATH.length - 1].id, INITIAL_PATH.length, null);
         }
+
+        // Initialize Image Listeners
+        const imageInput = document.getElementById('image_files');
+        if (imageInput) {
+            imageInput.addEventListener('change', handleFileSelect);
+        }
+
+        document.addEventListener('paste', handlePaste);
+
+        const form = document.getElementById('editProductForm');
+        if (form) {
+            form.addEventListener('submit', handleFormSubmit);
+        }
     });
 
+    // --- Category Logic ---
     async function loadNextLevel(parentId, level, selectedId) {
         const response = await fetch(`/api/categories/children/${parentId}`);
         const children = await response.json();
@@ -331,7 +347,7 @@
         document.getElementById('category_id_hidden').value = lastId;
     }
 
-    // Image removal
+    // --- Existing Image Logic ---
     let removedImages = [];
     function removeExistingImage(filename, index) {
         removedImages.push(filename);
@@ -339,16 +355,17 @@
         document.getElementById(`existing-image-${index}`).style.display = 'none';
     }
 
-    // New image preview
-    let newImageFiles = [];
+    // --- New Image Logic (Add Product Style) ---
+    let newImageData = []; // Stores objects: { file: File, previewUrl: String }
 
-    document.getElementById('image_files').addEventListener('change', function (e) {
-        newImageFiles = Array.from(e.target.files).slice(0, 4);
-        renderNewImagePreviews();
-    });
+    function handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        processFiles(files);
+        // Reset input so same file can be selected again if needed (though we manage state manually now)
+        e.target.value = '';
+    }
 
-    // Paste from clipboard
-    document.addEventListener('paste', function (e) {
+    function handlePaste(e) {
         const items = e.clipboardData?.items;
         if (!items) return;
 
@@ -356,69 +373,132 @@
             if (items[i].type.indexOf('image') !== -1) {
                 e.preventDefault();
                 const blob = items[i].getAsFile();
-
-                if (newImageFiles.length >= 4) {
-                    alert('Максимум 4 изображения');
-                    return;
-                }
-
-                newImageFiles.push(blob);
-                renderNewImagePreviews();
+                processFiles([blob]);
                 break;
             }
         }
-    });
+    }
 
-    function renderNewImagePreviews() {
-        const preview = document.getElementById('image-preview');
-        preview.innerHTML = '';
+    function processFiles(files) {
+        files.forEach(file => {
+            if (newImageData.length >= 4) {
+                // Optional: Alert user
+                return;
+            }
 
-        // Update file input with new files
-        const dataTransfer = new DataTransfer();
-        newImageFiles.forEach(file => dataTransfer.items.add(file));
-        document.getElementById('image_files').files = dataTransfer.files;
-
-        newImageFiles.forEach(file => {
             const reader = new FileReader();
             reader.onload = (re) => {
-                const div = document.createElement('div');
-                div.style.aspectRatio = '1/1';
-                div.style.borderRadius = 'var(--radius-md)';
-                div.style.overflow = 'hidden';
-                div.style.border = '1px solid var(--gray-200)';
-                div.innerHTML = `<img src="${re.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
-                preview.appendChild(div);
+                newImageData.push({
+                    file: file,
+                    previewUrl: re.target.result
+                });
+                renderNewImagePreviews();
             };
             reader.readAsDataURL(file);
         });
     }
 
+    function renderNewImagePreviews() {
+        const preview = document.getElementById('image-preview');
+        preview.innerHTML = '';
+
+        newImageData.forEach((data, index) => {
+            const div = document.createElement('div');
+            div.style.position = 'relative';
+            div.style.aspectRatio = '1/1';
+            div.style.borderRadius = 'var(--radius-md)';
+            div.style.overflow = 'hidden';
+            div.style.border = '1px solid var(--gray-200)';
+
+            div.innerHTML = `
+                <img src="${data.previewUrl}" style="width:100%; height:100%; object-fit:cover;">
+                <button type="button" onclick="removeNewImage(${index})"
+                    style="position: absolute; top: 0.25rem; right: 0.25rem; background: var(--danger); color: white; border: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            preview.appendChild(div);
+        });
+    }
+
+    // Make accessible globally
+    window.removeNewImage = function (index) {
+        newImageData.splice(index, 1);
+        renderNewImagePreviews();
+    };
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+
+        // Remove the original file input data (it's likely empty or stale)
+        formData.delete('image_files');
+
+        // Append our manually managed files
+        newImageData.forEach(data => {
+            formData.append('image_files', data.file, data.file.name || "pasted_image.png");
+        });
+
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+
+        fetch(window.location.href, { // Submit to current URL
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else if (response.ok) {
+                    // If no redirect but OK, maybe success message or reload?
+                    // Usually Flask redirects on success. 
+                    // If it returns HTML (error), we might need to parse or reload.
+                    window.location.reload();
+                } else {
+                    return response.text().then(text => { alert('Ошибка: ' + text); });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ошибка при сохранении');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+    }
 
     // Region/City dependency
-    document.getElementById('region_id').addEventListener('change', function () {
-        const regionId = this.value;
-        const citySelect = document.getElementById('city_id');
-        citySelect.innerHTML = '<option value="">Загрузка...</option>';
-        citySelect.disabled = true;
+    const regionSelect = document.getElementById('region_id');
+    if (regionSelect) {
+        regionSelect.addEventListener('change', function () {
+            const regionId = this.value;
+            const citySelect = document.getElementById('city_id');
+            citySelect.innerHTML = '<option value="">Загрузка...</option>';
+            citySelect.disabled = true;
 
-        if (!regionId) {
-            citySelect.innerHTML = '<option value="">Сначала выберите область</option>';
-            return;
-        }
+            if (!regionId) {
+                citySelect.innerHTML = '<option value="">Сначала выберите область</option>';
+                return;
+            }
 
-        fetch(`/api/cities/by-region/${regionId}`)
-            .then(res => res.json())
-            .then(cities => {
-                citySelect.innerHTML = '<option value="">Выберите город</option>';
-                cities.forEach(city => {
-                    const opt = document.createElement('option');
-                    opt.value = city.id;
-                    opt.textContent = city.name;
-                    citySelect.appendChild(opt);
+            fetch(`/api/cities/by-region/${regionId}`)
+                .then(res => res.json())
+                .then(cities => {
+                    citySelect.innerHTML = '<option value="">Выберите город</option>';
+                    cities.forEach(city => {
+                        const opt = document.createElement('option');
+                        opt.value = city.id;
+                        opt.textContent = city.name;
+                        citySelect.appendChild(opt);
+                    });
+                    citySelect.disabled = false;
                 });
-                citySelect.disabled = false;
-            });
-    });
+        });
+    }
 </script>
 
 <style>

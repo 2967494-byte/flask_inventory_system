@@ -158,6 +158,7 @@
                                 <div class="main-product-meta">
                                     <span class="main-product-owner">{{ product.owner.company_name or 'Частное лицо'
                                         }}</span>
+                                    <span><i class="far fa-eye"></i> {{ product.view_count or 0 }}</span>
                                     <span class="main-product-date">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
                                 </div>
                             </div>
