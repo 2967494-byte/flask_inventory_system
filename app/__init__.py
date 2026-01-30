@@ -1,5 +1,9 @@
+import os
 from dotenv import load_dotenv
-load_dotenv()
+
+# Explicitly load .env from the project root (one level up from app/)
+basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+load_dotenv(os.path.join(basedir, '.env'))
 
 from flask import Flask, g, render_template
 from flask_sqlalchemy import SQLAlchemy
