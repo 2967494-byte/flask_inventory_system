@@ -25,8 +25,9 @@
                 <!-- Search Input Wrapper -->
                 <div class="main-search-input-wrapper">
                     <i class="fas fa-search search-input-icon"></i>
-                    <input type="text" name="search" id="searchInput" placeholder="Поиск по товарам, производителям..."
-                        value="{{ request.args.get('search', '') }}" class="main-search-input">
+                    <input type="search" name="search" id="searchInput"
+                        placeholder="Поиск по товарам, производителям..." value="{{ request.args.get('search', '') }}"
+                        class="main-search-input" enterkeyhint="search">
                     <button type="button" class="main-filter-btn" id="openFilters" title="Параметры поиска">
                         <i class="fas fa-sliders-h"></i>
                     </button>
@@ -41,10 +42,6 @@
                 </div>
 
                 <button type="submit" class="btn-primary main-search-btn">Найти</button>
-            </div>
-
-            <div class="mobile-search-btn-container">
-                <button type="submit" class="btn-primary w-100 py-3 mt-2">Найти товары</button>
             </div>
 
             {% include 'partials/filter_modal.html' %}
@@ -485,9 +482,7 @@
         min-width: 180px;
     }
 
-    .mobile-search-btn-container {
-        display: none;
-    }
+
 
     @media (max-width: 991px) {
 
@@ -497,9 +492,7 @@
             display: none !important;
         }
 
-        .mobile-search-btn-container {
-            display: block;
-        }
+
 
         .main-search-input-wrapper {
             height: 50px;

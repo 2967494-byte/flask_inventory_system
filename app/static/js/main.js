@@ -357,16 +357,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            applyFilters(selectedValue, searchTerm);
+            applyFilters();
         });
     }
 
     if (searchInput) {
         searchInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                const categoryId = categorySelect ? categorySelect.value : '';
-                applyFilters(categoryId, this.value.trim());
+                e.preventDefault();
+                applyFilters();
             }
         });
     }
