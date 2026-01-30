@@ -4,6 +4,13 @@ let currentLocation = localStorage.getItem('userLocation') || 'Казань';
 let searchTimeout = null;
 let selectedCategoryId = localStorage.getItem('selectedCategoryId') || '';
 
+// Helper to remove emojis and special icons from strings
+function removeEmojis(string) {
+    if (!string) return '';
+    // Removes anything that is not a letter (Latin/Cyrillic), number, or basic punctuation
+    return string.replace(/[^A-Za-z0-9\s\u0400-\u04FF\(\),.\-]/g, '').trim();
+}
+
 // === ОСНОВНЫЕ ФУНКЦИИ ===
 function applyFilters(categoryId = '', searchTerm = '') {
     let url = '/';
@@ -23,14 +30,14 @@ function selectCategory(categoryElement, categoryId) {
     document.querySelectorAll('.main-category-item').forEach(item => {
         item.classList.remove('active');
     });
-    
+
     // Добавляем активный класс выбранной категории
     categoryElement.classList.add('active');
-    
+
     // Сохраняем выбранную категорию
     selectedCategoryId = categoryId;
     localStorage.setItem('selectedCategoryId', categoryId);
-    
+
     // Обновляем селект выбора категории
     const categorySelect = document.getElementById('categoryFilter');
     if (categorySelect) {
@@ -48,7 +55,7 @@ function selectCategory(categoryElement, categoryId) {
             categorySelect.options[0].selected = true;
         }
     }
-    
+
     // Применяем фильтры
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.trim() : '';
@@ -111,8 +118,8 @@ async function loadPopularLocations() {
         if (currentLocation && currentLocation !== 'Все регионы') {
             const currentDiv = document.createElement('div');
             currentDiv.className = 'suggestion-item current-location';
-            currentDiv.innerHTML = `<strong>${currentLocation}</strong> (текущий)`;
-            currentDiv.onclick = function() {
+            currentDiv.innerHTML = `<span>${removeEmojis(currentLocation)}</span> <small class="text-muted">(текущий)</small>`;
+            currentDiv.onclick = function () {
                 closeLocationModal();
             };
             suggestions.appendChild(currentDiv);
@@ -121,14 +128,14 @@ async function loadPopularLocations() {
         const allRegionsDiv = document.createElement('div');
         allRegionsDiv.className = 'suggestion-item all-regions';
         allRegionsDiv.innerHTML = 'Все регионы';
-        allRegionsDiv.onclick = function() {
+        allRegionsDiv.onclick = function () {
             setLocation('Все регионы');
         };
         suggestions.appendChild(allRegionsDiv);
         // 3. Разделитель
         const separator = document.createElement('div');
         separator.className = 'suggestion-separator';
-        separator.innerHTML = 'Другие регионы и города';
+        separator.innerHTML = 'Другие города';
         suggestions.appendChild(separator);
         // 4. Остальные локации из API
         for (let location of locations) {
@@ -137,8 +144,8 @@ async function loadPopularLocations() {
             if (location.display_name === currentLocation) continue;
             const div = document.createElement('div');
             div.className = 'suggestion-item';
-            div.innerHTML = location.display_name;
-            div.onclick = function() {
+            div.innerHTML = removeEmojis(location.display_name);
+            div.onclick = function () {
                 setLocation(location.display_name);
             };
             suggestions.appendChild(div);
@@ -187,7 +194,7 @@ async function searchLocations(searchTerm) {
         const allRegionsDiv = document.createElement('div');
         allRegionsDiv.className = 'suggestion-item all-regions';
         allRegionsDiv.innerHTML = 'Все регионы';
-        allRegionsDiv.onclick = function() {
+        allRegionsDiv.onclick = function () {
             setLocation('Все регионы');
         };
         suggestions.appendChild(allRegionsDiv);
@@ -202,8 +209,8 @@ async function searchLocations(searchTerm) {
             if (location.display_name === 'Все регионы') continue;
             const div = document.createElement('div');
             div.className = 'suggestion-item';
-            div.innerHTML = location.display_name;
-            div.onclick = function() {
+            div.innerHTML = removeEmojis(location.display_name); // Removed emojis/icons
+            div.onclick = function () {
                 setLocation(location.display_name);
             };
             suggestions.appendChild(div);
@@ -252,7 +259,7 @@ function setLocation(location) {
 }
 
 // === ИНИЦИАЛИЗАЦИЯ ===
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Восстанавливаем выбранную категорию при загрузке
     if (selectedCategoryId) {
         const categoryElement = document.querySelector(`.main-category-item[data-category-id="${selectedCategoryId}"]`);
@@ -276,23 +283,23 @@ document.addEventListener('DOMContentLoaded', function() {
             allCategories.classList.add('active');
         }
     }
-    
+
     // Сохраняем имя категории при клике
     document.querySelectorAll('.main-category-item').forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function () {
             const categoryName = this.dataset.categoryName;
             if (categoryName) {
                 localStorage.setItem('selectedCategoryName', categoryName);
             }
         });
     });
-    
+
     // Устанавливаем текущую локацию
     const locationText = document.getElementById('locationText');
     if (locationText) {
         locationText.textContent = currentLocation;
     }
-    
+
     // Спрашиваем локацию при первом посещении
     const alreadyAsked = localStorage.getItem('locationAsked');
     if (!alreadyAsked) {
@@ -301,44 +308,44 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('locationAsked', 'true');
         }, 1500);
     }
-    
+
     // Обработчики для модального окна
     const locationDisplay = document.getElementById('locationDisplay');
     if (locationDisplay) {
         locationDisplay.addEventListener('click', openLocationModal);
     }
-    
+
     const locationInput = document.getElementById('locationInput');
     if (locationInput) {
         locationInput.addEventListener('input', debounceSearch);
-        locationInput.addEventListener('keypress', function(e) {
+        locationInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 debounceSearch();
             }
         });
     }
-    
+
     // Обработчики для фильтров
     const categorySelect = document.getElementById('categoryFilter');
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.querySelector('.search-btn');
-    
+
     if (searchBtn) {
-        searchBtn.addEventListener('click', function() {
+        searchBtn.addEventListener('click', function () {
             const categoryId = categorySelect ? categorySelect.value : '';
             const searchTerm = searchInput ? searchInput.value.trim() : '';
             applyFilters(categoryId, searchTerm);
         });
     }
-    
+
     if (categorySelect) {
-        categorySelect.addEventListener('change', function() {
+        categorySelect.addEventListener('change', function () {
             // При изменении селекта, обновляем активную категорию в блоке картинок
             const selectedValue = this.value;
             document.querySelectorAll('.main-category-item').forEach(item => {
                 item.classList.remove('active');
             });
-            
+
             // Ищем соответствующий элемент категории
             let found = false;
             document.querySelectorAll('.main-category-item').forEach(item => {
@@ -349,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     localStorage.setItem('selectedCategoryId', selectedValue);
                 }
             });
-            
+
             // Если не нашли, активируем "Все категории"
             if (!found) {
                 const allCategories = document.querySelector('.main-category-item[data-category-id=""]');
@@ -359,71 +366,71 @@ document.addEventListener('DOMContentLoaded', function() {
                     localStorage.setItem('selectedCategoryId', '');
                 }
             }
-            
+
             const searchTerm = searchInput ? searchInput.value.trim() : '';
             applyFilters(selectedValue, searchTerm);
         });
     }
-    
+
     if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
+        searchInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const categoryId = categorySelect ? categorySelect.value : '';
                 applyFilters(categoryId, this.value.trim());
             }
         });
     }
-    
+
     // Закрытие модального окна при клике вне его
-    window.addEventListener('click', function(event) {
+    window.addEventListener('click', function (event) {
         const modal = document.getElementById('locationModal');
         if (event.target === modal) {
             closeLocationModal();
         }
     });
-    
+
     // Закрытие модального окна по ESC
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeLocationModal();
         }
     });
-    
+
     // Переключение видов товаров
     const viewButtons = document.querySelectorAll('.view-btn');
-    
+
     function activateView(viewType) {
         const containers = {
             grid: document.getElementById('productsGridView'),
             list: document.getElementById('productsListView'),
             table: document.getElementById('productsTableView')
         };
-        
+
         // Показываем только выбранный вид, скрываем остальные
         for (let key in containers) {
             if (containers[key]) {
                 containers[key].style.display = key === viewType ? 'block' : 'none';
             }
         }
-        
+
         // Обновляем активную кнопку
         viewButtons.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-view') === viewType);
         });
-        
+
         // Сохраняем выбор в localStorage
         localStorage.setItem('mainView', viewType);
     }
-    
+
     viewButtons.forEach(button => {
         button.addEventListener('click', () => {
             const viewType = button.getAttribute('data-view');
             activateView(viewType);
         });
     });
-    
+
     // Инициализация представления при загрузке
     const savedView = localStorage.getItem('mainView') || 'grid';
     activateView(savedView);
-    
+
 });

@@ -9,14 +9,16 @@ class TelegramBot:
         self.token = None
         self.chat_id = None
         self.base_url = None
+        self.env = 'development'
     
     def init_app(self, app):
         """Инициализирует бота с настройками из конфига"""
         self.token = app.config.get('TELEGRAM_BOT_TOKEN')
         self.chat_id = app.config.get('TELEGRAM_CHAT_ID')
+        self.env = app.config.get('ENV', 'development')
         if self.token:
             self.base_url = f"https://api.telegram.org/bot{self.token}"
-        logger.info(f"Telegram бот инициализирован: токен={bool(self.token)}, chat_id={self.chat_id}")
+        logger.info(f"Telegram бот инициализирован: токен={bool(self.token)}, chat_id={self.chat_id}, env={self.env}")
     
     def send_message(self, text, parse_mode='HTML', disable_web_page_preview=True):
         """Отправляет сообщение в Telegram"""
@@ -109,10 +111,16 @@ class TelegramBot:
 
     def send_startup_notification(self):
         """Отправляет уведомление о запуске системы"""
+        if self.env == 'development':
+            logger.info("Пропуск уведомления о запуске в DEV-окружении")
+            return True
         return self.send_message("🟢 <b>СИСТЕМА ЗАПУЩЕНА</b>\n\nПриложение начало работу.")
 
     def send_shutdown_notification(self):
         """Отправляет уведомление об остановке системы"""
+        if self.env == 'development':
+            logger.info("Пропуск уведомления об остановке в DEV-окружении")
+            return True
         return self.send_message("🛑 <b>СИСТЕМА ОСТАНОВЛЕНА</b>\n\nПриложение завершает работу.")
 
 # Создаем глобальный экземпляр бота

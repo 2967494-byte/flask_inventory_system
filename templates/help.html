@@ -1,154 +1,116 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <h1 class="mb-4 text-center">Помощь по системе</h1>
+<div style="max-width: 800px; margin: 3rem auto; padding-bottom: 5rem;">
+    <div style="text-align: center; margin-bottom: 4rem;">
+        <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">Центр поддержки</h1>
+        <p style="color: var(--gray-500); font-size: 1.125rem;">Найдите ответы на популярные вопросы о работе в системе
+        </p>
+    </div>
 
-            <div class="accordion" id="helpAccordion">
-
-                <!-- Начало работы -->
-                <div class="accordion-item mb-3 border rounded shadow-sm">
-                    <h2 class="accordion-header" id="headingOne">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                            <strong>🏁 Начало работы</strong>
-                        </button>
-                    </h2>
-                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
-                        data-bs-parent="#helpAccordion">
-                        <div class="accordion-body">
-                            <p>Добро пожаловать в систему продажи остатков! Здесь вы можете:</p>
-                            <ul>
-                                <li>Искать и покупать товары по выгодным ценам.</li>
-                                <li>Продавать свои остатки материалов, оборудования и других товаров.</li>
-                            </ul>
-                            <p>Для полного доступа к функциям (продажа, избранное, сообщения) необходимо <a
-                                    href="{{ url_for('auth.register') }}">зарегистрироваться</a> или <a
-                                    href="{{ url_for('auth.login') }}">войти</a> в свой аккаунт.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Покупателям -->
-                <div class="accordion-item mb-3 border rounded shadow-sm">
-                    <h2 class="accordion-header" id="headingTwo">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                            <strong>🛒 Покупателям</strong>
-                        </button>
-                    </h2>
-                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
-                        data-bs-parent="#helpAccordion">
-                        <div class="accordion-body">
-                            <h5>Поиск товаров</h5>
-                            <p>Используйте строку поиска вверху страницы для ввода названия товара. Вы также можете
-                                фильтровать товары по:</p>
-                            <ul>
-                                <li>Категории (выберите нужную категорию на главной странице)</li>
-                                <li>Региону и городу</li>
-                            </ul>
-
-                            <h5>Избранное</h5>
-                            <p>Чтобы не потерять интересный товар, нажмите на значок ❤️ ("Добавить в избранное"). Все
-                                сохраненные товары находятся в разделе "Избранное" в личном кабинете.</p>
-
-                            <h5>Связь с продавцом</h5>
-                            <p>На странице товара вы найдете контакты продавца (телефон) или можете написать ему
-                                сообщение через форму на сайте (если доступно).</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Продавцам -->
-                <div class="accordion-item mb-3 border rounded shadow-sm">
-                    <h2 class="accordion-header" id="headingThree">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                            <strong>💼 Продавцам</strong>
-                        </button>
-                    </h2>
-                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree"
-                        data-bs-parent="#helpAccordion">
-                        <div class="accordion-body">
-                            <h5>Как добавить товар?</h5>
-                            <ol>
-                                <li>Нажмите кнопку <strong>"➕ Разместить объявление"</strong> в верхней части сайта.
-                                </li>
-                                <li>Заполните обязательные поля: название, цена, категория, регион.</li>
-                                <li>Добавьте фотографии. Вы можете просто перетащить их в область загрузки или выбрать
-                                    файлы на устройстве. Качественные фото повышают шанс продажи!</li>
-                                <li>Нажмите "Разместить". Товар появится на сайте сразу после публикации.</li>
-                            </ol>
-
-                            <h5>Управление товарами (Dashboard)</h5>
-                            <p>В личном кабинете в разделе "Мои объявления" вы видите все свои товары:</p>
-                            <ul>
-                                <li><span class="badge bg-success">Опубликован</span> — товар виден всем.</li>
-                                <li><span class="badge bg-warning text-dark">Снят с публикации</span> — товар виден
-                                    только вам. Вы можете снова опубликовать его в любой момент.</li>
-                                <li><span class="badge bg-info text-dark">Готов к публикации</span> — срок публикации
-                                    истек, но товар можно продлить.</li>
-                            </ul>
-                            <p>Вы можете <strong>Редактировать</strong>, <strong>Снимать с публикации</strong> или
-                                <strong>Удалять</strong> свои товары с помощью кнопок на карточке товара.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Профиль и настройки -->
-                <div class="accordion-item mb-3 border rounded shadow-sm">
-                    <h2 class="accordion-header" id="headingFour">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-                            <strong>⚙️ Профиль и настройки</strong>
-                        </button>
-                    </h2>
-                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour"
-                        data-bs-parent="#helpAccordion">
-                        <div class="accordion-body">
-                            <p>В разделе "Профиль" вы можете:</p>
-                            <ul>
-                                <li>Изменить свои контактные данные (имя, телефон, компания).</li>
-                                <li>Сменить пароль.</li>
-                                <li>Указать реквизиты организации (ИНН, Юр. адрес) для повышения доверия покупателей.
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
+    <!-- Help Sections -->
+    <div style="display: grid; gap: 1.5rem;">
+        <!-- Section: Welcome -->
+        <div class="card" style="padding: 0; overflow: hidden; transition: none;">
+            <button onclick="toggleHelp(this)"
+                style="width: 100%; text-align: left; background: none; border: none; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: inherit;">
+                <span style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">Начало работы</span>
+                <i class="fas fa-chevron-down" style="color: var(--gray-400); transition: transform 0.2s;"></i>
+            </button>
+            <div style="display: none; padding: 0 2rem 2rem; color: var(--gray-600); line-height: 1.6;">
+                <p style="margin-bottom: 1rem;">Добро пожаловать! Наша платформа помогает компаниям реализовывать
+                    складские остатки и неликвиды.</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.25rem; display: grid; gap: 0.5rem;">
+                    <li>Ищите товары по выгодным ценам в каталоге.</li>
+                    <li>Размещайте собственные объявления о продаже.</li>
+                </ul>
+                <p>Для доступа к продажам и сообщениям необходимо <a href="{{ url_for('auth.register') }}"
+                        style="color: var(--primary); font-weight: 600;">зарегистрироваться</a>.</p>
             </div>
+        </div>
 
-            <!-- Ссылка на полное описание -->
-            <div class="card mt-4 mb-4 border-primary shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-primary">Интересуют подробности?</h5>
-                    <p class="card-text">Ознакомьтесь с полным функциональным описанием возможностей системы.</p>
-                    <a href="{{ url_for('main.system_description') }}" class="btn btn-primary">Полное описание
-                        системы</a>
-                </div>
-            </div>
+        <!-- Section: Buyers -->
+        <div class="card" style="padding: 0; overflow: hidden; transition: none;">
+            <button onclick="toggleHelp(this)"
+                style="width: 100%; text-align: left; background: none; border: none; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: inherit;">
+                <span style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">Для покупателей</span>
+                <i class="fas fa-chevron-down" style="color: var(--gray-400); transition: transform 0.2s;"></i>
+            </button>
+            <div style="display: none; padding: 0 2rem 2rem; color: var(--gray-600); line-height: 1.6;">
+                <h4 style="font-size: 0.9375rem; color: var(--gray-900); font-weight: 700; margin-bottom: 0.75rem;">
+                    Поиск товаров</h4>
+                <p style="margin-bottom: 1rem;">Используйте умный поиск в шапке сайта. Вы можете искать по названию,
+                    категории или региону.</p>
 
-            <div class="text-center mt-5">
-                <p class="text-muted">Остались вопросы?</p>
-                <a href="#" onclick="openContactModal(); return false;" class="btn btn-outline-primary">Напишите нам</a>
+                <h4 style="font-size: 0.9375rem; color: var(--gray-900); font-weight: 700; margin-bottom: 0.75rem;">
+                    Избранное</h4>
+                <p style="margin-bottom: 1.5rem;">Сохраняйте интересные товары, нажимая на иконку сердца. Все они
+                    доступны в вашем <a href="{{ url_for('main.favorites') }}" style="color: var(--primary);">личном
+                        кабинете</a>.</p>
+
+                <h4 style="font-size: 0.9375rem; color: var(--gray-900); font-weight: 700; margin-bottom: 0.75rem;">
+                    Связь с продавцом</h4>
+                <p>На странице товара доступны контактные данные продавца. Также вы можете изучить отзывы о продавце
+                    перед сделкой.</p>
             </div>
+        </div>
+
+        <!-- Section: Sellers -->
+        <div class="card" style="padding: 0; overflow: hidden; transition: none;">
+            <button onclick="toggleHelp(this)"
+                style="width: 100%; text-align: left; background: none; border: none; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: inherit;">
+                <span style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">Для продавцов</span>
+                <i class="fas fa-chevron-down" style="color: var(--gray-400); transition: transform 0.2s;"></i>
+            </button>
+            <div style="display: none; padding: 0 2rem 2rem; color: var(--gray-600); line-height: 1.6;">
+                <h4 style="font-size: 0.9375rem; color: var(--gray-900); font-weight: 700; margin-bottom: 0.75rem;">
+                    Размещение объявления</h4>
+                <ol style="margin-bottom: 1.5rem; padding-left: 1.25rem; display: grid; gap: 0.5rem;">
+                    <li>Нажмите "Разместить объявление" в меню.</li>
+                    <li>Подробно заполните характеристики товара.</li>
+                    <li>Загрузите качественные фотографии (до 8 штук).</li>
+                </ol>
+
+                <h4 style="font-size: 0.9375rem; color: var(--gray-900); font-weight: 700; margin-bottom: 0.75rem;">
+                    Управление (Дашборд)</h4>
+                <p>В разделе <a href="{{ url_for('main.dashboard') }}" style="color: var(--primary);">"Мои
+                        объявления"</a> вы можете продлевать, редактировать или снимать товары с публикации. Каждое
+                    объявление активно 30 дней.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div
+        style="margin-top: 4rem; background: var(--gray-50); border-radius: var(--radius-xl); padding: 3rem; text-align: center;">
+        <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">Остались вопросы?</h3>
+        <p style="color: var(--gray-500); margin-bottom: 2rem;">Наши специалисты готовы помочь вам с любыми
+            затруднениями.</p>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="mailto:support@example.com" class="btn-primary" style="padding: 1rem 2rem;">Написать в
+                поддержку</a>
+            <a href="{{ url_for('main.system_description') }}" class="btn-secondary"
+                style="padding: 1rem 2rem;">Техническое описание</a>
         </div>
     </div>
 </div>
 
-<style>
-    .accordion-button:not(.collapsed) {
-        background-color: var(--avito-blue-light);
-        color: var(--avito-blue);
-    }
+<script>
+    function toggleHelp(btn) {
+        const content = btn.nextElementSibling;
+        const icon = btn.querySelector('i');
+        const isVisible = content.style.display === 'block';
 
-    .accordion-button:focus {
-        box-shadow: 0 0 0 0.25rem rgba(0, 87, 255, 0.25);
-        border-color: var(--avito-blue);
+        // Close others
+        // document.querySelectorAll('.card > div[style*="display: block"]').forEach(d => d.style.display = 'none');
+
+        if (isVisible) {
+            content.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+        }
     }
-</style>
+</script>
 {% endblock %}

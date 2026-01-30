@@ -1,10 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="text-align: center; padding: 4rem 0; color: white;">
-    <h1 style="font-size: 4rem; margin-bottom: 1rem;">404</h1>
-    <h2 style="margin-bottom: 2rem;">Страница не найдена</h2>
-    <p style="margin-bottom: 2rem; font-size: 1.2rem;">Извините, запрашиваемая страница не существует.</p>
-    <a href="{{ url_for('index') }}" class="btn">🏠 На главную</a>
+<div
+    style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 2rem;">
+    <div
+        style="font-size: 8rem; font-weight: 800; color: var(--gray-100); line-height: 1; margin-bottom: 2rem; position: relative;">
+        404
+        <i class="fas fa-search"
+            style="position: absolute; font-size: 3rem; bottom: 1rem; right: -1rem; color: var(--primary); transform: rotate(15deg);"></i>
+    </div>
+    <h1 style="font-size: 2rem; margin-bottom: 1rem; color: var(--gray-900);">Страница не найдена</h1>
+    <p style="color: var(--gray-500); max-width: 400px; margin-bottom: 2.5rem; line-height: 1.6;">
+        Извините, запрашиваемая вами страница не существует или была перенесена.
+    </p>
+    <a href="{{ url_for('main.index') }}" class="btn-primary"
+        style="padding: 1rem 2.5rem; display: inline-flex; align-items: center; gap: 0.75rem;">
+        <i class="fas fa-home"></i>
+        На главную
+    </a>
 </div>
 {% endblock %}

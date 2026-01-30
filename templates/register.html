@@ -3,201 +3,265 @@
 {% block title %}Регистрация - Система продажи неликвидов{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="page-header text-center mb-4">
-        <h1 class="page-title">Регистрация организации</h1>
-        <p class="page-subtitle">Создайте аккаунт для вашей компании</p>
-    </div>
-
-    <form method="POST" id="registration-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <!-- ✅ ДОБАВЛЕНО: Поле для username -->
-        <div class="form-group">
-            <label class="form-label">Имя пользователя (логин) *</label>
-            <input type="text" name="username" class="form-control" placeholder="mycompany" required
-                value="{{ request.form.get('username', '') }}">
-            <small class="text-muted">Будет отображаться в системе. Можно использовать латинские буквы и цифры.</small>
+<div class="auth-page">
+    <div class="card reg-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Регистрация организации</h1>
+            <p class="auth-subtitle">Создайте профиль для вашей компании</p>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Email *</label>
-            <input type="email" name="email" class="form-control" placeholder="contact@company.ru" required
-                value="{{ request.form.get('email', '') }}">
-        </div>
+        <form method="POST" id="registration-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <div class="form-group">
-            <label class="form-label">Пароль *</label>
-            <input type="password" name="password" class="form-control" placeholder="Придумайте надежный пароль"
-                minlength="6" required>
-        </div>
+            <div class="reg-grid-2">
+                <div class="reg-full">
+                    <label class="auth-label">Email *</label>
+                    <input type="email" name="email" class="contact-form-control auth-input"
+                        placeholder="contact@company.ru" required value="{{ request.form.get('email', '') }}">
+                </div>
 
-        <div class="form-group">
-            <label class="form-label">Подтверждение пароля *</label>
-            <input type="password" name="confirm_password" class="form-control" placeholder="Повторите пароль" required>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Название организации *</label>
-            <input type="text" name="company_name" class="form-control bg-light"
-                placeholder="ООО 'Ромашка' (Заполнится автоматически)" readonly required
-                value="{{ request.form.get('company_name', '') }}">
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">ИНН *</label>
-            <input type="text" name="inn" class="form-control" placeholder="1234567890" maxlength="12"
-                pattern="[0-9]{10,12}" required value="{{ request.form.get('inn', '') }}">
-            <small class="text-muted">Введите ИНН и нажмите кнопку поиска</small>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label">КПП</label>
-                    <input type="text" name="kpp" class="form-control bg-light" placeholder="Заполнится автоматически"
-                        readonly value="{{ request.form.get('kpp', '') }}">
+                <div class="reg-half">
+                    <label class="auth-label">Пароль *</label>
+                    <input type="password" name="password" class="contact-form-control auth-input"
+                        placeholder="••••••••" minlength="6" required>
+                </div>
+                <div class="reg-half">
+                    <label class="auth-label">Подтверждение *</label>
+                    <input type="password" name="confirm_password" class="contact-form-control auth-input"
+                        placeholder="••••••••" required>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label">ОГРН</label>
-                    <input type="text" name="ogrn" class="form-control bg-light" placeholder="Заполнится автоматически"
-                        readonly value="{{ request.form.get('ogrn', '') }}">
+
+            <div class="reg-section">
+                <h3 class="reg-section-title">Данные организации</h3>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">ИНН *</label>
+                    <div class="reg-inn-search">
+                        <input type="text" name="inn" id="inn-field" class="contact-form-control auth-input"
+                            placeholder="10 или 12 цифр" maxlength="12" pattern="[0-9]{10,12}" required
+                            value="{{ request.form.get('inn', '') }}">
+                        <button type="button" id="inn-search-btn" class="btn-secondary reg-inn-btn">Поиск</button>
+                    </div>
+                </div>
+
+                <div class="auth-form-group">
+                    <label class="auth-label">Название организации *</label>
+                    <input type="text" name="company_name" class="contact-form-control auth-input readonly"
+                        placeholder="Заполнится автоматически" readonly required
+                        value="{{ request.form.get('company_name', '') }}">
                 </div>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label class="form-label">Юридический адрес *</label>
-            <input type="text" name="legal_address" class="form-control bg-light"
-                placeholder="г. Москва, ул. Примерная, д. 1 (Заполнится автоматически)" readonly required
-                value="{{ request.form.get('legal_address', '') }}">
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">ФИО контактного лица *</label>
-            <input type="text" name="contact_person" class="form-control" placeholder="Иванов Иван Иванович" required
-                value="{{ request.form.get('contact_person', '') }}">
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Должность *</label>
-            <input type="text" name="position" class="form-control" placeholder="Менеджер по закупкам" required
-                value="{{ request.form.get('position', '') }}">
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Телефон *</label>
-            <input type="tel" name="phone" class="form-control" placeholder="+7 (999) 123-45-67" required
-                value="{{ request.form.get('phone', '') }}">
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Сфера деятельности</label>
-            <select name="industry" class="form-select">
-                <option value="">-- Выберите сферу деятельности --</option>
-                <option value="production" {% if request.form.get('industry')=='production' %}selected{% endif %}>
-                    Производство</option>
-                <option value="wholesale" {% if request.form.get('industry')=='wholesale' %}selected{% endif %}>Оптовая
-                    торговля</option>
-                <option value="retail" {% if request.form.get('industry')=='retail' %}selected{% endif %}>Розничная
-                    торговля</option>
-                <option value="services" {% if request.form.get('industry')=='services' %}selected{% endif %}>Услуги
-                </option>
-                <option value="logistics" {% if request.form.get('industry')=='logistics' %}selected{% endif %}>
-                    Логистика</option>
-                <option value="construction" {% if request.form.get('industry')=='construction' %}selected{% endif %}>
-                    Строительство</option>
-                <option value="it" {% if request.form.get('industry')=='it' %}selected{% endif %}>IT-технологии</option>
-                <option value="other" {% if request.form.get('industry')=='other' %}selected{% endif %}>Другое</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">О компании</label>
-            <textarea name="about" class="form-control" rows="3"
-                placeholder="Краткое описание деятельности компании">{{ request.form.get('about', '') }}</textarea>
-        </div>
-
-        <div class="form-group mb-4">
-            <label class="form-label">Введите цифры с картинки *</label>
-            <div class="d-flex align-items-center gap-2">
-                <img src="{{ url_for('auth.register_captcha') }}" alt="Captcha" id="register-captcha-image"
-                    class="border rounded" style="cursor: pointer; height: 50px;" title="Нажмите, чтобы обновить">
-
-                <input type="text" class="form-control text-center mb-0" id="register-captcha-input" name="captcha"
-                    required autocomplete="off" placeholder="1234"
-                    style="width: 100px; height: 50px; font-size: 1.2rem; letter-spacing: 2px;">
-
-                <button type="button" class="btn btn-outline-secondary" id="register-refresh-captcha"
-                    style="height: 50px; width: 50px;" title="Обновить картинку">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
+            <div class="reg-grid-2">
+                <div class="reg-half">
+                    <label class="auth-label">Контактное лицо *</label>
+                    <input type="text" name="contact_person" class="contact-form-control auth-input" placeholder="ФИО"
+                        required value="{{ request.form.get('contact_person', '') }}">
+                </div>
+                <div class="reg-half">
+                    <label class="auth-label">Телефон *</label>
+                    <input type="tel" name="phone" class="contact-form-control auth-input" placeholder="+7" required
+                        value="{{ request.form.get('phone', '') }}">
+                </div>
             </div>
-            <script>
-                function reloadRegCaptcha() {
-                    var img = document.getElementById('register-captcha-image');
-                    img.src = "{{ url_for('auth.register_captcha') }}?v=" + new Date().getTime();
-                    document.getElementById('register-captcha-input').value = '';
-                }
-                document.getElementById('register-refresh-captcha').addEventListener('click', reloadRegCaptcha);
-                document.getElementById('register-captcha-image').addEventListener('click', reloadRegCaptcha);
-            </script>
-        </div>
 
-        <div class="form-group">
-            <div class="form-check">
-                <input type="checkbox" name="agree_terms" class="form-check-input" id="agree_terms" required {% if
-                    request.form.get('agree_terms') %}checked{% endif %}>
-                <label class="form-check-label" for="agree_terms">
-                    Я согласен с <a href="#" class="text-avito-blue">условиями использования</a>
-                    и <a href="{{ url_for('main.privacy_policy') }}" target="_blank" class="text-avito-blue">политикой
-                        конфиденциальности</a> *
+            <div class="reg-agreement">
+                <label class="reg-checkbox-label">
+                    <input type="checkbox" name="agree_terms" required>
+                    <span class="reg-agreement-text">Я согласен с <a href="#" class="auth-link">условиями</a> и
+                        <a href="#" class="auth-link">политикой конфиденциальности</a></span>
                 </label>
             </div>
+
+            <button type="submit" class="btn-primary auth-submit">
+                Зарегистрировать организацию
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>
+                Уже есть аккаунт?
+                <a href="{{ url_for('auth.login') }}" class="auth-link bold">
+                    Войти
+                </a>
+            </p>
         </div>
-
-        <button type="submit" class="btn-primary"
-            style="width: 100%; display: flex; justify-content: center; align-items: center;">
-            Зарегистрировать организацию
-        </button>
-    </form>
-
-    <div class="text-center mt-4">
-        <p class="text-muted">
-            Уже есть аккаунт?
-            <a href="{{ url_for('auth.login') }}" class="text-avito-blue">
-                Войдите
-            </a>
-        </p>
     </div>
 </div>
 
+<script>
+    document.getElementById('inn-search-btn').addEventListener('click', async function () {
+        const innInput = document.getElementById('inn-field');
+        const inn = innInput.value;
+        if (!inn) return;
+
+        this.textContent = 'Поиск...';
+        this.disabled = true;
+        // Logic handled by register.js
+    });
+</script>
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
+{% endblock %}
+
+{% block styles %}
 <style>
-    .form-check {
+    .auth-page {
+        min-height: calc(100vh - var(--header-height) - 100px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 0;
+    }
+
+    .reg-card {
+        width: 100%;
+        max-width: 680px;
+        padding: 4rem !important;
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 3.5rem;
+    }
+
+    .auth-title {
+        font-size: 2.25rem;
+        font-weight: 900;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+    }
+
+    .auth-subtitle {
+        color: var(--gray-500);
+        font-weight: 500;
+        font-size: 1.125rem;
+    }
+
+    .reg-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .reg-full {
+        grid-column: span 2;
+    }
+
+    .reg-half {
+        grid-column: span 1;
+    }
+
+    @media (max-width: 600px) {
+        .reg-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .reg-half {
+            grid-column: span 1;
+        }
+    }
+
+    .reg-section {
+        background: var(--gray-50);
+        padding: 2.5rem;
+        border-radius: var(--radius-xl);
+        margin-bottom: 2.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .reg-section-title {
+        font-size: 1.125rem;
+        font-weight: 800;
+        margin-bottom: 2rem;
+        color: var(--gray-800);
+    }
+
+    .reg-inn-search {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.75rem;
+    }
+
+    .reg-inn-btn {
+        padding: 0 2rem !important;
+    }
+
+    .auth-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        margin-bottom: 0.625rem;
+    }
+
+    .auth-input {
+        margin-bottom: 0 !important;
+        font-family: inherit !important;
+        padding: 0.875rem 1.125rem !important;
+    }
+
+    .auth-input.readonly {
+        background: var(--gray-100) !important;
+        color: var(--gray-600);
+    }
+
+    .auth-submit {
+        width: 100%;
+        justify-content: center;
+        padding: 1.125rem !important;
+        font-size: 1.125rem !important;
+        font-weight: 800;
+        border-radius: var(--radius-lg);
+    }
+
+    .reg-agreement {
+        margin-bottom: 2.5rem;
+    }
+
+    .reg-checkbox-label {
         display: flex;
         align-items: flex-start;
-        gap: 8px;
+        gap: 0.875rem;
+        cursor: pointer;
     }
 
-    .form-check-input {
-        margin-top: 0.2rem;
+    .reg-checkbox-label input {
+        margin-top: 0.375rem;
+        width: 1.125rem;
+        height: 1.125rem;
+        border-radius: 4px;
+        border: 2px solid var(--gray-300);
     }
 
-    .form-check-label {
-        font-size: 14px;
-        line-height: 1.4;
+    .reg-agreement-text {
+        font-size: 0.9375rem;
+        color: var(--gray-600);
+        line-height: 1.5;
     }
 
-    .text-avito-blue {
-        color: #0057FF;
+    .auth-link {
+        color: var(--primary);
         text-decoration: none;
+        font-weight: 600;
     }
 
-    .text-avito-blue:hover {
+    .auth-link:hover {
+        color: var(--primary-hover);
         text-decoration: underline;
-        color: #0044CC;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 3.5rem;
+        padding-top: 2.5rem;
+        border-top: 1px solid var(--gray-100);
+    }
+
+    .auth-footer p {
+        color: var(--gray-500);
+        margin: 0;
     }
 </style>
-<script src="{{ url_for('static', filename='js/register.js') }}"></script>
 {% endblock %}

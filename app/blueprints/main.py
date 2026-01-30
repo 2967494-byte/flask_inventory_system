@@ -569,25 +569,6 @@ def update_expired_products():
         db.session.commit()
     return f'Обновлено {updated_count} товаров с истекшим сроком публикации'
 
-@main.route('/product/<int:product_id>/favorite', methods=['POST'])
-@login_required
-def toggle_favorite(product_id):
-    product = Product.query.get_or_404(product_id)
-    is_favorited = False
-    if product in current_user.favorited_products:
-        current_user.favorited_products.remove(product)
-        is_favorited = False
-    else:
-        current_user.favorited_products.append(product)
-        is_favorited = True
-    
-    db.session.commit()
-    
-    # Return JSON if requested (for AJAX)
-    if request.is_json or request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-        return jsonify({'success': True, 'is_favorited': is_favorited})
-        
-    return redirect(request.referrer or url_for('main.index'))
 
 @main.route('/messages/<int:user_id>/<int:product_id>')
 @login_required
@@ -611,6 +592,38 @@ def report_product(product_id):
 def favorites():
     favorite_products = current_user.favorited_products.all()
     return render_template('favorites.html', products=favorite_products)
+
+@main.route('/favorites/toggle/<int:product_id>', methods=['POST'])
+@login_required
+def toggle_favorite(product_id):
+    """Toggle product in user's favorites"""
+    product = Product.query.get_or_404(product_id)
+    
+    # Check if already in favorites
+    is_favorite = product in current_user.favorited_products
+    
+    if is_favorite:
+        # Remove from favorites
+        current_user.favorited_products.remove(product)
+        message = 'Товар удален из избранного'
+    else:
+        # Add to favorites
+        current_user.favorited_products.append(product)
+        message = 'Товар добавлен в избранное'
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'is_favorite': not is_favorite,
+            'message': message
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Ошибка: {str(e)}'
+        }), 500
 
 @main.route('/user/<int:user_id>/reviews')
 def user_reviews(user_id):

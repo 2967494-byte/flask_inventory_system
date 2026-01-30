@@ -1,39 +1,40 @@
-<!-- add_product.html - исправленная версия с НДС и зависимыми полями -->
 {% extends "base.html" %}
 
-{% block title %}Добавить товар - Система продажи неликвидов{% endblock %}
+{% block title %}Добавить товар - Система{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="form-container">
-        <div class="page-header text-center mb-4">
-            <h1 class="page-title">Добавить товар</h1>
-            <p class="page-subtitle">Разместите новое объявление</p>
+<div style="max-width: 800px; margin: 2rem auto;">
+    <div class="card" style="padding: 2.5rem; transition: none;">
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+            <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Добавить товар</h1>
+            <p style="color: var(--gray-500);">Заполните информацию о вашем товаре для размещения</p>
         </div>
 
         <form method="POST" action="{{ url_for('main.add_product') }}" enctype="multipart/form-data"
             id="addProductForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-grid">
-                <!-- Основная информация -->
-                <div class="form-section">
-                    <div class="form-section-header">
-                        <span class="form-section-icon"></span>
-                        <h3>Основная информация</h3>
+
+            <!-- Основная информация -->
+            <div style="margin-bottom: 3rem;">
+                <h3
+                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-info-circle" style="color: var(--primary);"></i>
+                    Основная информация
+                </h3>
+
+                <div style="display: grid; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="title">Название товара <span
+                                style="color: var(--danger);">*</span></label>
+                        <input type="text" name="title" id="title" class="contact-form-control"
+                            style="margin-bottom: 0;" placeholder="Например: Офисные стулья Herman Miller" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="title">
-                            Название товара <span class="required">*</span>
-                        </label>
-                        <input type="text" name="title" id="title" class="form-control"
-                            placeholder="Например: Офисные стулья Herman Miller" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Категория <span class="required">*</span></label>
-                        <div id="category-container">
-                            <select class="form-select mb-2" onchange="handleCategoryChange(this)" data-level="0">
+                        <label class="form-label">Категория <span style="color: var(--danger);">*</span></label>
+                        <div id="category-container" style="display: grid; gap: 0.75rem;">
+                            <select class="contact-form-control" style="margin-bottom: 0;"
+                                onchange="handleCategoryChange(this)" data-level="0">
                                 <option value="">-- Выберите категорию --</option>
                                 {% for category in categories %}
                                 <option value="{{ category.id }}">{{ category.name }}</option>
@@ -41,1058 +42,284 @@
                             </select>
                         </div>
                         <input type="hidden" name="category_id" id="category_id_hidden" required>
-                        <div class="form-text text-muted" id="category-help-text">Выберите категорию верхнего уровня,
-                            затем уточняющие подкатегории</div>
+                        <p style="font-size: 0.8125rem; color: var(--gray-500); margin-top: 0.5rem;">Выберите категорию
+                            верхнего уровня, затем уточняющие подкатегории</p>
                     </div>
 
-                    <script>
-                        function handleCategoryChange(selectElement) {
-                            const container = document.getElementById('category-container');
-                            const hiddenInput = document.getElementById('category_id_hidden');
-                            const currentLevel = parseInt(selectElement.getAttribute('data-level'));
-                            const selectedId = selectElement.value;
-
-                            // 1. Update hidden input (always the currently selected value, effectively)
-                            // We need to find the *last* selected valid value in the chain.
-                            updateHiddenInput();
-
-                            // 2. Remove all deeper levels
-                            const selects = Array.from(container.querySelectorAll('select'));
-                            selects.forEach(sel => {
-                                if (parseInt(sel.getAttribute('data-level')) > currentLevel) {
-                                    sel.remove();
-                                }
-                            });
-
-                            if (!selectedId) {
-                                // Deselected current level
-                                return;
-                            }
-
-                            // 3. Fetch children
-                            fetch(`/api/categories/children/${selectedId}`)
-                                .then(response => response.json())
-                                .then(children => {
-                                    if (children.length > 0) {
-                                        // Create new select
-                                        const newLevel = currentLevel + 1;
-                                        const newSelect = document.createElement('select');
-                                        newSelect.className = 'form-select mb-2';
-                                        newSelect.setAttribute('data-level', newLevel);
-                                        newSelect.onchange = function () { handleCategoryChange(this); };
-
-                                        const defaultOption = document.createElement('option');
-                                        defaultOption.value = '';
-                                        defaultOption.textContent = '-- Уточните категорию --';
-                                        newSelect.appendChild(defaultOption);
-
-                                        children.forEach(child => {
-                                            const option = document.createElement('option');
-                                            option.value = child.id;
-                                            option.textContent = child.name;
-                                            newSelect.appendChild(option);
-                                        });
-
-                                        container.appendChild(newSelect);
-                                    }
-                                })
-                                .catch(err => console.error('Error loading categories:', err));
-                        }
-
-                        function updateHiddenInput() {
-                            const selects = Array.from(document.querySelectorAll('#category-container select'));
-                            let lastSelectedId = '';
-
-                            // Iterate and find the deepest selected value
-                            // Requirement: "обязателен только верхний уровень" (mandatory is only top level)
-                            // But usually we want the deepest.
-                            // However, the user said "mandatory is only top level". 
-                            // So if I select level 1, and level 2 is available but I don't select it, is it valid?
-                            // "после открывалось поле выбора дочерней категории (если имеется) далее при наличии следующий уровень."
-                            // Usually in e-commerce you must select the leaf.
-                            // But the user said "mandatory is only top level".
-                            // So I will set the value to the deepest *selected* value.
-
-                            for (let sel of selects) {
-                                if (sel.value) {
-                                    lastSelectedId = sel.value;
-                                } else {
-                                    break;
-                                }
-                            }
-                            document.getElementById('category_id_hidden').value = lastSelectedId;
-                        }
-                    </script>
-
-                    <div class="form-row">
+                    <div style="display: grid; grid-template-columns: 1fr 120px; gap: 1.5rem;">
                         <div class="form-group">
                             <label class="form-label" for="manufacturer">Производитель</label>
-                            <input type="text" name="manufacturer" id="manufacturer" class="form-control"
-                                placeholder="Например: IKEA, Herman Miller, Xiaomi">
+                            <input type="text" name="manufacturer" id="manufacturer" class="contact-form-control"
+                                style="margin-bottom: 0;" placeholder="Напр. IKEA, Xiaomi">
                         </div>
-
                         <div class="form-group">
                             <label class="form-label" for="quantity">Количество</label>
-                            <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1"
-                                step="1" placeholder="1">
+                            <input type="number" name="quantity" id="quantity" class="contact-form-control"
+                                style="margin-bottom: 0;" value="1" min="1" step="1">
                         </div>
                     </div>
 
-                    <!-- ЕДИНСТВЕННОЕ ПОЛЕ ЦЕНЫ С НДС И ТИПОМ ЦЕНЫ -->
                     <div class="form-group">
                         <label class="form-label">Цена (руб.)</label>
-                        <div class="price-input-wrapper">
-                            <!-- Выбор типа цены -->
-                            <select class="form-select price-type-select" name="price_type"
-                                style="width: 110px; flex: 0 0 auto;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select class="contact-form-control" name="price_type"
+                                style="width: 120px; margin-bottom: 0; flex-shrink: 0;">
                                 <option value="fixed">Равная</option>
                                 <option value="from">От</option>
                             </select>
-
-                            <!-- Поле ввода цены -->
-                            <div class="price-input-container">
-                                <input type="number" name="price" id="price" class="form-control" step="0.01" min="0"
+                            <div style="position: relative; flex: 1;">
+                                <input type="number" name="price" id="price" class="contact-form-control"
+                                    style="margin-bottom: 0; padding-right: 2rem;" step="0.01" min="0"
                                     placeholder="0.00">
+                                <span
+                                    style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-400);">₽</span>
                             </div>
-                            <span class="price-currency">₽</span>
-
-                            <!-- Чекбокс НДС -->
-                            <div class="vat-checkbox-container">
-                                <input type="checkbox" name="vat_included" id="vat_included" class="vat-checkbox">
-                                <label for="vat_included" class="vat-label">с НДС</label>
+                            <div
+                                style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem; white-space: nowrap;">
+                                <input type="checkbox" name="vat_included" id="vat_included"
+                                    style="width: 1.125rem; height: 1.125rem; border-radius: 4px; border: 1px solid var(--gray-300); cursor: pointer;">
+                                <label for="vat_included"
+                                    style="font-size: 0.875rem; color: var(--gray-700); cursor: pointer;">с НДС</label>
                             </div>
                         </div>
-                        <div class="form-text">Оставьте пустым, чтобы указать "Договорная"</div>
+                        <p style="font-size: 0.8125rem; color: var(--gray-500); margin-top: 0.5rem;">Оставьте пустым,
+                            чтобы указать "Договорная"</p>
                     </div>
-                    <!-- Состояние товара -->
+
                     <div class="form-group">
                         <label class="form-label">Состояние</label>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="condition" id="conditionNew" value="new"
-                                checked>
-                            <label class="form-check-label" for="conditionNew">Новое</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="condition" id="conditionUsed"
-                                value="used">
-                            <label class="form-check-label" for="conditionUsed">Б/у</label>
-                        </div>
-                    </div>
-
-                    <!-- Субъект РФ и Город (зависимые поля) -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="region_id">Субъект РФ <span class="required">*</span></label>
-                            <select class="form-select" id="region_id" name="region_id" required>
-                                <option value="">Выберите субъект РФ</option>
-                                {% for region in regions %}
-                                <option value="{{ region.id }}" data-region-name="{{ region.name }}">
-                                    {{ region.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="city_id">Город <span class="required">*</span></label>
-                            <select class="form-select" id="city_id" name="city_id" required disabled>
-                                <option value="">Сначала выберите субъект РФ</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Скрытые поля для обратной совместимости -->
-                    <input type="hidden" id="old_region" name="old_region" value="">
-                    <input type="hidden" id="old_city" name="old_city" value="">
-
-                    <!-- Доставка -->
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="delivery" id="delivery" value="on">
-                            <label class="form-check-label" for="delivery">Возможна доставка</label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="description">Описание</label>
-                        <textarea name="description" id="description" class="form-control" rows="5"
-                            placeholder="Подробное описание товара, состояние, характеристики, комплектация, размеры..."></textarea>
-                        <div class="form-text">Опишите состояние, характеристики, комплектацию и размеры товара</div>
-                    </div>
-                </div>
-
-                <!-- Загрузка изображений -->
-                <div class="form-section">
-                    <div class="form-section-header">
-                        <span class="form-section-icon"></span>
-                        <h3>Изображения товара</h3>
-                    </div>
-
-                    <!-- Загрузка файлов -->
-                    <div class="form-group">
-                        <label class="form-label" for="image_files">Загрузить фотографии</label>
-
-                        <div class="file-upload-wrapper">
-                            <input type="file" name="image_files" id="image_files" multiple accept="image/*"
-                                class="file-input">
-
-                            <div class="file-upload-area" id="file-upload-area">
-                                <div class="upload-placeholder">
-                                    <div class="upload-icon">
-                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="1.5">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                            <polyline points="17 8 12 3 7 8"></polyline>
-                                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                                        </svg>
-                                    </div>
-                                    <div class="upload-text">
-                                        <strong>Нажмите для выбора файлов</strong>
-                                        <span>или перетащите сюда изображения</span>
-                                    </div>
-                                    <div class="upload-hint">
-                                        <strong>Поддерживаются:</strong> JPG, PNG, GIF, WEBP (максимум 5 МБ)
-                                        <ul>
-                                            <li>Можно выбрать до 4 изображений</li>
-                                            <li>Первое изображение будет основным</li>
-                                            <li>Рекомендуемый размер: 1200×800 пикселей</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Croppie Modal -->
-                    <div id="cropper-modal" class="cropper-modal" style="display: none;">
-                        <div class="cropper-content">
-                            <h3>Обрежьте изображение</h3>
-                            <p class="cropper-hint">Подгоните изображение под карточку (соотношение 3:2)</p>
-                            <div id="cropper-container" style="width: 100%; max-width: 400px; margin: 0 auto;"></div>
-                            <div class="cropper-actions">
-                                <button type="button" class="btn btn-secondary" onclick="closeCropper()">Отмена</button>
-                                <button type="button" class="btn btn-primary" onclick="applyCrop()">Применить</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Предпросмотр изображений -->
-                    <div id="image-preview-container" class="image-preview-container" style="display: none;">
-                        <h4>Выбранные изображения:</h4>
-                        <p class="preview-hint">
-                            Кликните на изображение, чтобы обрезать его под карточку (соотношение 3:2).
-                        </p>
-                        <div id="image-preview" class="image-preview-grid"></div>
-                        <div class="preview-info">
-                            <span id="image-count">0</span> изображений выбрано
-                            <button type="button" class="btn-clear" onclick="clearImages()">Очистить все</button>
-                        </div>
-                    </div>
-
-                    <!-- Разделитель -->
-                    <div class="or-divider">
-                        <span>ИЛИ</span>
-                    </div>
-
-                    <!-- URL изображений -->
-                    <div class="form-group url-field">
-                        <label class="form-label" for="image_urls">URL изображений</label>
-                        <textarea name="image_urls" id="image_urls" class="form-control" rows="2" placeholder="Введите URL изображений через запятую
-Пример: https://example.com/image1.jpg    , https://example.com/image2.jpg    "></textarea>
-                        <div class="form-text">
-                            Укажите URL изображений через запятую, если нет файлов для загрузки.
-                            Ссылки должны быть доступны публично.
+                        <div style="display: flex; gap: 2rem; margin-top: 0.25rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="condition" value="new" checked
+                                    style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                <span style="font-size: 0.9375rem; color: var(--gray-700);">Новое</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="condition" value="used"
+                                    style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                <span style="font-size: 0.9375rem; color: var(--gray-700);">Б/у</span>
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Кнопки -->
-            <div class="form-actions">
-                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
-                    ← Назад
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    📤 Разместить объявление
+            <!-- Местоположение -->
+            <div style="margin-bottom: 3rem;">
+                <h3
+                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
+                    Местоположение
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="region_id">Субъект РФ <span
+                                style="color: var(--danger);">*</span></label>
+                        <select class="contact-form-control" style="margin-bottom: 0;" id="region_id" name="region_id"
+                            required>
+                            <option value="">Выберите субъект РФ</option>
+                            {% for region in regions %}
+                            <option value="{{ region.id }}">{{ region.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="city_id">Город <span
+                                style="color: var(--danger);">*</span></label>
+                        <select class="contact-form-control" style="margin-bottom: 0;" id="city_id" name="city_id"
+                            required disabled>
+                            <option value="">Сначала выберите область</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem;">
+                    <input type="checkbox" name="delivery" id="delivery"
+                        style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                    <label for="delivery"
+                        style="font-size: 0.9375rem; color: var(--gray-700); cursor: pointer;">Возможна доставка</label>
+                </div>
+            </div>
+
+            <!-- Описание -->
+            <div style="margin-bottom: 3rem;">
+                <h3
+                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-align-left" style="color: var(--primary);"></i>
+                    Описание
+                </h3>
+                <div class="form-group">
+                    <textarea name="description" id="description" class="contact-form-control" rows="6"
+                        style="margin-bottom: 0;"
+                        placeholder="Опишите состояние, характеристики и особенности товара..."></textarea>
+                </div>
+            </div>
+
+            <!-- Изображения -->
+            <div style="margin-bottom: 3rem;">
+                <h3
+                    style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-camera" style="color: var(--primary);"></i>
+                    Изображения
+                </h3>
+
+                <div style="background: var(--gray-50); border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 3rem; text-align: center; position: relative; transition: border-color 0.2s;"
+                    ondragover="this.style.borderColor='var(--primary)'"
+                    ondragleave="this.style.borderColor='var(--gray-200)'">
+                    <input type="file" name="image_files" id="image_files" multiple accept="image/*"
+                        style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2;">
+                    <i class="fas fa-cloud-upload-alt fa-3x" style="color: var(--gray-300); margin-bottom: 1rem;"></i>
+                    <p style="font-weight: 600; color: var(--gray-900); margin-bottom: 0.25rem;">Нажмите или перетащите
+                        файлы для загрузки</p>
+                    <p style="font-size: 0.8125rem; color: var(--gray-500);">Поддерживаются JPG, PNG, WEBP. До 4
+                        изображений.</p>
+                </div>
+
+                <div id="image-preview"
+                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.5rem;"></div>
+
+                <div style="margin: 2rem 0; display: flex; align-items: center; gap: 1rem;">
+                    <div style="height: 1px; background: var(--gray-200); flex: 1;"></div>
+                    <span
+                        style="font-size: 0.75rem; font-weight: 600; color: var(--gray-400); text-transform: uppercase;">или
+                        по ссылке</span>
+                    <div style="height: 1px; background: var(--gray-200); flex: 1;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="image_urls">URL изображений</label>
+                    <input type="text" name="image_urls" id="image_urls" class="contact-form-control"
+                        style="margin-bottom: 0;" placeholder="https://example.com/image.jpg, ...">
+                </div>
+            </div>
+
+            <!-- Действия -->
+            <div style="display: flex; gap: 1.5rem; padding-top: 2.5rem; border-top: 1px solid var(--gray-100);">
+                <button type="button" class="btn-secondary" style="flex: 1; justify-content: center; padding: 0.875rem;"
+                    onclick="location.href='{{ url_for('main.index') }}'">
+                    Отмена
+                </button>
+                <button type="submit" class="btn-primary" style="flex: 1; justify-content: center; padding: 0.875rem;">
+                    <i class="fas fa-plus"></i>
+                    Опубликовать
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<style>
-    :root {
-        --avito-blue: #0057FF;
-        --avito-blue-light: #E6F0FF;
-        --avito-blue-hover: #0047D6;
-        --text-primary: #1A1A1A;
-        --text-secondary: #666666;
-        --text-tertiary: #999999;
-        --border: #E0E0E0;
-        --border-light: #F0F0F0;
-        --background-secondary: #F8F9FA;
-        --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        --radius: 8px;
-    }
-
-    .form-container {
-        background: white;
-        border-radius: 12px;
-        padding: 32px;
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border);
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 32px;
-        margin-bottom: 32px;
-    }
-
-    .form-section {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .form-section-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 8px;
-    }
-
-    .form-section-icon {
-        font-size: 20px;
-    }
-
-    .form-section h3 {
-        color: var(--text-primary);
-        font-size: 18px;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-
-    .form-label {
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 4px;
-        font-size: 14px;
-    }
-
-    .required {
-        color: #FF3B30;
-    }
-
-    .form-control,
-    .form-select {
-        padding: 12px 16px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        font-size: 14px;
-        transition: all 0.2s ease;
-        background: white;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: var(--avito-blue);
-        box-shadow: 0 0 0 3px rgba(0, 87, 255, 0.1);
-        outline: none;
-    }
-
-    /* Цена + НДС — горизонтальный контейнер */
-    .price-input-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-    }
-
-    .price-input-container {
-        flex: 1;
-        position: relative;
-    }
-
-    .price-input-container .form-control {
-        padding-right: 40px;
-        width: 100%;
-    }
-
-    .price-currency {
-        color: var(--text-secondary);
-        font-weight: 500;
-        font-size: 16px;
-        white-space: nowrap;
-    }
-
-    .vat-checkbox-container {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .vat-checkbox {
-        margin: 0;
-    }
-
-    .vat-label {
-        font-size: 13px;
-        color: var(--text-secondary);
-        cursor: pointer;
-    }
-
-    /* Стили для загрузки файлов */
-    .file-upload-wrapper {
-        position: relative;
-    }
-
-    .file-input {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
-        z-index: 10;
-        top: 0;
-        left: 0;
-    }
-
-    .file-upload-area {
-        border: 2px dashed var(--border);
-        border-radius: var(--radius);
-        padding: 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: var(--background-secondary);
-        position: relative;
-        min-height: 180px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .file-upload-area:hover {
-        border-color: var(--avito-blue);
-        background: rgba(0, 87, 255, 0.05);
-    }
-
-    .file-upload-area.drag-over {
-        border-color: var(--avito-blue);
-        background: rgba(0, 87, 255, 0.1);
-        border-style: solid;
-    }
-
-    .upload-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        padding: 10px;
-        width: 100%;
-        pointer-events: none;
-    }
-
-    .upload-icon {
-        color: var(--text-tertiary);
-        margin-bottom: 5px;
-    }
-
-    .upload-icon svg {
-        stroke: var(--text-tertiary);
-    }
-
-    .file-upload-area:hover .upload-icon svg {
-        stroke: var(--avito-blue);
-    }
-
-    .upload-text {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        text-align: center;
-    }
-
-    .upload-text strong {
-        color: var(--text-primary);
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-    .upload-text span {
-        color: var(--text-secondary);
-        font-size: 14px;
-        line-height: 1.4;
-    }
-
-    .upload-hint {
-        color: var(--text-tertiary);
-        font-size: 13px;
-        margin-top: 10px;
-        text-align: center;
-        max-width: 400px;
-    }
-
-    .upload-hint strong {
-        color: var(--text-secondary);
-        font-weight: 600;
-    }
-
-    .upload-hint ul {
-        list-style: none;
-        padding: 0;
-        margin: 8px 0;
-        text-align: left;
-        display: inline-block;
-    }
-
-    .upload-hint li {
-        padding: 2px 0;
-        position: relative;
-        padding-left: 15px;
-        color: var(--text-secondary);
-        font-size: 12px;
-    }
-
-    .upload-hint li:before {
-        content: "•";
-        position: absolute;
-        left: 0;
-        color: var(--avito-blue);
-        font-size: 16px;
-    }
-
-    /* Разделитель */
-    .or-divider {
-        display: flex;
-        align-items: center;
-        margin: 20px 0;
-        color: var(--text-tertiary);
-    }
-
-    .or-divider:before,
-    .or-divider:after {
-        content: "";
-        flex: 1;
-        height: 1px;
-        background: var(--border);
-    }
-
-    .or-divider span {
-        padding: 0 15px;
-        font-size: 13px;
-        font-weight: 500;
-    }
-
-    /* URL поле */
-    .url-field .form-control {
-        font-family: monospace;
-        font-size: 13px;
-    }
-
-    .url-field .form-text {
-        background: #f8f9fa;
-        padding: 10px;
-        border-radius: 6px;
-        border-left: 3px solid var(--avito-blue);
-        margin-top: 10px;
-        font-size: 12px;
-        line-height: 1.5;
-    }
-
-    /* Предпросмотр изображений */
-    .image-preview-container {
-        margin-top: 20px;
-        padding: 20px;
-        background: var(--background-secondary);
-        border-radius: var(--radius);
-        border: 1px solid var(--border-light);
-    }
-
-    .image-preview-container h4 {
-        color: var(--text-primary);
-        margin-bottom: 10px;
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-    .preview-hint,
-    .cropper-hint {
-        font-size: 13px;
-        color: var(--text-tertiary);
-        margin: 0 0 15px 0;
-        text-align: center;
-    }
-
-    .image-preview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .preview-wrapper {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .preview-image {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 3 / 2;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 2px solid var(--border);
-        background: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        cursor: pointer;
-    }
-
-    .preview-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .remove-image-small {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background: rgba(255, 0, 0, 0.8);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        font-size: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        z-index: 10;
-    }
-
-    .preview-wrapper:hover .remove-image-small {
-        background: rgba(255, 0, 0, 1);
-    }
-
-    .preview-image:hover {
-        transform: scale(1.03);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .preview-wrapper small {
-        margin-top: 6px;
-        font-size: 12px;
-        color: var(--text-secondary);
-        text-align: center;
-        max-width: 120px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .preview-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: var(--text-secondary);
-        font-size: 14px;
-        padding-top: 10px;
-        border-top: 1px solid var(--border-light);
-    }
-
-    .btn-clear {
-        background: none;
-        border: 1px solid var(--border);
-        color: var(--text-secondary);
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 13px;
-        transition: all 0.2s ease;
-    }
-
-    .btn-clear:hover {
-        background: var(--background-secondary);
-        color: var(--text-primary);
-        border-color: var(--text-tertiary);
-    }
-
-    /* Croppie Modal */
-    .cropper-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-    }
-
-    .cropper-content {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        width: 90%;
-        max-width: 450px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        text-align: center;
-    }
-
-    .cropper-actions {
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-        margin-top: 20px;
-    }
-
-    /* Кнопки */
-    .form-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 24px;
-        border-top: 1px solid var(--border-light);
-    }
-
-    .btn {
-        padding: 12px 24px;
-        border-radius: var(--radius);
-        font-weight: 500;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, var(--avito-blue) 0%, var(--avito-blue-hover) 100%);
-        color: white;
-        box-shadow: 0 2px 8px rgba(0, 87, 255, 0.3);
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(0, 87, 255, 0.4);
-        color: white;
-    }
-
-    .btn-secondary {
-        background: var(--background-secondary);
-        color: var(--text-primary);
-        border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-        background: var(--border-light);
-        color: var(--text-primary);
-    }
-
-    /* Адаптивность */
-    @media (max-width: 768px) {
-        .form-container {
-            padding: 20px;
-            margin: 0 16px;
-        }
-
-        .form-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-
-        .form-row {
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-
-        .form-actions {
-            flex-direction: column;
-            gap: 16px;
-            align-items: stretch;
-        }
-
-        .btn {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .image-preview-grid {
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        }
-
-        /* Цена и НДС на мобильных — в колонку */
-        .price-input-wrapper {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .form-container {
-            padding: 16px;
-        }
-
-        .preview-image {
-            aspect-ratio: 3 / 2;
-        }
-    }
-</style>
-
-<!-- Подключаем Croppie -->
-<link rel="stylesheet" href="https://unpkg.com/croppie@2.6.5/croppie.css">
-<script src="https://unpkg.com/croppie@2.6.5/croppie.min.js"></script>
-
 <script>
-    let selectedFiles = [];
-    let croppieInstance = null;
-    let currentFileIndex = null;
+    function handleCategoryChange(selectElement) {
+        const container = document.getElementById('category-container');
+        const hiddenInput = document.getElementById('category_id_hidden');
+        const currentLevel = parseInt(selectElement.getAttribute('data-level'));
+        const selectedId = selectElement.value;
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const fileInput = document.getElementById('image_files');
-        const uploadArea = document.getElementById('file-upload-area');
-        const regionSelect = document.getElementById('region_id');
-        const citySelect = document.getElementById('city_id');
-
-        // Обработчик изменения региона
-        regionSelect.addEventListener('change', function () {
-            loadCitiesForRegion(this.value);
-        });
-
-        fileInput.addEventListener('change', handleFileSelect);
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('drag-over');
-        });
-
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                handleFileSelect({ target: fileInput });
+        // Remove deeper levels
+        const selects = Array.from(container.querySelectorAll('select'));
+        selects.forEach(sel => {
+            if (parseInt(sel.getAttribute('data-level')) > currentLevel) {
+                sel.remove();
             }
         });
 
-        uploadArea.addEventListener('click', function (e) {
-            if (e.target === uploadArea || e.target.closest('.upload-placeholder')) {
-                fileInput.click();
-            }
-        });
-    });
+        updateHiddenInput();
 
-    // Загрузка городов для выбранного региона
-    function loadCitiesForRegion(regionId) {
+        if (!selectedId) return;
+
+        fetch(`/api/categories/children/${selectedId}`)
+            .then(res => res.json())
+            .then(children => {
+                if (children.length > 0) {
+                    const nextLevel = currentLevel + 1;
+                    const newSelect = document.createElement('select');
+                    newSelect.className = 'contact-form-control';
+                    newSelect.style.marginBottom = '0';
+                    newSelect.setAttribute('data-level', nextLevel);
+                    newSelect.onchange = function () { handleCategoryChange(this); };
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = '-- Уточните категорию --';
+                    newSelect.appendChild(defaultOption);
+
+                    children.forEach(child => {
+                        const opt = document.createElement('option');
+                        opt.value = child.id;
+                        opt.textContent = child.name;
+                        newSelect.appendChild(opt);
+                    });
+
+                    container.appendChild(newSelect);
+                }
+            });
+    }
+
+    function updateHiddenInput() {
+        const selects = Array.from(document.querySelectorAll('#category-container select'));
+        let lastId = '';
+        for (let s of selects) {
+            if (s.value) lastId = s.value;
+            else break;
+        }
+        document.getElementById('category_id_hidden').value = lastId;
+    }
+
+    // Region/City dependency
+    document.getElementById('region_id').addEventListener('change', function () {
+        const regionId = this.value;
         const citySelect = document.getElementById('city_id');
+        citySelect.innerHTML = '<option value="">Загрузка...</option>';
+        citySelect.disabled = true;
 
         if (!regionId) {
-            citySelect.innerHTML = '<option value="">Сначала выберите субъект РФ</option>';
-            citySelect.disabled = true;
+            citySelect.innerHTML = '<option value="">Сначала выберите область</option>';
             return;
         }
 
-        citySelect.innerHTML = '<option value="">Загрузка городов...</option>';
-        citySelect.disabled = true;
-
-        // AJAX запрос для получения городов
         fetch(`/api/cities/by-region/${regionId}`)
-            .then(response => response.json())
+            .then(res => res.json())
             .then(cities => {
                 citySelect.innerHTML = '<option value="">Выберите город</option>';
                 cities.forEach(city => {
-                    const option = document.createElement('option');
-                    option.value = city.id;
-                    option.textContent = city.name;
-                    citySelect.appendChild(option);
+                    const opt = document.createElement('option');
+                    opt.value = city.id;
+                    opt.textContent = city.name;
+                    citySelect.appendChild(opt);
                 });
                 citySelect.disabled = false;
-            })
-            .catch(error => {
-                console.error('Ошибка при загрузке городов:', error);
-                citySelect.innerHTML = '<option value="">Ошибка загрузки городов</option>';
             });
-    }
+    });
 
-    function handleFileSelect(event) {
-        const files = Array.from(event.target.files);
-
-        if (files.length > 4) {
-            alert('Можно выбрать не более 4 изображений!');
-            event.target.value = '';
-            return;
-        }
-
-        if (files.some(f => f.size > 5 * 1024 * 1024)) {
-            alert('Один или несколько файлов превышают 5 МБ!');
-            event.target.value = '';
-            return;
-        }
-
-        selectedFiles = files.map(file => ({
-            originalFile: file,
-            croppedBlob: null,
-            croppedFile: null,
-            url: URL.createObjectURL(file)
-        }));
-
-        renderPreview();
-        document.getElementById('image-preview-container').style.display = 'block';
-    }
-
-    function renderPreview() {
-        const container = document.getElementById('image-preview');
-        container.innerHTML = '';
-
-        selectedFiles.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'preview-wrapper';
-            div.innerHTML = `
-            <div class="preview-image" onclick="openCropper(${index})">
-                <img src="${item.croppedBlob ? URL.createObjectURL(item.croppedBlob) : item.url}" alt="Preview">
-            </div>
-            <small>${item.originalFile.name.length > 15 ? item.originalFile.name.substring(0, 12) + '...' : item.originalFile.name}</small>
-            <button type="button" class="remove-image-small" onclick="event.stopPropagation(); removeImage(${index})">×</button>
-        `;
-            container.appendChild(div);
+    // Simple image preview
+    document.getElementById('image_files').addEventListener('change', function (e) {
+        const preview = document.getElementById('image-preview');
+        preview.innerHTML = '';
+        const files = Array.from(e.target.files).slice(0, 4);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                const div = document.createElement('div');
+                div.style.aspectRatio = '1/1';
+                div.style.borderRadius = 'var(--radius-md)';
+                div.style.overflow = 'hidden';
+                div.style.border = '1px solid var(--gray-200)';
+                div.innerHTML = `<img src="${re.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
         });
-
-        document.getElementById('image-count').textContent = selectedFiles.length;
-    }
-
-    function openCropper(index) {
-        currentFileIndex = index;
-        const imageUrl = selectedFiles[index].url;
-
-        const container = document.getElementById('cropper-container');
-        container.innerHTML = '';
-
-        croppieInstance = new Croppie(container, {
-            viewport: { width: 300, height: 200, type: 'rectangle' },
-            boundary: { width: 350, height: 250 },
-            enableOrientation: true,
-            enableZoom: true,
-            mouseWheelZoom: true
-        });
-
-        croppieInstance.bind({ url: imageUrl });
-        document.getElementById('cropper-modal').style.display = 'flex';
-    }
-
-    function closeCropper() {
-        if (croppieInstance) {
-            croppieInstance.destroy();
-            croppieInstance = null;
-        }
-        document.getElementById('cropper-modal').style.display = 'none';
-        currentFileIndex = null;
-    }
-
-    function applyCrop() {
-        if (!croppieInstance || currentFileIndex === null) return;
-
-        croppieInstance.result({
-            type: 'blob',
-            size: { width: 600, height: 400 },
-            format: 'jpeg',
-            quality: 0.92
-        }).then(blob => {
-            const originalFile = selectedFiles[currentFileIndex].originalFile;
-            const newFile = new File([blob], originalFile.name.replace(/\.[^/.]+$/, "") + ".jpg", {
-                type: 'image/jpeg',
-                lastModified: Date.now()
-            });
-
-            selectedFiles[currentFileIndex].croppedBlob = blob;
-            selectedFiles[currentFileIndex].croppedFile = newFile;
-
-            closeCropper();
-            renderPreview();
-        });
-    }
-
-    function removeImage(index) {
-        if (confirm('Удалить это изображение?')) {
-            selectedFiles.splice(index, 1);
-            renderPreview();
-            if (selectedFiles.length === 0) {
-                document.getElementById('image-preview-container').style.display = 'none';
-            }
-        }
-    }
-
-    function clearImages() {
-        if (confirm('Очистить все изображения?')) {
-            selectedFiles = [];
-            document.getElementById('image_files').value = '';
-            document.getElementById('image-preview-container').style.display = 'none';
-        }
-    }
-
-    // Перед отправкой — подменяем файлы на обрезанные
-    document.getElementById('addProductForm').addEventListener('submit', function (e) {
-        const dataTransfer = new DataTransfer();
-        let hasImages = false;
-
-        selectedFiles.forEach(item => {
-            if (item.croppedFile) {
-                dataTransfer.items.add(item.croppedFile);
-                hasImages = true;
-            } else if (item.originalFile) {
-                dataTransfer.items.add(item.originalFile);
-                hasImages = true;
-            }
-        });
-
-        if (hasImages) {
-            document.getElementById('image_files').files = dataTransfer.files;
-        }
-
-        // Заполняем старые поля для обратной совместимости
-        const regionSelect = document.getElementById('region_id');
-        const citySelect = document.getElementById('city_id');
-        const regionOption = regionSelect.options[regionSelect.selectedIndex];
-        const cityOption = citySelect.options[citySelect.selectedIndex];
-
-        if (regionOption && regionOption.dataset.regionName) {
-            document.getElementById('old_region').value = regionOption.dataset.regionName;
-        }
-        if (cityOption) {
-            document.getElementById('old_city').value = cityOption.textContent;
-        }
     });
 </script>
+
+<style>
+    .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.5rem;
+    }
+</style>
 {% endblock %}

@@ -1037,6 +1037,7 @@
 <script>
     // Функция для изменения типа локации
     function changeLocationType(type) {
+        const form = document.getElementById('addLocationForm');
         const locationType = document.getElementById('locationType');
         const regionSelectGroup = document.getElementById('regionSelectGroup');
         const submitBtn = document.getElementById('locationSubmitBtn');
@@ -1044,10 +1045,12 @@
         locationType.value = type;
 
         if (type === 'city') {
+            form.action = "{{ url_for('admin_bp.add_city') }}";
             regionSelectGroup.style.display = 'block';
             submitBtn.textContent = '➕ Добавить город';
             document.getElementById('parentRegionSelect').required = true;
         } else {
+            form.action = "{{ url_for('admin_bp.add_region') }}";
             regionSelectGroup.style.display = 'none';
             submitBtn.textContent = '➕ Добавить регион';
             document.getElementById('parentRegionSelect').required = false;

@@ -20,6 +20,7 @@ class Config:
         
         SQLALCHEMY_DATABASE_URI = database_url
         DEBUG = False
+        ENV = 'production'
         
         # В продакшене используем временную папку (лучше настроить S3 в будущем)
         UPLOAD_FOLDER = '/opt/flask_inventory_system/app/static/uploads'
@@ -28,6 +29,7 @@ class Config:
         # Локальная разработка
         SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://postgres:postgres@localhost:5432/flask_inventory'
         DEBUG = True
+        ENV = 'development'
         
         UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'static', 'uploads')
     

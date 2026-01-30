@@ -3,40 +3,145 @@
 {% block title %}Вход - Система продажи неликвидов{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="page-header text-center mb-4">
-        <h1 class="page-title">Вход для организаций</h1>
-        <p class="page-subtitle">Войдите в корпоративный аккаунт</p>
-    </div>
-
-    <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" name="email" class="form-control" placeholder="contact@company.ru" required>
+<div class="auth-page">
+    <div class="card auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">С возвращением</h1>
+            <p class="auth-subtitle">Войдите в свой аккаунт</p>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Пароль</label>
-            <input type="password" name="password" class="form-control" placeholder="Ваш пароль" required>
-            <div class="text-end mt-1">
-                <a href="{{ url_for('auth.reset_password_request') }}" class="text-muted small">Забыли пароль?</a>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="auth-form-group">
+                <label class="auth-label">Email</label>
+                <input type="email" name="email" class="contact-form-control auth-input" placeholder="name@company.com"
+                    required>
             </div>
+
+            <div class="auth-form-group">
+                <div class="auth-flex-label">
+                    <label class="auth-label">Пароль</label>
+                    <a href="{{ url_for('auth.reset_password_request') }}" class="auth-link">Забыли пароль?</a>
+                </div>
+                <input type="password" name="password" class="contact-form-control auth-input" placeholder="••••••••"
+                    required>
+            </div>
+
+            <button type="submit" class="btn-primary auth-submit">
+                Войти в систему
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>
+                Нет аккаунта?
+                <a href="{{ url_for('auth.register') }}" class="auth-link bold">
+                    Зарегистрироваться
+                </a>
+            </p>
         </div>
-
-        <button type="submit" class="btn-primary"
-            style="width: 100%; display: flex; justify-content: center; align-items: center;">
-            Войти в систему
-        </button>
-    </form>
-
-    <div class="text-center mt-4">
-        <p class="text-muted">
-            Нет корпоративного аккаунта?
-            <a href="{{ url_for('auth.register') }}" class="text-avito-blue">
-                Зарегистрируйте организацию
-            </a>
-        </p>
     </div>
 </div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .auth-page {
+        min-height: calc(100vh - var(--header-height) - 100px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 0;
+    }
+
+    .auth-card {
+        width: 100%;
+        max-width: 440px;
+        padding: 3rem !important;
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .auth-title {
+        font-size: 1.875rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+    }
+
+    .auth-subtitle {
+        color: var(--gray-500);
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    .auth-form-group {
+        margin-bottom: 1.75rem;
+    }
+
+    .auth-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        margin-bottom: 0.625rem;
+    }
+
+    .auth-flex-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.625rem;
+    }
+
+    .auth-flex-label .auth-label {
+        margin-bottom: 0;
+    }
+
+    .auth-input {
+        margin-bottom: 0 !important;
+        font-family: inherit !important;
+        padding: 0.875rem 1.125rem !important;
+    }
+
+    .auth-submit {
+        width: 100%;
+        justify-content: center;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+        margin-top: 0.5rem;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--gray-100);
+    }
+
+    .auth-footer p {
+        color: var(--gray-500);
+        font-size: 0.9375rem;
+        margin: 0;
+    }
+
+    .auth-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .auth-link:hover {
+        color: var(--primary-hover);
+        text-decoration: underline;
+    }
+
+    .auth-link.bold {
+        font-weight: 700;
+    }
+</style>
 {% endblock %}

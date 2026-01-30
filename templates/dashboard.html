@@ -1,461 +1,144 @@
 {% extends "base.html" %}
 
+{% block title %}Личный кабинет - ASAUDA{% endblock %}
+
 {% block content %}
-<style>
-    /* CSS сортировка */
-    .sort-icon::before {
-        content: '\f0dc';
-        /* fa-sort */
-        font-family: 'Font Awesome 5 Free';
-        font-weight: 900;
-        color: #ccc;
-    }
-
-    th.sort-asc .sort-icon::before {
-        content: '\f0de';
-        /* fa-sort-up */
-        color: #007bff;
-    }
-
-    th.sort-desc .sort-icon::before {
-        content: '\f0dd';
-        /* fa-sort-down */
-        color: #007bff;
-    }
-
-    .empty-icon {
-        font-size: 48px;
-        color: #ccc;
-    }
-</style>
-<div class="dashboard-container">
-    <div class="dashboard-layout">
-        <!-- Левое меню -->
-        <aside class="dashboard-sidebar">
-            <nav class="sidebar-nav">
-                <ul class="nav-menu">
-                    <li class="nav-item active">
-                        <a href="{{ url_for('main.dashboard') }}" class="nav-link">
-                            <span class="nav-text">Мои объявления</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <span class="nav-text">Мои отзывы</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('main.favorites') }}" class="nav-link">
-                            <span class="nav-text">Избранное</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <span class="nav-text">Сообщения</span>
-                            <span class="badge">3</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <span class="nav-text">Уведомления</span>
-                            <span class="badge">5</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <span class="nav-text">Рассылки</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('main.profile') }}" class="nav-link">
-                            <span class="nav-text">Управление профилем</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <span class="nav-text">Настройки</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+<div class="container db-container">
+    <div class="db-layout">
+        <!-- Sidebar -->
+        <aside class="db-sidebar">
+            <div class="card db-sidebar-card">
+                <nav>
+                    <ul class="db-nav">
+                        <li class="db-nav-item">
+                            <a href="{{ url_for('main.dashboard') }}" class="db-nav-link active">
+                                <i class="fas fa-box"></i> Мои объявления
+                            </a>
+                        </li>
+                        <li class="db-nav-item">
+                            <a href="{{ url_for('main.favorites') }}" class="db-nav-link">
+                                <i class="far fa-heart"></i> Избранное
+                            </a>
+                        </li>
+                        <li class="db-nav-item">
+                            <a href="{{ url_for('main.profile') }}" class="db-nav-link">
+                                <i class="far fa-user"></i> Профиль
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </aside>
 
-        <!-- Основной контент -->
-        <main class="dashboard-main">
-            <div class="dashboard-header">
-                <div class="header-top-row">
-                    <h1>
+        <!-- Main Content -->
+        <main class="db-main">
+            <div class="db-header">
+                <div class="db-title-box">
+                    <h1 class="db-title">
                         {% if current_user.company_name %}
                         {{ current_user.company_name }}
                         {% else %}
-                        Название организации не указано
-                        {% endif %}
-                        -
-                        {% if current_user.contact_person %}
-                        {{ current_user.contact_person }}
-                        {% elif current_user.username %}
-                        {{ current_user.username }}
-                        {% else %}
-                        {{ current_user.email }}
+                        Личный кабинет
                         {% endif %}
                     </h1>
+                    <p class="db-subtitle">Управление вашими товарами и публикациями</p>
                 </div>
-                <div class="dashboard-controls">
-                    <div class="view-toggle">
-                        <button class="view-btn active" data-view="grid" title="Плитка">
+                <div class="db-actions">
+                    <div class="db-view-toggle">
+                        <button class="db-view-btn active" data-view="grid" title="Плитка">
                             <i class="fas fa-th-large"></i>
                         </button>
-                        <button class="view-btn" data-view="list" title="Список">
+                        <button class="db-view-btn" data-view="list" title="Список">
                             <i class="fas fa-list"></i>
                         </button>
-                        <button class="view-btn" data-view="table" title="Таблица">
-                            <i class="fas fa-table"></i>
-                        </button>
                     </div>
-                    <a href="{{ url_for('main.add_product') }}" class="btn-add-product">
+                    <a href="{{ url_for('main.add_product') }}" class="btn-primary">
                         <i class="fas fa-plus"></i> Добавить товар
                     </a>
                 </div>
             </div>
 
-            {% if products %}
-            <!-- Вид плиткой (по умолчанию) -->
-            <div class="products-grid" id="productsGrid">
+            <!-- View: Grid -->
+            <div class="db-products-grid" id="productsGrid">
+                {% if products %}
                 {% for product in products %}
-                <div class="product-card {% if product.status != product.STATUS_PUBLISHED %}product-unpublished{% endif %}"
-                    onclick="window.location.href='{{ url_for('main.product_detail', product_id=product.id) }}'"
-                    style="cursor: pointer;">
-                    <div class="product-image">
+                <div class="card db-product-card {% if product.status != product.STATUS_PUBLISHED %}db-unpublished{% endif %}"
+                    onclick="window.location.href='{{ url_for('main.product_detail', product_id=product.id) }}'">
+
+                    <div class="db-product-img-box">
                         {% if product.image_list and product.image_list|length > 0 %}
                         <img src="{{ url_for('main.serve_uploaded_file', filename=product.image_list[0]) }}"
-                            alt="{{ product.title }}"
-                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="no-image" style="display: none; padding: 0; overflow: hidden;">
-                            <svg class="category-placeholder" width="100%" height="100%" viewBox="0 0 150 150"
-                                preserveAspectRatio="none"
-                                data-category-id="{{ product.product_category.id if product.product_category else '' }}">
-                                <rect width="100%" height="100%"
-                                    fill="{{ product.product_category.color|default('#ccc') if product.product_category else '#ccc' }}" />
-                                <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16"
-                                    fill="white" font-weight="500">
-                                    {{ product.product_category.name|truncate(15) if product.product_category else 'No
-                                    Category' }}
-                                </text>
-                            </svg>
-                        </div>
+                            alt="{{ product.title }}">
                         {% else %}
-                        <div class="no-image" style="padding: 0; overflow: hidden;">
-                            <svg class="category-placeholder" width="100%" height="100%" viewBox="0 0 150 150"
-                                preserveAspectRatio="none"
-                                data-category-id="{{ product.product_category.id if product.product_category else '' }}">
-                                <rect width="100%" height="100%"
-                                    fill="{{ product.product_category.color|default('#ccc') if product.product_category else '#ccc' }}" />
-                                <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16"
-                                    fill="white" font-weight="500">
-                                    {{ product.product_category.name|truncate(15) if product.product_category else 'No
-                                    Category' }}
-                                </text>
-                            </svg>
+                        <div class="db-no-img">
+                            <i class="fas fa-box fa-2x"></i>
                         </div>
                         {% endif %}
 
-                        <!-- Бейдж статуса -->
-                        <div class="product-status-badge status-{{ product.status }}">
-                            {{ product.status_text }}
-                            {% if product.status == product.STATUS_PUBLISHED and product.days_remaining > 0 %}
-                            <span class="days-remaining">({{ product.days_remaining }} дн.)</span>
-                            {% elif product.status == product.STATUS_PUBLISHED and product.days_remaining == 0 %}
-                            <span class="days-remaining">(сегодня)</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="product-info">
-                        <h3 class="product-title">{{ product.title }}</h3>
-                        <p class="product-price">
-                            {{ product|format_product_price }}
-                            {% if product.vat_included %}
-                            <span class="vat-label vat-included">С НДС</span>
-                            {% else %}
-                            <span class="vat-label vat-excluded">Без НДС</span>
-                            {% endif %}
-                        </p>
-                        <div class="product-views">
-                            <span class="views-count">
-                                <img src="{{ url_for('static', filename='icons/eye_icon.svg') }}" alt=""
-                                    style="width: 14px; height: 14px; vertical-align: middle; opacity: 0.6; margin-right: 4px;">
-                                {{ product.view_count if product.view_count else 0 }}
+                        <!-- Status Badge -->
+                        <div class="db-status-badge">
+                            <span
+                                class="badge {% if product.status == product.STATUS_PUBLISHED %}badge-success{% else %}badge-info{% endif %}">
+                                {{ product.status_text }}
                             </span>
                         </div>
-                        <p class="product-description">{{ product.description|truncate(100) if product.description else
-                            'Нет описания' }}</p>
-
-                        <div class="product-meta">
-                            <span class="category">{{ product.product_category.name if product.product_category else
-                                'Без категории' }}</span>
-                            <span class="date">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
-                        </div>
                     </div>
 
-                    <div class="product-actions" onclick="event.stopPropagation();">
-                        <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="btn-view">
-                            Посмотреть
-                        </a>
+                    <div class="db-product-info">
+                        <h3 class="db-product-title">{{ product.title }}</h3>
+                        <p class="db-product-price">{{ product|format_product_price }}</p>
 
-                        {% if product.status == product.STATUS_PUBLISHED %}
-                        <form action="{{ url_for('main.unpublish_product', product_id=product.id) }}" method="POST"
-                            class="action-form">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="db-product-stats">
+                            <span><i class="far fa-eye"></i> {{ product.view_count if product.view_count else 0
+                                }}</span>
+                            <span><i class="far fa-calendar"></i> {{ product.created_at.strftime('%d.%m.%Y') }}</span>
+                        </div>
 
-                            <button type="submit" class="btn-unpublish"
-                                onclick="event.stopPropagation(); return confirm('Снять товар с публикации? Он станет виден только вам.')">
-                                Снять
-                            </button>
-                        </form>
-                        {% elif product.status == product.STATUS_READY_FOR_PUBLICATION or product.status ==
-                        product.STATUS_UNPUBLISHED %}
-                        <form action="{{ url_for('main.renew_product', product_id=product.id) }}" method="POST"
-                            class="action-form">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="db-product-actions" onclick="event.stopPropagation();">
+                            <a href="{{ url_for('main.product_detail', product_id=product.id) }}"
+                                class="btn-secondary db-action-btn">
+                                Детали
+                            </a>
 
-                            <button type="submit" class="btn-publish" onclick="event.stopPropagation();">
-                                Опубликовать
-                            </button>
-                        </form>
-                        {% endif %}
+                            {% if product.status == product.STATUS_PUBLISHED %}
+                            <form action="{{ url_for('main.unpublish_product', product_id=product.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-secondary db-action-btn"
+                                    onclick="return confirm('Снять с публикации?')">
+                                    Снять
+                                </button>
+                            </form>
+                            {% else %}
+                            <form action="{{ url_for('main.renew_product', product_id=product.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-primary db-action-btn">
+                                    Публикация
+                                </button>
+                            </form>
+                            {% endif %}
 
-                        <form action="{{ url_for('main.delete_product', product_id=product.id) }}" method="POST"
-                            class="action-form"
-                            onsubmit="event.stopPropagation(); return confirm('Удалить товар? Это действие нельзя отменить.')">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                            <button type="submit" class="btn-delete" onclick="event.stopPropagation();">
-                                Удалить
-                            </button>
-                        </form>
+                            <form action="{{ url_for('main.delete_product', product_id=product.id) }}" method="POST"
+                                class="db-delete-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-secondary db-delete-btn"
+                                    onclick="return confirm('Удалить?')">
+                                    <i class="far fa-trash-alt"></i> Удалить
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
 
-            <!-- Вид списком -->
-            <div class="products-list" id="productsList" style="display: none;">
-                {% for product in products %}
-                <div class="list-product-card {% if product.status != product.STATUS_PUBLISHED %}product-unpublished{% endif %}"
-                    onclick="window.location.href='{{ url_for('main.product_detail', product_id=product.id) }}'"
-                    style="cursor: pointer;">
-                    <div class="list-product-image">
-                        {% if product.image_list and product.image_list|length > 0 %}
-                        <img src="{{ url_for('main.serve_uploaded_file', filename=product.image_list[0]) }}"
-                            alt="{{ product.title }}"
-                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="no-image-small" style="display: none; padding: 0; overflow: hidden;">
-                            <svg class="category-placeholder" width="100%" height="100%" viewBox="0 0 150 150"
-                                preserveAspectRatio="none"
-                                data-category-id="{{ product.product_category.id if product.product_category else '' }}">
-                                <rect width="100%" height="100%"
-                                    fill="{{ product.product_category.color|default('#ccc') if product.product_category else '#ccc' }}" />
-                                <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16"
-                                    fill="white" font-weight="500">
-                                    {{ product.product_category.name|truncate(15) if product.product_category else 'No
-                                    Category' }}
-                                </text>
-                            </svg>
-                        </div>
-                        {% else %}
-                        <div class="no-image-small" style="padding: 0; overflow: hidden;">
-                            <svg class="category-placeholder" width="100%" height="100%" viewBox="0 0 150 150"
-                                preserveAspectRatio="none"
-                                data-category-id="{{ product.product_category.id if product.product_category else '' }}">
-                                <rect width="100%" height="100%"
-                                    fill="{{ product.product_category.color|default('#ccc') if product.product_category else '#ccc' }}" />
-                                <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16"
-                                    fill="white" font-weight="500">
-                                    {{ product.product_category.name|truncate(15) if product.product_category else 'No
-                                    Category' }}
-                                </text>
-                            </svg>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="list-product-info">
-                        <h3 class="list-product-title">{{ product.title }}</h3>
-                        <p class="list-product-description">{{ product.description|truncate(150) if product.description
-                            else 'Нет описания' }}</p>
-
-                        <div class="list-product-meta">
-                            <span class="list-category">{{ product.product_category.name if product.product_category
-                                else 'Без категории' }}</span>
-                            <span class="list-date">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
-                            <span class="list-status status-{{ product.status }}">{{ product.status_text }}</span>
-                        </div>
-                    </div>
-
-                    <div class="list-product-price">
-                        <span class="price-value">{{ product|format_product_price }}</span>
-                        {% if product.vat_included %}
-                        <span class="vat-label vat-included">С НДС</span>
-                        {% else %}
-                        <span class="vat-label vat-excluded">Без НДС</span>
-                        {% endif %}
-                    </div>
-
-                    <div class="list-product-actions" onclick="event.stopPropagation();">
-                        {% if product.status == product.STATUS_PUBLISHED %}
-                        <form action="{{ url_for('main.unpublish_product', product_id=product.id) }}" method="POST"
-                            class="action-form">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                            <button type="submit" class="btn-unpublish"
-                                onclick="event.stopPropagation(); return confirm('Снять товар с публикации? Он станет виден только вам.')">
-                                Снять
-                            </button>
-                        </form>
-                        {% elif product.status == product.STATUS_READY_FOR_PUBLICATION or product.status ==
-                        product.STATUS_UNPUBLISHED %}
-                        <form action="{{ url_for('main.renew_product', product_id=product.id) }}" method="POST"
-                            class="action-form">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                            <button type="submit" class="btn-publish" onclick="event.stopPropagation();">
-                                Опубликовать
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Вид таблицей -->
-            <div class="products-table-container" id="productsTable" style="display: none;">
-                <div class="table-wrapper">
-                    <table class="products-data-table">
-                        <thead>
-                            <tr>
-                                <th data-sort="title" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">Название товара</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                                <th data-sort="price" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">Цена</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                                <th data-sort="vat_included" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">НДС</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                                <th data-sort="condition" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">Состояние</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                                <th data-sort="region" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">Регион</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                                <th data-sort="city" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">Город</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                                <th data-sort="delivery" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">Доставка</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                                <th data-sort="status" class="sortable">
-                                    <div class="table-header-content">
-                                        <div class="header-text">Статус</div>
-                                        <div class="sort-icon"></div>
-                                    </div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for product in products[:20] %}
-                            <tr class="table-product-row {% if product.status != product.STATUS_PUBLISHED %}product-unpublished{% endif %}"
-                                onclick="window.location.href='{{ url_for('main.product_detail', product_id=product.id) }}'"
-                                style="cursor: pointer;">
-                                <td class="product-title-cell">
-                                    <div class="table-product-title">{{ product.title }}</div>
-                                    <div class="table-category">{{ product.product_category.name if
-                                        product.product_category else 'Без категории' }}</div>
-                                </td>
-                                <td class="product-price-cell">
-                                    <span class="table-price">{{ product|format_product_price }}</span>
-                                </td>
-                                <td class="product-vat-cell">
-                                    {% if product.vat_included %}
-                                    <span class="vat-badge vat-included">+</span>
-                                    {% else %}
-                                    <span class="vat-badge vat-excluded">-</span>
-                                    {% endif %}
-                                </td>
-                                <td class="product-condition-cell">
-                                    {% if product.condition == 'new' %}
-                                    <span class="condition-badge condition-new">Новое</span>
-                                    {% else %}
-                                    <span class="condition-badge condition-used">Б/У</span>
-                                    {% endif %}
-                                </td>
-                                <td class="product-region-cell">{{ product.region or '—' }}</td>
-                                <td class="product-city-cell">{{ product.city or '—' }}</td>
-                                <td class="product-delivery-cell">
-                                    {% if product.delivery %}
-                                    <span class="delivery-badge delivery-yes">Есть</span>
-                                    {% else %}
-                                    <span class="delivery-badge delivery-no">Нет</span>
-                                    {% endif %}
-                                </td>
-                                <td class="product-status-cell">
-                                    <span class="status-badge status-{{ product.status }}">
-                                        {{ product.status_text }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Пагинация для таблицы -->
-                {% if products|length > 20 %}
-                <div class="table-pagination">
-                    <div class="pagination-info">
-                        Показано 1-20 из {{ products|length }} товаров
-                    </div>
-                    <div class="pagination-controls">
-                        <button class="pagination-btn prev-btn" disabled>← Назад</button>
-                        <div class="page-numbers">
-                            <span class="page-number active">1</span>
-                            {% for page in range(2, (products|length // 20) + 2) %}
-                            <span class="page-number">{{ page }}</span>
-                            {% endfor %}
-                        </div>
-                        <button class="pagination-btn next-btn">Вперед →</button>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
             {% else %}
-            <div class="empty-state">
-                <div class="empty-icon"><i class="fas fa-box-open"></i></div>
-                <h3>У вас пока нет товаров</h3>
-                <p>Добавьте первый товар, чтобы начать продавать</p>
-                <a href="{{ url_for('main.add_product') }}" class="btn-add-product">
+            <div class="card db-empty-state">
+                <div class="db-empty-icon">
+                    <i class="fas fa-box-open fa-4x"></i>
+                </div>
+                <h3>У вас пока нет объявлений</h3>
+                <p>Начните продавать прямо сейчас, добавив свой первый товар.</p>
+                <a href="{{ url_for('main.add_product') }}" class="btn-primary db-empty-btn">
                     <i class="fas fa-plus"></i> Добавить товар
                 </a>
             </div>
@@ -463,279 +146,262 @@
         </main>
     </div>
 </div>
+{% endblock %}
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const viewButtons = document.querySelectorAll('.view-btn');
-        const productsGrid = document.getElementById('productsGrid');
-        const productsList = document.getElementById('productsList');
-        const productsTable = document.getElementById('productsTable');
-
-        // Загружаем сохраненный вид или используем 'grid' по умолчанию
-        const savedView = localStorage.getItem('dashboardView') || 'grid';
-        setActiveView(savedView);
-
-        // Обработчики для кнопок переключения вида
-        viewButtons.forEach(button => {
-            button.addEventListener('click', function (e) {
-                e.preventDefault();
-                const viewType = this.getAttribute('data-view');
-                setActiveView(viewType);
-                localStorage.setItem('dashboardView', viewType);
-            });
-        });
-
-        function setActiveView(viewType) {
-            // Обновляем кнопки
-            viewButtons.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.getAttribute('data-view') === viewType) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Скрываем все виды
-            if (productsGrid) productsGrid.style.display = 'none';
-            if (productsList) productsList.style.display = 'none';
-            if (productsTable) productsTable.style.display = 'none';
-
-            // Показываем выбранный вид
-            switch (viewType) {
-                case 'grid':
-                    if (productsGrid) productsGrid.style.display = 'grid';
-                    break;
-                case 'list':
-                    if (productsList) productsList.style.display = 'block';
-                    break;
-                case 'table':
-                    if (productsTable) productsTable.style.display = 'block';
-                    // Инициализируем сортировку и пагинацию для таблицы
-                    setTimeout(() => {
-                        initializeTableSorting();
-                        initializePagination();
-                    }, 100);
-                    break;
-            }
-        }
-
-        // Активация текущего пункта меню
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-            item.addEventListener('click', function (e) {
-                const link = this.querySelector('a');
-                if (link && (link.getAttribute('href') === '#' || !link.getAttribute('href'))) {
-                    e.preventDefault();
-                    navItems.forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-                }
-            });
-        });
-
-        // Функция для сортировки таблицы
-        function initializeTableSorting() {
-            const sortableHeaders = document.querySelectorAll('.products-data-table th.sortable');
-            if (!sortableHeaders.length) return;
-
-            let currentSort = { column: null, direction: 'asc' };
-
-            sortableHeaders.forEach(header => {
-                header.addEventListener('click', function () {
-                    const column = this.getAttribute('data-sort');
-                    const table = this.closest('table');
-                    if (!table) return;
-
-                    const tbody = table.querySelector('tbody');
-                    if (!tbody) return;
-
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                    // Снимаем классы сортировки
-                    sortableHeaders.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
-
-                    // Определяем направление
-                    if (currentSort.column === column) {
-                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        currentSort.column = column;
-                        currentSort.direction = 'asc';
-                    }
-
-                    this.classList.add(`sort-${currentSort.direction}`);
-
-                    // Сортируем
-                    rows.sort((a, b) => {
-                        const aValue = getCellValue(a, column);
-                        const bValue = getCellValue(b, column);
-                        let comparison = 0;
-                        if (aValue < bValue) comparison = -1;
-                        if (aValue > bValue) comparison = 1;
-                        return currentSort.direction === 'desc' ? comparison * -1 : comparison;
-                    });
-
-                    // Переставляем
-                    rows.forEach(row => tbody.appendChild(row));
-                });
-            });
-
-            function getCellValue(row, column) {
-                const cell = row.querySelector(`.product-${column}-cell`);
-                if (!cell) return '';
-
-                switch (column) {
-                    case 'title':
-                        const titleElem = cell.querySelector('.table-product-title');
-                        return titleElem ? titleElem.textContent.toLowerCase() : '';
-                    case 'price':
-                        const priceElem = cell.querySelector('.table-price');
-                        if (!priceElem) return 0;
-                        const priceText = priceElem.textContent;
-                        return parseFloat(priceText.replace(/[^\d.]/g, '')) || 0;
-                    case 'vat_included':
-                        const vatElem = cell.querySelector('.vat-badge');
-                        return vatElem ? (vatElem.textContent === '+' ? 1 : 0) : 0;
-                    case 'condition':
-                        const conditionElem = cell.querySelector('.condition-badge');
-                        return conditionElem ? conditionElem.textContent.toLowerCase() : '';
-                    case 'region':
-                        return cell.textContent.toLowerCase();
-                    case 'city':
-                        return cell.textContent.toLowerCase();
-                    case 'delivery':
-                        const deliveryElem = cell.querySelector('.delivery-badge');
-                        return deliveryElem ? (deliveryElem.textContent === 'Есть' ? 1 : 0) : 0;
-                    case 'status':
-                        const statusElem = cell.querySelector('.status-badge');
-                        return statusElem ? statusElem.textContent.toLowerCase() : '';
-                    default:
-                        return cell.textContent.toLowerCase();
-                }
-            }
-        }
-
-        // Функция для пагинации таблицы
-        function initializePagination() {
-            try {
-                const products = {{ products_json| tojson | safe if products_json else '[]'
-            }};
-        const pageNumbers = document.querySelectorAll('.page-number');
-        const prevBtn = document.querySelector('.prev-btn');
-        const nextBtn = document.querySelector('.next-btn');
-
-        if (!products || products.length <= 20) return;
-
-        let currentPage = 1;
-        const itemsPerPage = 20;
-        const totalPages = Math.ceil(products.length / itemsPerPage);
-
-        function updateTable(page) {
-            currentPage = page;
-            const startIndex = (page - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageProducts = products.slice(startIndex, endIndex);
-
-            const tbody = document.querySelector('.products-data-table tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            pageProducts.forEach(product => {
-                const row = createTableRow(product);
-                tbody.appendChild(row);
-            });
-
-            updatePaginationControls();
-            const paginationInfo = document.querySelector('.pagination-info');
-            if (paginationInfo) {
-                paginationInfo.textContent =
-                    `Показано ${startIndex + 1}-${Math.min(endIndex, products.length)} из ${products.length} товаров`;
-            }
-        }
-
-        function createTableRow(product) {
-            const row = document.createElement('tr');
-            row.className = `table-product-row ${product.status !== 1 ? 'product-unpublished' : ''}`;
-            row.style.cursor = 'pointer';
-            row.onclick = () => window.location.href = `/product/${product.id}`;
-
-            const titleCell = document.createElement('td');
-            titleCell.className = 'product-title-cell';
-            titleCell.innerHTML = `
-                    <div class="table-product-title">${product.title || ''}</div>
-                    <div class="table-category">${(product.product_category && product.product_category.name) || 'Без категории'}</div>
-                `;
-
-            const priceCell = document.createElement('td');
-            priceCell.className = 'product-price-cell';
-            const price = parseFloat(product.price) || 0;
-            priceCell.innerHTML = `<span class="table-price">${price.toFixed(2)} ₽</span>`;
-
-            const vatCell = document.createElement('td');
-            vatCell.className = 'product-vat-cell';
-            vatCell.innerHTML = product.vat_included ?
-                '<span class="vat-badge vat-included">+</span>' :
-                '<span class="vat-badge vat-excluded">-</span>';
-
-            const conditionCell = document.createElement('td');
-            conditionCell.className = 'product-condition-cell';
-            conditionCell.innerHTML = (product.condition || 'new') === 'new' ?
-                '<span class="condition-badge condition-new">Новое</span>' :
-                '<span class="condition-badge condition-used">Б/У</span>';
-
-            const regionCell = document.createElement('td');
-            regionCell.className = 'product-region-cell';
-            regionCell.textContent = product.region || '—';
-
-            const cityCell = document.createElement('td');
-            cityCell.className = 'product-city-cell';
-            cityCell.textContent = product.city || '—';
-
-            const deliveryCell = document.createElement('td');
-            deliveryCell.className = 'product-delivery-cell';
-            deliveryCell.innerHTML = product.delivery ?
-                '<span class="delivery-badge delivery-yes">Есть</span>' :
-                '<span class="delivery-badge delivery-no">Нет</span>';
-
-            const statusCell = document.createElement('td');
-            statusCell.className = 'product-status-cell';
-            const statusMap = { 1: 'Опубликован', 2: 'Снят с публикации', 3: 'Готов к публикации' };
-            const statusText = statusMap[product.status] || 'Неизвестно';
-            statusCell.innerHTML = `<span class="status-badge status-${product.status}">${statusText}</span>`;
-
-            [titleCell, priceCell, vatCell, conditionCell, regionCell, cityCell, deliveryCell, statusCell].forEach(cell => {
-                row.appendChild(cell);
-            });
-
-            return row;
-        }
-
-        function updatePaginationControls() {
-            pageNumbers.forEach((page, index) => {
-                page.classList.toggle('active', index + 1 === currentPage);
-            });
-            if (prevBtn) prevBtn.disabled = currentPage === 1;
-            if (nextBtn) nextBtn.disabled = currentPage === totalPages;
-        }
-
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                if (currentPage > 1) updateTable(currentPage - 1);
-            });
-        }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                if (currentPage < totalPages) updateTable(currentPage + 1);
-            });
-        }
-        pageNumbers.forEach((page, index) => {
-            page.addEventListener('click', () => {
-                if (index + 1 !== currentPage) updateTable(index + 1);
-            });
-        });
-
-        updateTable(1);
-    } catch (error) {
-        console.error('Ошибка при инициализации пагинации:', error);
+{% block styles %}
+<style>
+    /* Local Styles for Dashboard Page */
+    .db-container {
+        padding-top: 2.5rem;
     }
+
+    .db-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 2rem;
     }
-});
-</script>
+
+    @media (max-width: 900px) {
+        .db-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .db-sidebar-card {
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .db-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .db-nav-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .db-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1.25rem;
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--gray-600);
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .db-nav-link:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+    }
+
+    .db-nav-link.active {
+        background: var(--primary-light);
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    .db-nav-link i {
+        font-size: 1.125rem;
+        width: 20px;
+    }
+
+    .db-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2.5rem;
+    }
+
+    .db-title {
+        font-size: 1.875rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+    }
+
+    .db-subtitle {
+        color: var(--gray-500);
+        font-weight: 500;
+        margin: 0;
+        font-size: 0.9375rem;
+    }
+
+    .db-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .db-view-toggle {
+        display: flex;
+        background: var(--gray-200);
+        padding: 0.25rem;
+        border-radius: var(--radius-md);
+    }
+
+    .db-view-btn {
+        padding: 0.5rem 0.75rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--gray-500);
+        border-radius: 6px;
+    }
+
+    .db-view-btn.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .db-products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .db-product-card {
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .db-product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary-light);
+    }
+
+    .db-unpublished {
+        opacity: 0.8;
+    }
+
+    .db-unpublished::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.05);
+        pointer-events: none;
+    }
+
+    .db-product-img-box {
+        aspect-ratio: 4/3;
+        background: var(--gray-100);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .db-product-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .db-no-img {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-300);
+    }
+
+    .db-status-badge {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+
+    .db-product-info {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .db-product-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+        color: var(--gray-900);
+    }
+
+    .db-product-price {
+        font-size: 1.375rem;
+        font-weight: 800;
+        color: var(--primary);
+        margin-bottom: 0.75rem;
+    }
+
+    .db-product-stats {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: var(--gray-500);
+        margin-bottom: 1.5rem;
+    }
+
+    .db-product-stats span {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .db-product-actions {
+        margin-top: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .db-action-btn {
+        padding: 0.625rem;
+        text-align: center;
+        font-size: 0.8125rem;
+        font-weight: 700;
+    }
+
+    .db-delete-form {
+        grid-column: span 2;
+        margin-top: 0.25rem;
+    }
+
+    .db-delete-btn {
+        width: 100%;
+        padding: 0.625rem;
+        font-size: 0.8125rem;
+        color: var(--danger);
+        border-color: rgba(229, 62, 62, 0.2);
+        background: white;
+        font-weight: 600;
+    }
+
+    .db-delete-btn:hover {
+        background: #fff5f5;
+        border-color: var(--danger);
+    }
+
+    .db-empty-state {
+        padding: 6rem 2rem;
+        text-align: center;
+        border: 2px dashed var(--gray-200);
+    }
+
+    .db-empty-icon {
+        color: var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .db-empty-btn {
+        margin-top: 2rem;
+    }
+</style>
 {% endblock %}

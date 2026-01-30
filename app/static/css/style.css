@@ -3,6 +3,9 @@
     --avito-blue: #0057FF;
     --avito-blue-hover: #0045CC;
     --avito-blue-light: #E8F0FE;
+    --primary: var(--avito-blue);
+    --primary-hover: var(--avito-blue-hover);
+    --primary-light: var(--avito-blue-light);
     --text-primary: #1F1F1F;
     --text-secondary: #7F7F7F;
     --text-tertiary: #999999;
@@ -10,13 +13,25 @@
     --background-secondary: #F8F9FA;
     --border: #E6E6E6;
     --border-light: #F0F0F0;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
     --shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
     --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
     --radius: 8px;
+    --radius-md: 8px;
     --radius-lg: 12px;
+    --radius-xl: 16px;
     --danger: #FF3B30;
     --danger-hover: #D32F2F;
-    --header-height: 60px;
+    --header-height: 64px;
 }
 
 /* Container */
@@ -3275,8 +3290,7 @@ select:focus-visible {
 }
 
 #locationModal .modal-header h3::before {
-    content: "📍";
-    font-size: 24px;
+    content: none;
 }
 
 #locationModal .modal-content .close {
@@ -3410,31 +3424,19 @@ select:focus-visible {
 }
 
 .suggestion-item::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #999999;
-    opacity: 0.5;
-    transition: all 0.2s;
+    display: none;
 }
 
 .suggestion-item:hover::before {
-    background: #0057FF;
-    opacity: 1;
-    transform: scale(1.2);
+    display: none;
 }
 
 .suggestion-item:first-child::before {
-    content: "🌍";
-    background: none;
-    width: auto;
-    height: auto;
-    font-size: 18px;
+    display: none;
 }
 
 .suggestion-item:first-child:hover::before {
-    transform: scale(1.1);
+    display: none;
 }
 
 /* Стили для популярных городов */

@@ -205,7 +205,9 @@ def admin_categories():
             total_products=total_products,
             all_regions=all_regions,      
             regions=regions,              
-            child_regions=child_regions   
+            child_regions=child_regions,
+            categories_with_images=Category.query.filter(Category.image.isnot(None)).all(),
+            cities_count=City.query.count()
     )
 
 # === РЕГИОНЫ ===
@@ -559,22 +561,27 @@ def add_city():
         flash('Недостаточно прав', 'error')
         return redirect(url_for('admin_bp.admin_categories'))
     name = request.form.get('name', '').strip()
-    region_id = request.form.get('region_id')
+    # Пытаемся взять из обоих возможных полей (region_id или parent_id)
+    region_id = request.form.get('region_id') or request.form.get('parent_id')
     description = request.form.get('description', '').strip()
+    
     if not name:
         flash('Название города обязательно', 'error')
         return redirect(url_for('admin_bp.admin_categories'))
     if not region_id:
         flash('Выберите регион', 'error')
         return redirect(url_for('admin_bp.admin_categories'))
-    existing = City.query.filter_by(name=name, region_id=region_id).first()
-    if existing:
-        flash('Такой город уже существует в этом регионе', 'error')
-        return redirect(url_for('admin_bp.admin_categories'))
+        
     try:
+        region_id = int(region_id)
+        existing = City.query.filter_by(name=name, region_id=region_id).first()
+        if existing:
+            flash('Такой город уже существует в этом регионе', 'error')
+            return redirect(url_for('admin_bp.admin_categories'))
+
         new_city = City(
             name=name,
-            region_id=int(region_id),
+            region_id=region_id,
             description=description
         )
         db.session.add(new_city)

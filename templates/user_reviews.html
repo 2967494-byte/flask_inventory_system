@@ -1,240 +1,143 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Кнопка Назад -->
-    <div class="mb-3">
-        <a href="{{ url_for('main.product_detail', product_id=request.args.get('product_id', 0)) if request.args.get('product_id') else url_for('main.index') }}" 
-           class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Назад
+<div style="max-width: 900px; margin: 2rem auto; padding-bottom: 4rem;">
+    <!-- Navigation Back -->
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('main.product_detail', product_id=request.args.get('product_id', 0)) if request.args.get('product_id') else url_for('main.index') }}"
+            class="btn-secondary"
+            style="font-size: 0.8125rem; padding: 0.5rem 1rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-arrow-left"></i>
+            Назад к товару
         </a>
     </div>
-    
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">
-                <i class="bi bi-person-circle me-2"></i>
-                Отзывы о продавце 
-                {% if user.username %}
-                    {{ user.username }}
-                {% elif user.company_name %}
-                    {{ user.company_name }}
-                {% else %}
-                    {{ user.email.split('@')[0] }}
-                {% endif %}
-            </h4>
-            
+
+    <div class="card" style="padding: 2.5rem; transition: none;">
+        <!-- Header -->
+        <div
+            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; gap: 2rem;">
+            <div>
+                <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">
+                    Отзывы о продавце
+                    <span style="color: var(--primary);">
+                        {% if user.username %}{{ user.username }}{% elif user.company_name %}{{ user.company_name }}{%
+                        else %}{{ user.email.split('@')[0] }}{% endif %}
+                    </span>
+                </h1>
+                <p style="color: var(--gray-500);">Все отзывы на платформе верифицированы</p>
+            </div>
+
             {% if current_user.is_authenticated and current_user.id != user.id %}
-            <a href="{{ url_for('main.add_review_direct', user_id=user.id, product_id=request.args.get('product_id')) }}" 
-               class="btn btn-primary">
-                <i class="bi bi-star-fill me-1"></i>Добавить отзыв
+            <a href="{{ url_for('main.add_review_direct', user_id=user.id, product_id=request.args.get('product_id')) }}"
+                class="btn-primary" style="padding: 0.875rem 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-star" style="margin-right: 0.5rem;"></i>
+                Оставить отзыв
             </a>
             {% endif %}
         </div>
-        
-        <div class="card-body">
-            <!-- Статистика -->
-            <div class="row mb-4">
-                <div class="col-md-6 text-center mb-4 mb-md-0">
-                    <div class="display-4 fw-bold text-primary">{{ "%.1f"|format(average_rating) if average_rating > 0 else "0.0" }}</div>
-                    <div class="text-muted">Средний рейтинг</div>
-                    <div class="stars text-warning fs-4 mt-2">
-                        {% for i in range(1, 6) %}
-                            {% if i <= average_rating|round %}
-                                ★
-                            {% else %}
-                                ☆
-                            {% endif %}
-                        {% endfor %}
-                    </div>
+
+        <!-- Rating Summary Card -->
+        <div
+            style="background: var(--gray-50); border-radius: var(--radius-lg); padding: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; margin-bottom: 3rem;">
+            <div style="text-align: center; border-right: 1px solid var(--gray-200); padding-right: 1.25rem;">
+                <div style="font-size: 3.5rem; font-weight: 800; color: var(--gray-900); line-height: 1.1;">
+                    {{ "%.1f"|format(average_rating) if average_rating > 0 else "0.0" }}
                 </div>
-                
-                <div class="col-md-6 text-center">
-                    <div class="display-4 fw-bold text-primary">{{ total_reviews }}</div>
-                    <div class="text-muted">Всего отзывов</div>
-                    <div class="mt-3">
-                        {% if total_reviews == 0 %}
-                        <span class="badge bg-secondary">Пока нет отзывов</span>
-                        {% elif average_rating >= 4.5 %}
-                        <span class="badge bg-success">Отличная репутация</span>
-                        {% elif average_rating >= 4.0 %}
-                        <span class="badge bg-info">Хорошая репутация</span>
-                        {% elif average_rating >= 3.0 %}
-                        <span class="badge bg-warning">Средняя репутация</span>
+                <div
+                    style="display: flex; justify-content: center; gap: 0.25rem; margin: 0.5rem 0 1rem; color: #ffbc00;">
+                    {% for i in range(1, 6) %}
+                    <i class="{% if i <= average_rating|round %}fas{% else %}far{% endif %} fa-star"></i>
+                    {% endfor %}
+                </div>
+                <div style="color: var(--gray-500); font-size: 0.875rem; font-weight: 500;">
+                    На основании {{ total_reviews }} отзывов
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; justify-content: center; gap: 0.75rem;">
+                {% for i in range(5, 0, -1) %}
+                {% set count = rating_distribution[i] %}
+                {% set percent = (count / total_reviews * 100) if total_reviews > 0 else 0 %}
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--gray-600); width: 1.5rem;">{{ i }}
+                        ★</span>
+                    <div
+                        style="flex: 1; height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden;">
+                        <div
+                            style="width: {{ percent }}%; height: 100%; background: {% if i >= 4 %}#10b981{% elif i == 3 %}#f59e0b{% else %}#ef4444{% endif %}; border-radius: 3px;">
+                        </div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--gray-400); width: 2.5rem; text-align: right;">{{ count
+                        }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Reviews List -->
+        <div>
+            <h3
+                style="font-size: 1.25rem; margin-bottom: 2rem; border-bottom: 1px solid var(--gray-100); padding-bottom: 1rem;">
+                Отзывы ({{ total_reviews }})</h3>
+
+            {% if reviews %}
+            <div style="display: grid; gap: 2rem;">
+                {% for review in reviews %}
+                <div style="display: flex; gap: 1.5rem;">
+                    <!-- Reviewer Identity -->
+                    <div
+                        style="flex-shrink: 0; width: 48px; height: 48px; background: var(--gray-100); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--gray-500); border: 1px solid var(--gray-200);">
+                        {% if review.buyer.username %}
+                        {{ review.buyer.username[0]|upper }}
                         {% else %}
-                        <span class="badge bg-danger">Низкая репутация</span>
+                        А
                         {% endif %}
                     </div>
-                </div>
-            </div>
-            
-            <!-- Распределение оценок -->
-            {% if total_reviews > 0 %}
-            <div class="mb-4">
-                <h5 class="mb-3"><i class="bi bi-bar-chart me-2"></i>Распределение оценок:</h5>
-                {% for i in range(5, 0, -1) %}
-                <div class="d-flex align-items-center mb-2">
-                    <div class="me-3" style="width: 50px;">
-                        <span class="text-warning">{{ i }} ★</span>
-                    </div>
-                    <div class="progress flex-grow-1" style="height: 20px;">
-                        {% set percentage = (rating_distribution[i] / total_reviews * 100) if total_reviews > 0 else 0 %}
-                        <div class="progress-bar {% if i >= 4 %}bg-success{% elif i == 3 %}bg-warning{% else %}bg-danger{% endif %}" 
-                             style="width: {{ percentage }}%;"
-                             role="progressbar">
-                            <span class="fw-medium">{{ rating_distribution[i] }}</span>
-                        </div>
-                    </div>
-                    <div class="ms-3" style="width: 50px; text-align: right;">
-                        <span class="fw-bold">{{ "%.0f"|format(percentage) }}%</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            <hr>
-            {% endif %}
-            
-            <!-- Кнопка добавления отзыва (только для гостей) -->
-            {% if not current_user.is_authenticated %}
-            <div class="text-center mb-4 p-3 bg-light rounded">
-                <p class="mb-2">Хотите оставить отзыв?</p>
-                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>Войти в аккаунт
-                </a>
-            </div>
-            {% endif %}
-            
-            <!-- Список отзывов -->
-            <div class="mb-3">
-                <h5><i class="bi bi-chat-left-text me-2"></i>Все отзывы ({{ total_reviews }})</h5>
-            </div>
-            
-            {% if reviews %}
-                {% for review in reviews %}
-                <div class="review-item mb-3 p-3 border rounded">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <div class="d-flex align-items-center mb-1">
-                                <div class="reviewer-avatar me-2">
-                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
-                                         style="width: 32px; height: 32px; font-size: 14px;">
-                                        {% if review.buyer.username %}
-                                            {{ review.buyer.username[0]|upper }}
-                                        {% else %}
-                                            А
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div>
-                                    <strong class="me-2">
-                                        {% if review.buyer.username %}
-                                            {{ review.buyer.username }}
-                                        {% else %}
-                                            Аноним
-                                        {% endif %}
-                                    </strong>
-                                </div>
+
+                    <div style="flex: 1;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <div>
+                                <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">
+                                    {% if review.buyer.username %}{{ review.buyer.username }}{% else %}Аноним{% endif %}
+                                </h4>
+                                <div style="font-size: 0.75rem; color: var(--gray-400);">{{
+                                    review.created_at.strftime('%d.%m.%Y') }}</div>
                             </div>
-                            <span class="text-muted small">{{ review.created_at.strftime('%d.%m.%Y в %H:%M') }}</span>
+                            <div style="color: #ffbc00; font-size: 0.875rem;">
+                                {% for j in range(1, 6) %}
+                                <i class="{% if j <= review.rating %}fas{% else %}far{% endif %} fa-star"></i>
+                                {% endfor %}
+                            </div>
                         </div>
-                        <div class="text-warning fs-5">
-                            {{ '★' * review.rating }}
-                            {% if review.rating < 5 %}
-                                {{ '☆' * (5 - review.rating) }}
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    {% if review.product %}
-                    <div class="mb-2">
-                        <a href="{{ url_for('main.product_detail', product_id=review.product.id) }}" 
-                           class="badge bg-light text-dark text-decoration-none border">
-                            <i class="bi bi-box-seam me-1"></i>
-                            Товар: {{ review.product.title|truncate(40) }}
+
+                        {% if review.product %}
+                        <a href="{{ url_for('main.product_detail', product_id=review.product.id) }}"
+                            style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--gray-50); padding: 0.375rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--gray-600); text-decoration: none; margin-bottom: 1rem; border: 1px solid var(--gray-100);">
+                            <i class="fas fa-shopping-bag" style="font-size: 0.7rem;"></i>
+                            {{ review.product.title|truncate(50) }}
                         </a>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="review-text">
-                        <p class="mb-0" style="line-height: 1.5;">{{ review.text }}</p>
+                        {% endif %}
+
+                        <div
+                            style="color: var(--gray-700); line-height: 1.6; font-size: 0.9375rem; white-space: pre-line;">
+                            {{ review.text }}</div>
                     </div>
                 </div>
+                {% if not loop.last %}
+                <div style="height: 1px; background: var(--gray-100); margin: 0.5rem 0;"></div>
+                {% endif %}
                 {% endfor %}
-                
+            </div>
             {% else %}
-                <!-- Если нет отзывов -->
-                <div class="text-center py-5">
-                    <div class="text-muted mb-4">
-                        <i class="bi bi-chat-left" style="font-size: 3rem; opacity: 0.3;"></i>
-                    </div>
-                    <h5 class="mb-3">У этого продавца пока нет отзывов</h5>
-                    <p class="text-muted mb-4">Будьте первым, кто поделится своим опытом</p>
-                    
-                    {% if current_user.is_authenticated and current_user.id != user.id %}
-                    <div class="mt-3">
-                        <a href="{{ url_for('main.add_review_direct', user_id=user.id, product_id=request.args.get('product_id')) }}" 
-                           class="btn btn-primary">
-                            <i class="bi bi-star-fill me-1"></i>Написать первый отзыв
-                        </a>
-                    </div>
-                    {% elif not current_user.is_authenticated %}
-                    <div class="mt-3">
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>Войти, чтобы оставить отзыв
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
+            <div style="text-align: center; padding: 4rem 0;">
+                <i class="far fa-comments fa-3x" style="color: var(--gray-200); margin-bottom: 1.5rem;"></i>
+                <h4 style="color: var(--gray-500); font-weight: 500;">Отзывов пока нет</h4>
+                <p style="color: var(--gray-400); font-size: 0.875rem; margin-bottom: 2rem;">Будьте первым, кто
+                    поделится своим опытом работы с этим продавцом</p>
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
-
-<style>
-.review-item {
-    background-color: #f8f9fa;
-    transition: all 0.2s ease;
-}
-
-.review-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.review-text {
-    border-left: 3px solid #0d6efd;
-    padding-left: 15px;
-}
-
-.reviewer-avatar {
-    flex-shrink: 0;
-}
-
-.btn-primary {
-    background-color: #0d6efd;
-    border: none;
-}
-
-.btn-primary:hover {
-    background-color: #0b5ed7;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .card-header {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 15px;
-    }
-    
-    .card-header h4 {
-        font-size: 1.25rem;
-    }
-    
-    .btn-primary {
-        width: 100%;
-        text-align: center;
-    }
-}
-</style>
 {% endblock %}

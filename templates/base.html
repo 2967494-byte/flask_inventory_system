@@ -6,86 +6,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Бесплатная система продажи остатков{% endblock %}</title>
 
-    <!-- Bootstrap CSS -->
+    <!-- Font & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Avito-like глобальные стили -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Custom Premium Styles - Forced Refresh v2.0 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.3') }}">
 
-    <!-- Базовые кастомные стили (если нужны) -->
     <style>
+        /* Failsafe Brand Styles - Overriding possible caching/conflicts */
         :root {
-            --avito-blue: #0057FF;
-            --avito-blue-hover: #0045CC;
-            --text-primary: #1F1F1F;
-            --text-secondary: #7F7F7F;
-            --background: #FFFFFF;
-            --border: #E6E6E6;
-            --shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+            --primary: #5c67f2 !important;
+            --primary-hover: #4e55c7 !important;
+            --success: #48bb78 !important;
+            --danger: #e53e3e !important;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .logo {
+            gap: 0 !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.05em !important;
+            font-size: 1.8rem !important;
         }
 
-        body {
-            font-family: 'Roboto', Arial, sans-serif;
-            background-color: #F8F9FA;
-            color: var(--text-primary);
-            line-height: 1.5;
+        /* Direct colors for logo spans to ensure they apply */
+        .logo span {
+            display: inline-block !important;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
+        .logo-l1 {
+            color: #5c67f2 !important;
         }
 
-        /* Основная структура */
-        .main-content {
-            min-height: calc(100vh - 120px);
-            padding: 32px 0;
+        .logo-l2 {
+            color: #48bb78 !important;
         }
 
-        /* Стили для flash-сообщений */
-        .flash-messages {
-            margin-bottom: 24px;
+        .logo-l3 {
+            color: #ed8936 !important;
         }
 
-        .flash-messages .flash {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            font-weight: 500;
-            border: 1px solid transparent;
+        .logo-l4 {
+            color: #e53e3e !important;
         }
 
-        .flash-messages .success {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
+        .logo-l5 {
+            color: #805ad5 !important;
         }
 
-        .flash-messages .error,
-        .flash-messages .danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
+        .logo-l6 {
+            color: #5c67f2 !important;
         }
 
-        .flash-messages .info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border-color: #bee5eb;
+        .btn-primary {
+            background-color: var(--primary) !important;
+            box-shadow: 0 4px 12px rgba(92, 103, 242, 0.2) !important;
         }
 
-        .flash-messages .warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border-color: #ffeaa7;
+        .btn-primary:hover {
+            background-color: var(--primary-hover) !important;
         }
     </style>
 
