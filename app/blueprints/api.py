@@ -15,7 +15,10 @@ def get_dadata_company():
 
         api_key = current_app.config.get('DADATA_API_KEY')
         if not api_key:
+            print("[ERROR] DADATA_API_KEY is not set in config")
             return jsonify({'error': 'API ключ не настроен'}), 500
+
+        print(f"[DEBUG] DaData INN Search: {inn}, Key: {'***' + api_key[-4:] if api_key and len(api_key)>4 else 'INVALID'}")
 
         url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party"
         headers = {
@@ -26,10 +29,18 @@ def get_dadata_company():
         payload = {"query": inn}
         
         response = requests.post(url, json=payload, headers=headers)
-        response.raise_for_status()
+        
+        if response.status_code != 200:
+            print(f"[ERROR] DaData API Error: {response.status_code} - {response.text}")
+            if response.status_code == 401:
+                return jsonify({'error': 'Ошибка авторизации API'}), 500
+            elif response.status_code == 403:
+                return jsonify({'error': 'Доступ к API запрещен (баланс или тариф)'}), 500
+            return jsonify({'error': f'Ошибка сервиса данных: {response.status_code}'}), 500
+        
         result = response.json()
         
-        if not result['suggestions']:
+        if not result.get('suggestions'):
             return jsonify({'error': 'Организация не найдена'}), 404
 
         company = result['suggestions'][0]['data']
@@ -44,6 +55,9 @@ def get_dadata_company():
         })
 
     except Exception as e:
+        print(f"[ERROR] INN Search Exception: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 

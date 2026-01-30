@@ -250,8 +250,12 @@ def add_product():
                         filename = secure_filename(file.filename)
                         unique_filename = f"{uuid.uuid4().hex}_{filename}"
                         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
-                        file.save(file_path)
-                        new_images.append(unique_filename)
+                        try:
+                            file.save(file_path)
+                            new_images.append(unique_filename)
+                        except Exception as e:
+                            print(f"[ERROR] Failed to save file {file_path}: {e}")
+                            flash(f'Ошибка при сохранении файла {filename}', 'error')
 
             # === ЦЕНА И ТИП ЦЕНЫ ===
             price_val = request.form.get('price')
@@ -424,43 +428,80 @@ def edit_product(product_id):
             # ========== ИСПРАВЛЕННАЯ ОБРАБОТКА ИЗОБРАЖЕНИЙ ==========
             current_images = _deserialize_images(product.images)
             removed_images = request.form.get('removed_images', '')
+            print(f"[DEBUG] Edit Product {product_id}: Existing={len(current_images)}, Removed={removed_images}")
+            
             if removed_images:
                 removed_list = [img.strip() for img in removed_images.split(',') if img.strip()]
                 current_images = [img for img in current_images if img not in removed_list]
                 for image_filename in removed_list:
                     image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], image_filename)
                     if os.path.exists(image_path):
-                        os.remove(image_path)
+                        try:
+                            os.remove(image_path)
+                            print(f"[DEBUG] Removed file: {image_path}")
+                        except Exception as e:
+                            print(f"[ERROR] Failed to remove file {image_path}: {e}")
+
             uploaded_files = request.files.getlist('image_files')
+            print(f"[DEBUG] Uploaded files count: {len(uploaded_files)}")
+            
             new_images = []
-            if uploaded_files and any(f.filename for f in uploaded_files):
+            if uploaded_files:
                 available_slots = 8 - len(current_images)
-                if available_slots <= 0:
-                    flash('Достигнут лимит в 8 изображений. Удалите некоторые существующие изображения перед добавлением новых.', 'error')
-                    return redirect(url_for('main.edit_product', product_id=product_id))
-                files_to_process = uploaded_files[:available_slots]
-                if len(uploaded_files) > available_slots:
-                    flash(f'Добавлено {len(files_to_process)} из {len(uploaded_files)} изображений. Достигнут лимит в 8 изображений.', 'warning')
+                print(f"[DEBUG] Available slots: {available_slots}")
+                
+                if available_slots <= 0 and any(f.filename for f in uploaded_files):
+                     # If trying to add files but no slots
+                     print("[WARN] No slots available")
+                     # We might want to continue saving other fields even if slots full, just warn.
+                     # But current logic redirects. Let's fix this behavior if needed.
+                     pass 
+
+                files_to_process = []
+                for f in uploaded_files:
+                    if f and f.filename:
+                        # Fix for blobs sometimes having generic names or issues
+                        print(f"[DEBUG] Processing file: {f.filename}, Content-Type: {f.content_type}")
+                        if available_slots > 0:
+                            files_to_process.append(f)
+                            available_slots -= 1
+                
                 for file in files_to_process:
-                    if file and file.filename:
-                        if not allowed_file(file.filename):
-                            flash(f'Файл "{file.filename}" недопустимого типа. Разрешены: png, jpg, jpeg, gif, webp', 'error')
-                            return redirect(url_for('main.edit_product', product_id=product_id))
-                        filename = secure_filename(file.filename)
-                        unique_filename = f"{uuid.uuid4().hex}_{filename}"
-                        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                    if not allowed_file(file.filename):
+                        print(f"[ERROR] Invalid file type: {file.filename}")
+                        flash(f'Файл "{file.filename}" недопустимого типа.', 'error')
+                        return redirect(url_for('main.edit_product', product_id=product_id))
+                    
+                    filename = secure_filename(file.filename)
+                    if not filename: 
+                        filename = "image.jpg" # Fallback
+                        
+                    unique_filename = f"{uuid.uuid4().hex}_{filename}"
+                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                    try:
                         file.save(file_path)
                         new_images.append(unique_filename)
+                        print(f"[DEBUG] Saved new image: {unique_filename} to {file_path}")
+                    except Exception as e:
+                        print(f"[ERROR] Failed to save {filename} to {file_path}: {e}")
+                        flash(f'Не удалось сохранить файл {filename}. Проверьте права доступа.', 'error')
+
             if new_images:
                 current_images.extend(new_images)
-            current_images = current_images[:8]
+            
+            current_images = current_images[:8] # Enforce limit strict
             product.images = _serialize_images(current_images)
+            print(f"[DEBUG] Final images list: {current_images}")
             # ========== КОНЕЦ ОБРАБОТКИ ИЗОБРАЖЕНИЙ ==========
+            
             db.session.commit()
             flash('Товар успешно обновлен', 'success')
             return redirect(url_for('main.product_detail', product_id=product_id))
         except Exception as e:
             db.session.rollback()
+            print(f"[CRITICAL ERROR] Edit Product Failed: {e}")
+            import traceback
+            traceback.print_exc()
             flash(f'Ошибка при обновлении товара: {str(e)}', 'error')
             return redirect(url_for('main.edit_product', product_id=product_id))
     categories = Category.query.filter_by(parent_id=None).order_by(Category.name).all()

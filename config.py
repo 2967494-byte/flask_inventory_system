@@ -4,6 +4,9 @@ import tempfile
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-123'
 
+    # Базовая директория приложения
+    basedir = os.path.abspath(os.path.dirname(__file__))
+
     # Определяем среду
     is_production = os.environ.get('DATABASE_URL') is not None
     
@@ -22,8 +25,8 @@ class Config:
         DEBUG = False
         ENV = 'production'
         
-        # В продакшене используем временную папку (лучше настроить S3 в будущем)
-        UPLOAD_FOLDER = '/opt/flask_inventory_system/app/static/uploads'
+        # Используем относительный путь и в продакшене, чтобы избежать ошибок прав доступа к /opt
+        UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
         
     else:
         # Локальная разработка
@@ -31,7 +34,7 @@ class Config:
         DEBUG = True
         ENV = 'development'
         
-        UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'static', 'uploads')
+        UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 128 * 1024 * 1024
