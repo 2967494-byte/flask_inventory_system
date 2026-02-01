@@ -29,8 +29,8 @@
 
             <div class="header-right">
                 {% if current_user.is_authenticated %}
-                <a href="{{ url_for('main.add_product') }}" class="btn-primary">
-                    <i class="fas fa-plus"></i> Добавить товар
+                <a href="{{ url_for('main.add_product') }}" class="btn-primary header-btn-add">
+                    <i class="fa-solid fa-plus header-icon"></i> Добавить товар
                 </a>
 
                 <div class="user-actions">
@@ -39,7 +39,7 @@
                         class="nav-link messages-icon"
                         title="Сообщения"
                     >
-                        <i class="far fa-comment-alt"></i>
+                        <i class="fa-regular fa-comment header-icon"></i>
                         <span
                             id="unread-messages-badge"
                             class="badge bg-danger rounded-pill"
@@ -53,7 +53,7 @@
                             href="{{ url_for('main.dashboard') }}"
                             class="user-profile-link"
                         >
-                            <i class="far fa-user-circle fa-lg"></i>
+                            <i class="fa-regular fa-user header-icon"></i>
                             <span class="user-name">
                                 {% if current_user.username %} {{
                                 current_user.username }} {% elif
@@ -68,7 +68,7 @@
                             class="logout-button"
                             title="Выйти"
                         >
-                            <i class="fas fa-sign-out-alt"></i>
+                            <i class="fa-regular fa-right-from-bracket header-icon"></i>
                         </a>
                     </div>
                 </div>
@@ -113,7 +113,20 @@
 </header>
 
 <style>
-    /* Стили для иконки сообщений в шапке */
+    /* Единый размер и стиль иконок в шапке */
+    .header .header-icon {
+        font-size: 1.125rem;
+        width: 1.125rem;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-btn-add .header-icon {
+        color: inherit;
+    }
+
     .nav-link {
         position: relative;
     }
@@ -137,13 +150,12 @@
         background-color: rgba(0, 0, 0, 0.05);
     }
 
-    .messages-icon i.fa-comment-alt {
-        font-size: 1.3rem;
+    .messages-icon .header-icon {
         transition: color 0.2s ease;
         color: #6b7280;
     }
 
-    .messages-icon:hover i.fa-comment-alt {
+    .messages-icon:hover .header-icon {
         color: var(--primary) !important;
     }
 
@@ -226,10 +238,6 @@
 
         .messages-icon {
             padding: 0.25rem;
-        }
-
-        .messages-icon i.fa-comment-alt {
-            font-size: 1.2rem;
         }
 
         .user-name {
