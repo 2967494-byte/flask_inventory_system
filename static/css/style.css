@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-    /* Primary Colors - More Muted & Professional */
-    --primary: #5c67f2;
-    --primary-hover: #4e55c7;
-    --primary-light: #f0f2ff;
+    /* Primary Colors - Blue Flat Design */
+    --primary: #4A90E2;
+    --primary-hover: #357ABD;
+    --primary-light: #f0f7ff;
 
     /* Semantic Colors - Muted Palette */
     --success: #48bb78;
@@ -44,12 +44,19 @@
     box-sizing: border-box;
 }
 
+/* Фикс сдвига страницы при переключении разделов (Избранное и др.): всегда резервируем место под скроллбар */
+html {
+    scrollbar-gutter: stable;
+    overflow-y: scroll; /* запасной вариант: скроллбар всегда виден, ширина страницы не прыгает */
+}
+
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: var(--gray-50);
+    background-color: #ffffff;
     color: var(--gray-900);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden; /* убираем горизонтальный скролл, чтобы страница не сдвигалась */
 }
 
 .container {
@@ -105,7 +112,7 @@ h4 {
 
 /* Multi-colored logo letters */
 .logo-l1 {
-    color: #5c67f2;
+    color: #3498db;
 }
 
 .logo-l2 {
@@ -125,7 +132,7 @@ h4 {
 }
 
 .logo-l6 {
-    color: #5c67f2;
+    color: #3498db;
 }
 
 .logo:hover {
@@ -174,7 +181,7 @@ h4 {
 
 .btn-primary:hover {
     background-color: var(--primary-hover);
-    box-shadow: 0 8px 15px -3px rgba(92, 103, 242, 0.15);
+    box-shadow: 0 8px 15px -3px rgba(74, 144, 226, 0.15);
     transform: translateY(-1px);
 }
 
@@ -191,7 +198,7 @@ h4 {
 }
 
 .btn-secondary:hover {
-    background-color: var(--gray-50);
+    background-color: #ffffff;
     border-color: var(--gray-300);
 }
 
@@ -269,16 +276,16 @@ h4 {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
+width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--gray-50);
+background: #ffffff;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--gray-300);
-    border-radius: 4px;
+background: var(--gray-300);
+border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

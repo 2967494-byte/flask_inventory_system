@@ -1,211 +1,460 @@
-{% extends "base.html" %}
+{% extends "dashboard_base.html" %} {% set active_section = 'profile' %} {%
+block title %}Профиль - ASAUDA{% endblock %} {% block dashboard_content %}
+<div class="card" style="padding: 2.5rem; transition: none">
+    <h1 style="font-size: 1.75rem; margin-bottom: 2rem; color: var(--gray-900)">
+        Настройки профиля
+    </h1>
 
-{% block content %}
-<div class="container" style="margin-top: 2rem; margin-bottom: 4rem;">
-    <div style="display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem;">
-        <!-- Sidebar -->
-        <aside>
-            <div class="card" style="padding: 1.5rem; transition: none;">
-                <nav>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        <li style="margin-bottom: 0.5rem;">
-                            <a href="{{ url_for('main.dashboard') }}" class="nav-link"
-                                style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem; border-radius: var(--radius-md); text-decoration: none; color: var(--gray-600); font-weight: 500; transition: all 0.2s;">
-                                <i class="fas fa-box" style="width: 20px; font-size: 1.125rem;"></i>
-                                Мои объявления
-                            </a>
-                        </li>
-                        <li style="margin-bottom: 0.5rem;">
-                            <a href="{{ url_for('main.favorites') }}" class="nav-link"
-                                style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem; border-radius: var(--radius-md); text-decoration: none; color: var(--gray-600); font-weight: 500; transition: all 0.2s;">
-                                <i class="far fa-heart" style="width: 20px; font-size: 1.125rem;"></i>
-                                Избранное
-                            </a>
-                        </li>
-                        <li style="margin-bottom: 0.5rem;">
-                            <a href="{{ url_for('main.profile') }}" class="nav-link"
-                                style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem; border-radius: var(--radius-md); text-decoration: none; background: var(--primary-light); color: var(--primary); font-weight: 600; transition: all 0.2s;">
-                                <i class="far fa-user" style="width: 20px; font-size: 1.125rem;"></i>
-                                Профиль
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main>
-            <div class="card" style="padding: 2.5rem; transition: none;">
-                <h1 style="font-size: 1.75rem; margin-bottom: 2rem;">Настройки профиля</h1>
-
-                <!-- Tabs -->
-                <div style="display: flex; gap: 2rem; border-bottom: 1px solid var(--gray-200); margin-bottom: 2.5rem;">
-                    <button class="tab-btn active" data-tab="basic"
-                        style="background: none; border: none; padding: 1rem 0; font-size: 0.9375rem; font-weight: 600; color: var(--primary); border-bottom: 2px solid var(--primary); cursor: pointer; transition: all 0.2s;">
-                        Основная информация
-                    </button>
-                    <button class="tab-btn" data-tab="additional"
-                        style="background: none; border: none; padding: 1rem 0; font-size: 0.9375rem; font-weight: 500; color: var(--gray-500); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
-                        onmouseover="this.style.color='var(--primary)'"
-                        onmouseout="if(!this.classList.contains('active'))this.style.color='var(--gray-500)'">
-                        Реквизиты и банк
-                    </button>
-                </div>
-
-                <!-- Basic Info Form -->
-                <form method="POST" id="basic-form" class="profile-section">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <div style="display: grid; gap: 1.75rem;">
-                        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">Персональные данные
-                        </h3>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">Имя пользователя</label>
-                                <input type="text" name="username" value="{{ current_user.username }}"
-                                    class="contact-form-control" style="margin-bottom: 0;" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Email</label>
-                                <input type="email" value="{{ current_user.email }}" class="contact-form-control"
-                                    style="margin-bottom: 0; background-color: var(--gray-50); color: var(--gray-400); cursor: not-allowed;"
-                                    disabled>
-                                <p style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.375rem;">Email
-                                    нельзя изменить</p>
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">Компания</label>
-                                <input type="text" name="company_name" value="{{ current_user.company_name or '' }}"
-                                    class="contact-form-control" style="margin-bottom: 0;" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">ИНН</label>
-                                <input type="text" name="inn" value="{{ current_user.inn or '' }}"
-                                    class="contact-form-control" style="margin-bottom: 0;" required maxlength="12">
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">Контактное лицо</label>
-                                <input type="text" name="contact_person" value="{{ current_user.contact_person or '' }}"
-                                    class="contact-form-control" style="margin-bottom: 0;" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Телефон</label>
-                                <input type="tel" name="phone" value="{{ current_user.phone or '' }}"
-                                    class="contact-form-control" style="margin-bottom: 0;" required>
-                            </div>
-                        </div>
-
-                        <div style="height: 1px; background: var(--gray-100); margin: 0.5rem 0;"></div>
-                        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">Безопасность</h3>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">Новый пароль</label>
-                                <input type="password" name="new_password" class="contact-form-control"
-                                    style="margin-bottom: 0;" placeholder="Оставьте пустым">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Подтвердите пароль</label>
-                                <input type="password" name="confirm_password" class="contact-form-control"
-                                    style="margin-bottom: 0;" placeholder="Повторите пароль">
-                            </div>
-                        </div>
-
-                        <div style="padding-top: 1rem;">
-                            <button type="submit" class="btn-primary" style="padding: 0.875rem 2rem;">
-                                Сохранить изменения
-                            </button>
-                        </div>
-                    </div>
-                </form>
-
-                <!-- Additional Info Form -->
-                <form method="POST" id="additional-form" class="profile-section" style="display: none;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <div style="display: grid; gap: 1.75rem;">
-                        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">Банковские реквизиты
-                        </h3>
-
-                        <div class="form-group">
-                            <label class="form-label">Банк</label>
-                            <input type="text" name="bank_name" value="{{ current_user.bank_name or '' }}"
-                                class="contact-form-control" style="margin-bottom: 0;" required>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">Расчетный счет</label>
-                                <input type="text" name="bank_account" value="{{ current_user.bank_account or '' }}"
-                                    class="contact-form-control" style="margin-bottom: 0;" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">БИК</label>
-                                <input type="text" name="bik" value="{{ current_user.bik or '' }}"
-                                    class="contact-form-control" style="margin-bottom: 0;" maxlength="9">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">ФИО руководителя</label>
-                            <input type="text" name="director_name" value="{{ current_user.director_name or '' }}"
-                                class="contact-form-control" style="margin-bottom: 0;" required>
-                        </div>
-
-                        <div style="padding-top: 1rem;">
-                            <button type="submit" class="btn-primary" style="padding: 0.875rem 2rem;">
-                                Сохранить реквизиты
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </main>
+    <!-- Tabs -->
+    <div
+        style="
+            display: flex;
+            gap: 2rem;
+            border-bottom: 1px solid var(--gray-200);
+            margin-bottom: 2.5rem;
+        "
+    >
+        <button
+            class="tab-btn active"
+            data-tab="basic"
+            style="
+                background: none;
+                border: none;
+                padding: 1rem 0;
+                font-size: 0.9375rem;
+                font-weight: 600;
+                color: var(--primary);
+                border-bottom: 2px solid var(--primary);
+                cursor: pointer;
+                transition: all 0.2s;
+            "
+        >
+            Основная информация
+        </button>
+        <button
+            class="tab-btn"
+            data-tab="additional"
+            style="
+                background: none;
+                border: none;
+                padding: 1rem 0;
+                font-size: 0.9375rem;
+                font-weight: 500;
+                color: var(--gray-500);
+                border-bottom: 2px solid transparent;
+                cursor: pointer;
+                transition: all 0.2s;
+            "
+            onmouseover="this.style.color = 'var(--primary)'"
+            onmouseout="
+                if (!this.classList.contains('active'))
+                    this.style.color = 'var(--gray-500)';
+            "
+        >
+            Реквизиты и банк
+        </button>
     </div>
+
+    <!-- Basic Info Form -->
+    <form method="POST" id="basic-form" class="profile-section">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div style="display: grid; gap: 1.75rem">
+            <h3
+                style="
+                    font-size: 1.125rem;
+                    font-weight: 700;
+                    color: var(--gray-900);
+                "
+            >
+                Персональные данные
+            </h3>
+
+            <div
+                style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                "
+            >
+                <div class="form-group">
+                    <label class="form-label">Имя пользователя</label>
+                    <input
+                        type="text"
+                        name="username"
+                        value="{{ current_user.username }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input
+                        type="email"
+                        value="{{ current_user.email }}"
+                        class="contact-form-control"
+                        style="
+                            margin-bottom: 0;
+                            background-color: var(--gray-50);
+                            color: var(--gray-400);
+                            cursor: not-allowed;
+                        "
+                        disabled
+                    />
+                    <p
+                        style="
+                            font-size: 0.75rem;
+                            color: var(--gray-400);
+                            margin-top: 0.375rem;
+                        "
+                    >
+                        Email нельзя изменить
+                    </p>
+                </div>
+            </div>
+
+            <div
+                style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                "
+            >
+                <div class="form-group">
+                    <label class="form-label">Компания</label>
+                    <input
+                        type="text"
+                        name="company_name"
+                        value="{{ current_user.company_name or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ИНН</label>
+                    <input
+                        type="text"
+                        name="inn"
+                        value="{{ current_user.inn or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        required
+                        maxlength="12"
+                    />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Юридический адрес</label>
+                <input
+                    type="text"
+                    name="legal_address"
+                    value="{{ current_user.legal_address or '' }}"
+                    class="contact-form-control"
+                    style="margin-bottom: 0"
+                    required
+                />
+            </div>
+
+            <div
+                style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                "
+            >
+                <div class="form-group">
+                    <label class="form-label">Контактное лицо</label>
+                    <input
+                        type="text"
+                        name="contact_person"
+                        value="{{ current_user.contact_person or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Должность</label>
+                    <input
+                        type="text"
+                        name="position"
+                        value="{{ current_user.position or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                    />
+                </div>
+            </div>
+
+            <div
+                style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                "
+            >
+                <div class="form-group">
+                    <label class="form-label">Телефон</label>
+                    <input
+                        type="tel"
+                        name="phone"
+                        value="{{ current_user.phone or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Отрасль</label>
+                    <input
+                        type="text"
+                        name="industry"
+                        value="{{ current_user.industry or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                    />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">О компании</label>
+                <textarea
+                    name="about"
+                    class="contact-form-control"
+                    style="margin-bottom: 0; min-height: 100px"
+                    rows="4"
+                >
+{{ current_user.about or '' }}</textarea
+                >
+            </div>
+
+            <div
+                style="
+                    height: 1px;
+                    background: var(--gray-100);
+                    margin: 0.5rem 0;
+                "
+            ></div>
+            <h3
+                style="
+                    font-size: 1.125rem;
+                    font-weight: 700;
+                    color: var(--gray-900);
+                "
+            >
+                Безопасность
+            </h3>
+
+            <div
+                style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                "
+            >
+                <div class="form-group">
+                    <label class="form-label">Новый пароль</label>
+                    <input
+                        type="password"
+                        name="new_password"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        placeholder="Оставьте пустым, чтобы не менять"
+                    />
+                    <p
+                        style="
+                            font-size: 0.75rem;
+                            color: var(--gray-400);
+                            margin-top: 0.375rem;
+                        "
+                    >
+                        Минимум 6 символов
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Подтвердите пароль</label>
+                    <input
+                        type="password"
+                        name="confirm_password"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        placeholder="Повторите пароль"
+                    />
+                </div>
+            </div>
+
+            <div style="padding-top: 1rem">
+                <button
+                    type="submit"
+                    class="btn-primary"
+                    style="padding: 0.875rem 2rem"
+                >
+                    <i class="fas fa-save"></i> Сохранить изменения
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Additional Info Form -->
+    <form
+        method="POST"
+        id="additional-form"
+        class="profile-section"
+        style="display: none"
+    >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div style="display: grid; gap: 1.75rem">
+            <h3
+                style="
+                    font-size: 1.125rem;
+                    font-weight: 700;
+                    color: var(--gray-900);
+                "
+            >
+                Банковские реквизиты
+            </h3>
+
+            <div class="form-group">
+                <label class="form-label">Банк</label>
+                <input
+                    type="text"
+                    name="bank_name"
+                    value="{{ current_user.bank_name or '' }}"
+                    class="contact-form-control"
+                    style="margin-bottom: 0"
+                />
+            </div>
+
+            <div
+                style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                "
+            >
+                <div class="form-group">
+                    <label class="form-label">Расчетный счет</label>
+                    <input
+                        type="text"
+                        name="bank_account"
+                        value="{{ current_user.bank_account or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        maxlength="20"
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">БИК</label>
+                    <input
+                        type="text"
+                        name="bik"
+                        value="{{ current_user.bik or '' }}"
+                        class="contact-form-control"
+                        style="margin-bottom: 0"
+                        maxlength="9"
+                    />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Корреспондентский счет</label>
+                <input
+                    type="text"
+                    name="correspondent_account"
+                    value="{{ current_user.correspondent_account or '' }}"
+                    class="contact-form-control"
+                    style="margin-bottom: 0"
+                    maxlength="20"
+                />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">ФИО руководителя</label>
+                <input
+                    type="text"
+                    name="director_name"
+                    value="{{ current_user.director_name or '' }}"
+                    class="contact-form-control"
+                    style="margin-bottom: 0"
+                />
+            </div>
+
+            <div style="padding-top: 1rem">
+                <button
+                    type="submit"
+                    class="btn-primary"
+                    style="padding: 0.875rem 2rem"
+                >
+                    <i class="fas fa-save"></i> Сохранить реквизиты
+                </button>
+            </div>
+        </div>
+    </form>
 </div>
-
+{% endblock %} {% block dashboard_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const basicForm = document.getElementById('basic-form');
-        const additionalForm = document.getElementById('additional-form');
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabBtns = document.querySelectorAll(".tab-btn");
+        const basicForm = document.getElementById("basic-form");
+        const additionalForm = document.getElementById("additional-form");
 
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-tab');
+        tabBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const tab = btn.getAttribute("data-tab");
 
-                tabBtns.forEach(b => {
-                    b.classList.remove('active');
-                    b.style.color = 'var(--gray-500)';
-                    b.style.borderBottomColor = 'transparent';
-                    b.style.fontWeight = '500';
+                // Убираем активность со всех табов
+                tabBtns.forEach((b) => {
+                    b.classList.remove("active");
+                    b.style.color = "var(--gray-500)";
+                    b.style.borderBottomColor = "transparent";
+                    b.style.fontWeight = "500";
                 });
 
-                btn.classList.add('active');
-                btn.style.color = 'var(--primary)';
-                btn.style.borderBottomColor = 'var(--primary)';
-                btn.style.fontWeight = '600';
+                // Активируем выбранный таб
+                btn.classList.add("active");
+                btn.style.color = "var(--primary)";
+                btn.style.borderBottomColor = "var(--primary)";
+                btn.style.fontWeight = "600";
 
-                if (tab === 'basic') {
-                    basicForm.style.display = 'block';
-                    additionalForm.style.display = 'none';
+                // Показываем нужную форму
+                if (tab === "basic") {
+                    basicForm.style.display = "block";
+                    additionalForm.style.display = "none";
                 } else {
-                    basicForm.style.display = 'none';
-                    additionalForm.style.display = 'block';
+                    basicForm.style.display = "none";
+                    additionalForm.style.display = "block";
                 }
             });
         });
+
+        // Валидация пароля
+        const passwordForm = document.getElementById("basic-form");
+        passwordForm.addEventListener("submit", function (e) {
+            const newPassword = this.querySelector(
+                'input[name="new_password"]',
+            ).value;
+            const confirmPassword = this.querySelector(
+                'input[name="confirm_password"]',
+            ).value;
+
+            if (newPassword && newPassword !== confirmPassword) {
+                e.preventDefault();
+                alert("Пароли не совпадают");
+                return false;
+            }
+
+            if (newPassword && newPassword.length < 6) {
+                e.preventDefault();
+                alert("Пароль должен содержать минимум 6 символов");
+                return false;
+            }
+        });
     });
 </script>
-
+{% endblock %} {% block dashboard_styles %}
 <style>
     .form-label {
         display: block;
@@ -215,9 +464,18 @@
         margin-bottom: 0.5rem;
     }
 
-    .nav-link:hover {
-        background: var(--gray-50);
-        color: var(--primary) !important;
+    .form-group {
+        position: relative;
+    }
+
+    @media (max-width: 768px) {
+        .card {
+            padding: 1.5rem !important;
+        }
+
+        div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
     }
 </style>
 {% endblock %}

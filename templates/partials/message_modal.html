@@ -1,0 +1,373 @@
+<!-- Модальное окно для отправки сообщения -->
+<div id="messageModal" class="message-modal-overlay" style="display: none;">
+    <div class="message-modal-content">
+        <div class="message-modal-header">
+            <h3 id="modalTitle">
+                <i class="fas fa-envelope"></i> Новое сообщение
+            </h3>
+            <button type="button" class="message-modal-close" onclick="closeMessageModal()">&times;</button>
+        </div>
+        <form id="messageForm" method="POST">
+            <input type="hidden" id="recipientId" name="recipient_id">
+            <input type="hidden" id="productId" name="product_id">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="form-group">
+                <label for="messageText" class="form-label">Сообщение:</label>
+                <textarea 
+                    class="form-control" 
+                    id="messageText" 
+                    name="message" 
+                    rows="4" 
+                    placeholder="Введите ваше сообщение..."
+                    required
+                ></textarea>
+                <div class="form-text">Минимум 10 символов</div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-transparent" onclick="closeMessageModal()">Отмена</button>
+                <button type="submit" class="btn btn-primary" id="sendButton">
+                    <i class="fas fa-paper-plane"></i> Отправить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.message-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.message-modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.message-modal-header {
+    background: #4A90E2;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.message-modal-header h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.message-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.message-modal-content .form-group {
+    padding: 20px;
+    padding-bottom: 10px;
+}
+
+.message-modal-content .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.form-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.form-actions {
+    padding: 15px 20px 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    border: none;
+}
+
+.btn-primary {
+    background: #4A90E2;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #357ABD;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+}
+
+.btn-transparent {
+    background: transparent;
+    color: #6c757d;
+    border: 1px solid transparent;
+}
+
+.btn-transparent:hover {
+    background: rgba(108, 117, 125, 0.1);
+    color: #5a6268;
+}
+
+.loading-spinner {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #4A90E2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 6px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+// Глобальная функция для открытия модального окна
+function openMessageModal(recipientId, productId) {
+    const modal = document.getElementById('messageModal');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    // Устанавливаем значения в форму
+    document.getElementById('recipientId').value = recipientId;
+    document.getElementById('productId').value = productId || 0;
+    
+    // Загружаем информацию о получателе и товаре для заголовка
+    Promise.all([
+        fetch(`/api/user/${recipientId}`).then(r => r.json()),
+        productId && productId > 0 ? fetch(`/api/product/${productId}`).then(r => r.json()) : Promise.resolve(null)
+    ])
+    .then(([user, product]) => {
+        const userName = user.username || user.company_name || user.email.split('@')[0];
+        
+        if (product) {
+            modalTitle.innerHTML = `
+                <i class="fas fa-envelope"></i> 
+                Сообщение пользователю ${userName} о товаре ${product.title}
+            `;
+            
+            // Устанавливаем текст по умолчанию
+            const messageText = document.getElementById('messageText');
+            if (!messageText.value) {
+                messageText.value = `Здравствуйте! У меня есть вопрос по товару "${product.title}".`;
+            }
+        } else {
+            modalTitle.innerHTML = `
+                <i class="fas fa-envelope"></i> 
+                Сообщение пользователю ${userName}
+            `;
+            
+            // Устанавливаем текст по умолчанию для личного сообщения
+            const messageText = document.getElementById('messageText');
+            if (!messageText.value) {
+                messageText.value = 'Здравствуйте! Хочу задать вам вопрос.';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка загрузки данных:', error);
+        modalTitle.innerHTML = `
+            <i class="fas fa-envelope"></i> 
+            Новое сообщение
+        `;
+    });
+    
+    // Показываем модальное окно
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Блокируем скролл фона
+}
+
+// Функция закрытия модального окна
+function closeMessageModal() {
+    const modal = document.getElementById('messageModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = ''; // Возвращаем скролл
+    
+    // Очищаем форму
+    document.getElementById('messageForm').reset();
+}
+
+// Закрытие по клику на фон
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('messageModal');
+    if (e.target === modal) {
+        closeMessageModal();
+    }
+});
+
+// Закрытие по ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeMessageModal();
+    }
+});
+
+// Обработка отправки формы
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('messageForm');
+    const submitBtn = document.getElementById('sendButton');
+    const spinner = document.createElement('span');
+    spinner.className = 'loading-spinner';
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const messageText = document.getElementById('messageText');
+        const message = messageText.value.trim();
+        
+        if (message.length < 10) {
+            showNotification('Сообщение должно содержать минимум 10 символов', 'error');
+            return;
+        }
+        
+        // Показываем загрузку
+        submitBtn.disabled = true;
+        submitBtn.appendChild(spinner);
+        spinner.style.display = 'inline-block';
+        
+        const formData = new FormData(form);
+        const data = {
+            recipient_id: parseInt(formData.get('recipient_id')),
+            product_id: formData.get('product_id') ? parseInt(formData.get('product_id')) : null,
+            message: message
+        };
+        
+        fetch('/messages/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrf_token')
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Закрываем модальное окно
+                closeMessageModal();
+                
+                // Показываем уведомление об успехе
+                showNotification('Сообщение успешно отправлено!', 'success');
+                
+                // Обновляем счетчик непрочитанных сообщений
+                updateUnreadMessagesCount();
+            } else {
+                showNotification(result.error || 'Ошибка отправки сообщения', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showNotification('Произошла ошибка при отправке', 'error');
+        })
+        .finally(() => {
+            // Скрываем загрузку
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+        });
+    });
+});
+
+function showNotification(message, type) {
+    // Создаем уведомление
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;';
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+            ${message}
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Автоматически скрываем через 3 секунды
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+</script>

@@ -656,25 +656,27 @@
     }
 
     .main-loc-chevron {
-        margin-left: auto;
-        font-size: 0.75rem;
-        opacity: 0.5;
-    }
 
-    .main-hero {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%) !important;
-        border-radius: var(--radius-xl);
-        padding: 3.5rem 3rem;
-        color: white;
-        margin-bottom: 3.5rem;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 12px 40px rgba(92, 103, 242, 0.2);
-    }
+        /* Radio Group */
+        .filter-radio-group {
+            display: flex;
+            background: var(--gray-100);
+            padding: 0.25rem;
+            border-radius: 10px;
+            gap: 0.25rem;
+        }
 
-    .main-hero-body {
-        position: relative;
-        z-index: 2;
+        .filter-radio-group label {
+            flex: 1;
+            text-align: center;
+            padding: 0.625rem;
+            cursor: pointer;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            margin: 0;
+        }
         max-width: 650px;
     }
 
@@ -799,7 +801,7 @@
         border-color: var(--primary);
         color: var(--primary);
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(92, 103, 242, 0.1);
+        box-shadow: 0 4px 8px rgba(74, 144, 226, 0.1);
     }
 
     .main-pill-name {

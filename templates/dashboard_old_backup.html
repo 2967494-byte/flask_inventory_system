@@ -1,0 +1,825 @@
+{% extends "base.html" %} {% block title %}Личный кабинет - ASAUDA{% endblock %}
+{% block content %}
+<div class="container db-container">
+    <div class="db-layout">
+        <!-- Sidebar -->
+        <aside class="db-sidebar">
+            <div class="card" style="padding: 1.5rem; transition: none">
+                <nav>
+                    <ul style="list-style: none; padding: 0; margin: 0">
+                        <li style="margin-bottom: 0.5rem">
+                            <a
+                                href="{{ url_for('main.dashboard', section='products') }}"
+                                class="nav-link {% if section == 'products' or not section %}active{% endif %}"
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.75rem;
+                                    padding: 0.875rem 1.25rem;
+                                    border-radius: var(--radius-md);
+                                    text-decoration: none;
+                                    {% if section == 'products' or not section %}background: var(--primary-light);
+                                    color: var(--primary);
+                                    font-weight: 600;{% else %}color: var(--gray-600);
+                                    font-weight: 500;{% endif %}
+                                    transition: all 0.2s;
+                                "
+                            >
+                                <i
+                                    class="fas fa-box"
+                                    style="width: 20px; font-size: 1.125rem"
+                                ></i>
+                                Мои объявления
+                            </a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem">
+                            <a
+                                href="{{ url_for('main.favorites') }}"
+                                class="nav-link"
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.75rem;
+                                    padding: 0.875rem 1.25rem;
+                                    border-radius: var(--radius-md);
+                                    text-decoration: none;
+                                    color: var(--gray-600);
+                                    font-weight: 500;
+                                    transition: all 0.2s;
+                                "
+                            >
+                                <i
+                                    class="far fa-heart"
+                                    style="width: 20px; font-size: 1.125rem"
+                                ></i>
+                                Избранное
+                            </a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem">
+                            <div class="nav-section">
+                                <a
+                                    href="{{ url_for('main.dashboard', section='messages') }}"
+                                    class="nav-link nav-toggle {% if section == 'messages' %}active{% endif %}"
+                                    onclick="
+                                        toggleSection(event, 'messages');
+                                        return false;
+                                    "
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.75rem;
+                                        padding: 0.875rem 1.25rem;
+                                        border-radius: var(--radius-md);
+                                        text-decoration: none;
+                                        color: var(--gray-600);
+                                        font-weight: 500;
+                                        transition: all 0.2s;
+                                        position: relative;
+                                        cursor: pointer;
+                                    "
+                                >
+                                    <i
+                                        class="fas fa-envelope"
+                                        style="width: 20px; font-size: 1.125rem"
+                                    ></i>
+                                    Сообщения
+                                    <i
+                                        class="fas fa-chevron-down"
+                                        style="
+                                            margin-left: auto;
+                                            font-size: 0.75rem;
+                                            transition: transform 0.2s;
+                                        "
+                                    ></i>
+                                    <span
+                                        id="sidebar-unread-badge"
+                                        class="badge bg-danger rounded-pill"
+                                        style="
+                                            display: none;
+                                            position: absolute;
+                                            top: 5px;
+                                            right: 30px;
+                                            font-size: 0.7rem;
+                                            min-width: 18px;
+                                            height: 18px;
+                                            line-height: 18px;
+                                        "
+                                        >0</span
+                                    >
+                                </a>
+                                <ul
+                                    id="messages-submenu"
+                                    class="submenu"
+                                    style="list-style: none; padding-left: 0; margin: 0.5rem 0 0 0; display: {% if section == 'messages' %}block{% else %}none{% endif %};"
+                                >
+                                    <li style="margin-bottom: 0.25rem">
+                                        <a
+                                            href="{{ url_for('main.dashboard', section='messages', subsection='inbox') }}"
+                                            class="nav-link submenu-link {% if section == 'messages' and subsection == 'inbox' %}active{% endif %}"
+                                            style="
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 0.5rem;
+                                                padding: 0.625rem 1.25rem
+                                                    0.625rem 3rem;
+                                                border-radius: var(--radius-md);
+                                                text-decoration: none;
+                                                color: var(--gray-500);
+                                                font-weight: 400;
+                                                font-size: 0.9rem;
+                                                transition: all 0.2s;
+                                            "
+                                        >
+                                            <i
+                                                class="fas fa-inbox"
+                                                style="
+                                                    width: 16px;
+                                                    font-size: 0.875rem;
+                                                "
+                                            ></i>
+                                            Входящие
+                                        </a>
+                                    </li>
+                                    <li style="margin-bottom: 0.25rem">
+                                        <a
+                                            href="{{ url_for('main.dashboard', section='messages', subsection='sent') }}"
+                                            class="nav-link submenu-link {% if section == 'messages' and subsection == 'sent' %}active{% endif %}"
+                                            style="
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 0.5rem;
+                                                padding: 0.625rem 1.25rem
+                                                    0.625rem 3rem;
+                                                border-radius: var(--radius-md);
+                                                text-decoration: none;
+                                                color: var(--gray-500);
+                                                font-weight: 400;
+                                                font-size: 0.9rem;
+                                                transition: all 0.2s;
+                                            "
+                                        >
+                                            <i
+                                                class="fas fa-paper-plane"
+                                                style="
+                                                    width: 16px;
+                                                    font-size: 0.875rem;
+                                                "
+                                            ></i>
+                                            Отправленные
+                                        </a>
+                                    </li>
+                                    <li style="margin-bottom: 0.25rem">
+                                        <a
+                                            href="{{ url_for('main.dashboard', section='messages', subsection='compose') }}"
+                                            class="nav-link submenu-link {% if section == 'messages' and subsection == 'compose' %}active{% endif %}"
+                                            style="
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 0.5rem;
+                                                padding: 0.625rem 1.25rem
+                                                    0.625rem 3rem;
+                                                border-radius: var(--radius-md);
+                                                text-decoration: none;
+                                                color: var(--gray-500);
+                                                font-weight: 400;
+                                                font-size: 0.9rem;
+                                                transition: all 0.2s;
+                                            "
+                                        >
+                                            <i
+                                                class="fas fa-edit"
+                                                style="
+                                                    width: 16px;
+                                                    font-size: 0.875rem;
+                                                "
+                                            ></i>
+                                            Написать сообщение
+                                        </a>
+                                    </li>
+                                    <li style="margin-bottom: 0.25rem">
+                                        <a
+                                            href="{{ url_for('main.dashboard', section='messages', subsection='search') }}"
+                                            class="nav-link submenu-link {% if section == 'messages' and subsection == 'search' %}active{% endif %}"
+                                            style="
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 0.5rem;
+                                                padding: 0.625rem 1.25rem
+                                                    0.625rem 3rem;
+                                                border-radius: var(--radius-md);
+                                                text-decoration: none;
+                                                color: var(--gray-500);
+                                                font-weight: 400;
+                                                font-size: 0.9rem;
+                                                transition: all 0.2s;
+                                            "
+                                        >
+                                            <i
+                                                class="fas fa-search"
+                                                style="
+                                                    width: 16px;
+                                                    font-size: 0.875rem;
+                                                "
+                                            ></i>
+                                            Поиск
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li style="margin-bottom: 0.5rem">
+                            <a
+                                href="{{ url_for('main.profile') }}"
+                                class="nav-link"
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.75rem;
+                                    padding: 0.875rem 1.25rem;
+                                    border-radius: var(--radius-md);
+                                    text-decoration: none;
+                                    color: var(--gray-600);
+                                    font-weight: 500;
+                                    transition: all 0.2s;
+                                "
+                            >
+                                <i
+                                    class="far fa-user"
+                                    style="width: 20px; font-size: 1.125rem"
+                                ></i>
+                                Профиль
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="db-main">
+            <div class="db-header">
+                <div class="db-title-box">
+                    <h1 class="db-title">
+                        {% if current_user.company_name %} {{
+                        current_user.company_name }} {% else %} Личный кабинет
+                        {% endif %}
+                    </h1>
+                    <p class="db-subtitle">
+                        Управление вашими товарами и публикациями
+                    </p>
+                </div>
+                <div class="db-actions">
+                    <div class="db-view-toggle">
+                        <button
+                            class="db-view-btn active"
+                            data-view="grid"
+                            title="Плитка"
+                        >
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button
+                            class="db-view-btn"
+                            data-view="list"
+                            title="Список"
+                        >
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    <a
+                        href="{{ url_for('main.add_product') }}"
+                        class="btn-primary"
+                    >
+                        <i class="fas fa-plus"></i> Добавить товар
+                    </a>
+                </div>
+            </div>
+
+            <!-- Messages Content -->
+            <div id="messages-content" style="display: none">
+                <div id="messages-inner-content">
+                    <!-- Content will be loaded here -->
+            <!-- Content Area -->
+            {% if section == 'messages' %}
+            <!-- Messages Section - Redirect to actual message pages -->
+            <script>
+                // Перенаправляем на страницу входящих сообщений
+                window.location.href = "{{ url_for('main.messages') }}";
+            </script>
+            <div style="text-align: center; padding: 50px;">
+                <h3>Перенаправление на сообщения...</h3>
+                <p>Если вы не были перенаправлены автоматически, <a href="{{ url_for('main.messages') }}">нажмите сюда</a></p>
+            </div>
+        {% else %}
+            <!-- View: Grid -->
+            <div class="db-products-grid" id="productsGrid">
+                {% if products %} {% for product in products %}
+                <div
+                    class="card db-product-card {% if product.status != product.STATUS_PUBLISHED %}db-unpublished{% endif %}"
+                    onclick="window.location.href='{{ url_for('main.product_detail', product_id=product.id) }}'"
+                >
+                    <div class="db-product-img-box">
+                        {% if product.image_list and product.image_list|length >
+                        0 %}
+                        <img
+                            src="{{ url_for('main.serve_uploaded_file', filename=product.image_list[0]) }}"
+                            alt="{{ product.title }}"
+                        />
+                        {% else %}
+                        <div class="db-no-img">
+                            <i class="fas fa-box fa-2x"></i>
+                        </div>
+                        {% endif %}
+
+                        <!-- Status Badge -->
+                        <div class="db-status-badge">
+                            <span
+                                class="badge {% if product.status == product.STATUS_PUBLISHED %}badge-success{% else %}badge-info{% endif %}"
+                            >
+                                {{ product.status_text }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="db-product-info">
+                        <h3 class="db-product-title">{{ product.title }}</h3>
+                        <p class="db-product-price">
+                            {{ product|format_product_price }}
+                        </p>
+
+                        <div class="db-product-stats">
+                            <span
+                                ><i class="far fa-eye"></i> {{
+                                product.view_count if product.view_count else 0
+                                }}</span
+                            >
+                            <span
+                                ><i class="far fa-calendar"></i> {{
+                                product.created_at.strftime('%d.%m.%Y') }}</span
+                            >
+                        </div>
+
+                        <div
+                            class="db-product-actions"
+                            onclick="event.stopPropagation()"
+                        >
+                            <a
+                                href="{{ url_for('main.product_detail', product_id=product.id) }}"
+                                class="btn-secondary db-action-btn"
+                            >
+                                Детали
+                            </a>
+
+                            {% if product.status == product.STATUS_PUBLISHED %}
+                            <form
+                                action="{{ url_for('main.unpublish_product', product_id=product.id) }}"
+                                method="POST"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}"
+                                />
+                                <button
+                                    type="submit"
+                                    class="btn-secondary db-action-btn"
+                                    onclick="
+                                        return confirm('Снять с публикации?');
+                                    "
+                                >
+                                    Снять
+                                </button>
+                            </form>
+                            {% else %}
+                            <form
+                                action="{{ url_for('main.renew_product', product_id=product.id) }}"
+                                method="POST"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}"
+                                />
+                                <button
+                                    type="submit"
+                                    class="btn-primary db-action-btn"
+                                >
+                                    Публикация
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            <form
+                                action="{{ url_for('main.delete_product', product_id=product.id) }}"
+                                method="POST"
+                                class="db-delete-form"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}"
+                                />
+                                <button
+                                    type="submit"
+                                    class="btn-secondary db-delete-btn"
+                                    onclick="return confirm('Удалить?');"
+                                >
+                                    <i class="far fa-trash-alt"></i> Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="card db-empty-state">
+                <div class="db-empty-icon">
+                    <i class="fas fa-box-open fa-4x"></i>
+                </div>
+                <h3>У вас пока нет объявлений</h3>
+                <p>
+                    Начните продавать прямо сейчас, добавив свой первый товар.
+                </p>
+                <a
+                    href="{{ url_for('main.add_product') }}"
+                    class="btn-primary db-empty-btn"
+                >
+                    <i class="fas fa-plus"></i> Добавить товар
+                </a>
+            </div>
+            {% endif %} {% endif %}
+        </main>
+    </div>
+</div>
+
+<script>
+    // Обновление счетчика непрочитанных сообщений в боковом меню
+    function updateSidebarUnreadCount() {
+        fetch('{{ url_for("main.unread_count") }}')
+            .then((response) => response.json())
+            .then((data) => {
+                const badge = document.getElementById("sidebar-unread-badge");
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.style.display = "inline";
+                } else {
+                    badge.style.display = "none";
+                }
+            })
+            .catch((error) =>
+                console.log(
+                    "Ошибка обновления счетчика сообщений в dashboard:",
+                    error,
+                ),
+            );
+    }
+
+    // Переключение подменю
+    function toggleSection(event, sectionName) {
+        event.preventDefault();
+        const submenu = document.getElementById(sectionName + "-submenu");
+        const toggle = event.currentTarget;
+        const chevron = toggle.querySelector(".fa-chevron-down");
+
+        if (submenu.style.display === "none" || submenu.style.display === "") {
+            submenu.style.display = "block";
+            chevron.style.transform = "rotate(180deg)";
+            toggle.classList.add("active");
+        } else {
+            submenu.style.display = "none";
+            chevron.style.transform = "rotate(0deg)";
+            toggle.classList.remove("active");
+        }
+    }
+
+    // Обновляем счетчик при загрузке страницы и каждые 30 секунд
+    document.addEventListener("DOMContentLoaded", function () {
+        updateSidebarUnreadCount();
+        setInterval(updateSidebarUnreadCount, 30000);
+
+        // Автоматически открываем подменю если мы в секции сообщений
+        const currentSection = "{{ section }}";
+        if (currentSection === "messages") {
+            const submenu = document.getElementById("messages-submenu");
+            const toggle = document.querySelector('[onclick*="toggleSection"]');
+            const chevron = toggle
+                ? toggle.querySelector(".fa-chevron-down")
+                : null;
+            if (submenu) submenu.style.display = "block";
+            if (chevron) chevron.style.transform = "rotate(180deg)";
+            if (toggle) toggle.classList.add("active");
+        }
+    });
+</script>
+{% endblock content %} {% block styles %}
+<style>
+    /* Local Styles for Dashboard Page */
+    .db-container {
+        margin-top: 2rem;
+        margin-bottom: 4rem;
+        padding-top: 0;
+    }
+
+    .db-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 2.5rem;
+    }
+
+    @media (max-width: 900px) {
+        .db-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .db-sidebar-card {
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .db-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Стили для подменю */
+    .nav-section {
+        position: relative;
+    }
+
+    .nav-toggle {
+        position: relative;
+    }
+
+    .nav-toggle.active {
+        background: var(--primary-light) !important;
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+    }
+
+    .submenu {
+        padding-left: 0;
+        margin-top: 0.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .submenu-link:hover {
+        background: var(--gray-100) !important;
+        color: var(--gray-900) !important;
+    }
+
+    .submenu-link.active {
+        background: var(--primary-light) !important;
+        color: var(--primary) !important;
+        font-weight: 500 !important;
+    }
+
+    /* Стили для iframe с сообщениями */
+    .messages-content {
+        width: 100%;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    #messages-iframe {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .db-nav-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .db-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1.25rem;
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--gray-600);
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .db-nav-link:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+    }
+
+    .db-nav-link.active {
+        background: var(--primary-light);
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    .db-nav-link i {
+        font-size: 1.125rem;
+        width: 20px;
+    }
+
+    .db-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2.5rem;
+    }
+
+    .db-title {
+        font-size: 1.875rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+    }
+
+    .db-subtitle {
+        color: var(--gray-500);
+        font-weight: 500;
+        margin: 0;
+        font-size: 0.9375rem;
+    }
+
+    .db-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .db-view-toggle {
+        display: flex;
+        background: var(--gray-200);
+        padding: 0.25rem;
+        border-radius: var(--radius-md);
+    }
+
+    .db-view-btn {
+        padding: 0.5rem 0.75rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--gray-500);
+        border-radius: 6px;
+    }
+
+    .db-view-btn.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .db-products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .db-product-card {
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .db-product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary-light);
+    }
+
+    .db-unpublished {
+        opacity: 0.8;
+    }
+
+    .db-unpublished::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.05);
+        pointer-events: none;
+    }
+
+    .db-product-img-box {
+        aspect-ratio: 4/3;
+        background: var(--gray-100);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .db-product-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .db-no-img {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-300);
+    }
+
+    .db-status-badge {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+
+    .db-product-info {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .db-product-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+        color: var(--gray-900);
+    }
+
+    .db-product-price {
+        font-size: 1.375rem;
+        font-weight: 800;
+        color: var(--primary);
+        margin-bottom: 0.75rem;
+    }
+
+    .db-product-stats {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: var(--gray-500);
+        margin-bottom: 1.5rem;
+    }
+
+    .db-product-stats span {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .db-product-actions {
+        margin-top: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .db-action-btn {
+        padding: 0.625rem;
+        text-align: center;
+        font-size: 0.8125rem;
+        font-weight: 700;
+    }
+
+    .db-delete-form {
+        grid-column: span 2;
+        margin-top: 0.25rem;
+    }
+
+    .db-delete-btn {
+        width: 100%;
+        padding: 0.625rem;
+        font-size: 0.8125rem;
+        color: var(--danger);
+        border-color: rgba(229, 62, 62, 0.2);
+        background: white;
+        font-weight: 600;
+    }
+
+    .db-delete-btn:hover {
+        background: #fff5f5;
+        border-color: var(--danger);
+    }
+
+    .db-empty-state {
+        padding: 6rem 2rem;
+        text-align: center;
+        border: 2px dashed var(--gray-200);
+    }
+
+    .db-empty-icon {
+        color: var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .db-empty-btn {
+        margin-top: 2rem;
+    }
+
+    .nav-link:hover {
+        background: var(--gray-50);
+        color: var(--primary) !important;
+    }
+</style>
+{% endblock styles %}

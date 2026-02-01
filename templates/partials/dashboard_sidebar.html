@@ -1,0 +1,141 @@
+{# Dashboard Sidebar Component #} {# Usage: {% include
+'partials/dashboard_sidebar.html' with context %} #} {# Pass 'active_section'
+variable to highlight current section #}
+
+<aside class="db-sidebar">
+    <div class="card" style="padding: 1.5rem; transition: none">
+        <nav>
+            <ul style="list-style: none; padding: 0; margin: 0">
+                <li style="margin-bottom: 0.5rem">
+                    <a
+                        href="{{ url_for('main.dashboard') }}"
+                        class="nav-link {% if active_section == 'products' %}active{% endif %}"
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 0.75rem;
+                            padding: 0.875rem 1.25rem;
+                            border-radius: var(--radius-md);
+                            text-decoration: none;
+                            {% if active_section == 'products' %}background: var(--primary-light);
+                            color: var(--primary);
+                            font-weight: 600;{% else %}color: var(--gray-600);
+                            font-weight: 500;{% endif %}
+                            transition: all 0.2s;
+                        "
+                    >
+                        <i
+                            class="fas fa-box"
+                            style="width: 20px; font-size: 1.125rem"
+                        ></i>
+                        Мои объявления
+                    </a>
+                </li>
+                <li style="margin-bottom: 0.5rem">
+                    <a
+                        href="{{ url_for('main.favorites') }}"
+                        class="nav-link {% if active_section == 'favorites' %}active{% endif %}"
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 0.75rem;
+                            padding: 0.875rem 1.25rem;
+                            border-radius: var(--radius-md);
+                            text-decoration: none;
+                            {% if active_section == 'favorites' %}background: var(--primary-light);
+                            color: var(--primary);
+                            font-weight: 600;{% else %}color: var(--gray-600);
+                            font-weight: 500;{% endif %}
+                            transition: all 0.2s;
+                        "
+                    >
+                        <i
+                            class="far fa-heart"
+                            style="width: 20px; font-size: 1.125rem"
+                        ></i>
+                        Избранное
+                    </a>
+                </li>
+                <li style="margin-bottom: 0.5rem">
+                    <div class="nav-section">
+                        <a
+                            href="{{ url_for('main.messages', subsection='inbox') }}"
+                            class="nav-link nav-toggle {% if active_section == 'messages' %}active{% endif %}"
+                            style="
+                                display: flex;
+                                align-items: center;
+                                gap: 0.75rem;
+                                padding: 0.875rem 1.25rem;
+                                border-radius: var(--radius-md);
+                                text-decoration: none;
+                                {% if active_section == 'messages' %}background: var(--primary-light);
+                                color: var(--primary);
+                                font-weight: 600;{% else %}color: var(--gray-600);
+                                font-weight: 500;{% endif %}
+                                transition: all 0.2s;
+                                position: relative;
+                                cursor: pointer;
+                            "
+                        >
+                            <i
+                                class="fas fa-envelope"
+                                style="width: 20px; font-size: 1.125rem"
+                            ></i>
+                            Сообщения
+                            <span
+                                id="sidebar-unread-badge"
+                                class="badge bg-danger rounded-pill"
+                                style="
+                                    display: none;
+                                    position: absolute;
+                                    right: 1rem;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                    font-size: 0.75rem;
+                                    padding: 0.25rem 0.5rem;
+                                "
+                            ></span>
+                        </a>
+                    </div>
+                </li>
+                <li style="margin-bottom: 0.5rem">
+                    <a
+                        href="{{ url_for('main.profile') }}"
+                        class="nav-link {% if active_section == 'profile' %}active{% endif %}"
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 0.75rem;
+                            padding: 0.875rem 1.25rem;
+                            border-radius: var(--radius-md);
+                            text-decoration: none;
+                            {% if active_section == 'profile' %}background: var(--primary-light);
+                            color: var(--primary);
+                            font-weight: 600;{% else %}color: var(--gray-600);
+                            font-weight: 500;{% endif %}
+                            transition: all 0.2s;
+                        "
+                    >
+                        <i
+                            class="far fa-user"
+                            style="width: 20px; font-size: 1.125rem"
+                        ></i>
+                        Профиль
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</aside>
+
+<style>
+    .nav-link:hover {
+        background: var(--gray-50) !important;
+        color: var(--primary) !important;
+    }
+
+    .nav-link.active:hover {
+        background: var(--primary-light) !important;
+        color: var(--primary) !important;
+    }
+</style>
