@@ -292,54 +292,53 @@ class YandexLoader:
                 
                 try:
                     # === ЭТАП 0: Умный поиск (Reuse) ===
-                # Ищем, есть ли уже товар с таким названием И картинкой
-                existing_with_img = Product.query.filter(
-                    Product.title == product.title,
-                    Product.images != None,
-                    cast(Product.images, String) != '[]',
-                    cast(Product.images, String) != ''
-                ).first()
+                    # Ищем, есть ли уже товар с таким названием И картинкой
+                    existing_with_img = Product.query.filter(
+                        Product.title == product.title,
+                        Product.images != None,
+                        cast(Product.images, String) != '[]',
+                        cast(Product.images, String) != ''
+                    ).first()
 
-                if existing_with_img:
-                    logging.info(f"   ♻️ Найдено существующее изображение у ID {existing_with_img.id}. Копируем...")
-                    product.images = existing_with_img.images
-                    db.session.commit()
-                    continue
+                    if existing_with_img:
+                        logging.info(f"   ♻️ Найдено существующее изображение у ID {existing_with_img.id}. Копируем...")
+                        product.images = existing_with_img.images
+                        db.session.commit()
+                        continue
 
-                # === ЭТАП 1: Поиск в Яндекс ===
-                search_query = f"{product.title}"
-                results = self._search_yandex(search_query)
-                
-                if results == "BLOCK":
-                    print("🛑 Обнаружена блокировка! Пауза 24 часа.")
-                    break
-                elif results == "CAPTCHA":
-                    logging.warning(f"⏩ Пропуск товара ID {product.id} из-за капчи")
+                    # === ЭТАП 1: Поиск в Яндекс ===
+                    search_query = f"{product.title}"
+                    results = self._search_yandex(search_query)
                     
-                    # При капче делаем долгую паузу, чтобы Яндекс "остыл"
-                    c_delay = random.uniform(*DELAY_CAPTCHA)
-                    logging.warning(f"⚠️ Обнаружена капча. Остываем {c_delay/60:.1f} минут...")
-                    time.sleep(c_delay)
+                    if results == "BLOCK":
+                        print("🛑 Обнаружена блокировка! Пауза 24 часа.")
+                        break
+                    elif results == "CAPTCHA":
+                        logging.warning(f"⏩ Пропуск товара ID {product.id} из-за капчи")
+                        
+                        # При капче делаем долгую паузу, чтобы Яндекс "остыл"
+                        c_delay = random.uniform(*DELAY_CAPTCHA)
+                        logging.warning(f"⚠️ Обнаружена капча. Остываем {c_delay/60:.1f} минут...")
+                        time.sleep(c_delay)
+                        
+                        # Если капча, можно просто пропустить, не маркируя дубликаты
+                        continue
+                    elif not results or isinstance(results, list) and len(results) == 0:
+                        continue 
                     
-                    # Если капча, можно просто пропустить, не маркируя дубликаты
-                    continue
-                elif not results or isinstance(results, list) and len(results) == 0:
-                    continue 
-                
-                # === ЭТАП 2: Скачивание ===
-                saved_images = []
-                for img_url in results[:IMAGES_PER_PRODUCT]:
-                    filename = self._download_and_save(img_url, product.id)
-                    if filename:
-                        saved_images.append(filename)
-                        logging.info(f"   ✅ Сохранено: {filename}")
+                    # === ЭТАП 2: Скачивание ===
+                    saved_images = []
+                    for img_url in results[:IMAGES_PER_PRODUCT]:
+                        filename = self._download_and_save(img_url, product.id)
+                        if filename:
+                            saved_images.append(filename)
+                            logging.info(f"   ✅ Сохранено: {filename}")
+                        
+                        random_sleep = random.uniform(2, 5)
+                        time.sleep(random_sleep)
                     
-                    random_sleep = random.uniform(2, 5)
-                    time.sleep(random_sleep)
-                
-                # === ЭТАП 3: Сохранение и дубликация ===
-                if saved_images:
-                    try:
+                    # === ЭТАП 3: Сохранение и дубликация ===
+                    if saved_images:
                         img_str = ",".join(saved_images)
                         
                         # 1. Обновляем текущий
