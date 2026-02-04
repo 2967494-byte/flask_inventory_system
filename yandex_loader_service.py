@@ -27,6 +27,7 @@ UPLOAD_FOLDER = 'app/static/uploads'
 # Паузы (секунды)
 DELAY_REQUEST = (5, 15)   # Пауза перед самим HTTP-запросом (микро-пауза)
 DELAY_PRODUCT = (180, 1200) # Пауза между ТОВАРАМИ (3 - 20 минут)
+DELAY_CAPTCHA = (360, 780)  # Пауза при КАПЧЕ (6 - 13 минут)
 
 # Коды ошибок
 ERRORS = {
@@ -308,6 +309,12 @@ class YandexLoader:
                     break
                 elif results == "CAPTCHA":
                     logging.warning(f"⏩ Пропуск товара ID {product.id} из-за капчи")
+                    
+                    # При капче делаем долгую паузу, чтобы Яндекс "остыл"
+                    c_delay = random.uniform(*DELAY_CAPTCHA)
+                    logging.warning(f"⚠️ Обнаружена капча. Остываем {c_delay/60:.1f} минут...")
+                    time.sleep(c_delay)
+                    
                     # Если капча, можно просто пропустить, не маркируя дубликаты
                     continue
                 elif not results or isinstance(results, list) and len(results) == 0:
