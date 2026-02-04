@@ -15,8 +15,7 @@
         {% if product.status != product.STATUS_PUBLISHED %}
         <div class="pd-status-alert pd-status-{{ product.status }}">
             <i
-                class="fas {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}fa-clock{% elif product.status == product.STATUS_UNPUBLISHED %}fa-ban{% else %}fa-search{% endif %}"
-            ></i>
+                class="fas {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}fa-clock{% elif product.status == product.STATUS_UNPUBLISHED %}fa-ban{% else %}fa-search{% endif %}"></i>
             <span>
                 {% if product.status == product.STATUS_READY_FOR_PUBLICATION %}
                 Срок публикации истек. Товар виден только вам. {% elif
@@ -31,16 +30,15 @@
         <div class="pd-main-grid">
             <!-- Gallery -->
             <div class="pd-gallery">
-                {% set image_list = product.images.split(',') if product.images
-                and ',' in product.images else ([product.images] if
-                product.images else []) %}
+                {% if product.images is string %}
+                {% set image_list = product.images.split(',') if product.images else [] %}
+                {% else %}
+                {% set image_list = product.images if product.images else [] %}
+                {% endif %}
                 <div class="pd-main-image">
                     {% if image_list and image_list|length > 0 %}
-                    <img
-                        src="{{ url_for('main.serve_uploaded_file', filename=image_list[0]) }}"
-                        alt="{{ product.title }}"
-                        id="mainImage"
-                    />
+                    <img src="{{ url_for('main.serve_uploaded_file', filename=image_list[0]) }}"
+                        alt="{{ product.title }}" id="mainImage" />
                     {% else %}
                     <div class="pd-no-image">
                         <i class="fas fa-image fa-4x"></i>
@@ -52,14 +50,10 @@
                 {% if image_list|length > 1 %}
                 <div class="pd-thumbnails">
                     {% for image in image_list %}
-                    <div
-                        class="pd-thumb-item {% if loop.first %}active{% endif %}"
-                        onclick="changeMainImage(this, '{{ url_for('main.serve_uploaded_file', filename=image) }}')"
-                    >
-                        <img
-                            src="{{ url_for('main.serve_uploaded_file', filename=image) }}"
-                            alt="{{ product.title }}"
-                        />
+                    <div class="pd-thumb-item {% if loop.first %}active{% endif %}"
+                        onclick="changeMainImage(this, '{{ url_for('main.serve_uploaded_file', filename=image) }}')">
+                        <img src="{{ url_for('main.serve_uploaded_file', filename=image) }}"
+                            alt="{{ product.title }}" />
                     </div>
                     {% endfor %}
                 </div>
@@ -89,33 +83,23 @@
                     <div class="pd-actions">
                         {% if current_user.is_authenticated %} {% if
                         current_user.id != product.user_id %}
-                        <button
-                            class="pd-btn pd-btn-primary"
-                            onclick="openMessageModal({{ product.user_id }}, {{ product.id }})"
-                        >
+                        <button class="pd-btn pd-btn-primary"
+                            onclick="openMessageModal({{ product.user_id }}, {{ product.id }})">
                             <i class="fas fa-paper-plane"></i> Написать
                             сообщение
                         </button>
-                        {% if product.owner.phone %}
-                        <button
-                            class="pd-btn pd-btn-secondary"
-                            id="phoneBtn"
-                            onclick="showPhone('{{ product.owner.phone }}')"
-                        >
+                        {% if product.external_phone or product.owner.phone %}
+                        <button class="pd-btn pd-btn-secondary" id="phoneBtn"
+                            onclick="showPhone('{{ product.external_phone if product.external_phone else product.owner.phone }}')">
                             <i class="fas fa-phone"></i> Показать телефон
                         </button>
                         {% endif %} {% else %}
-                        <a
-                            href="{{ url_for('main.edit_product', product_id=product.id) }}"
-                            class="pd-btn pd-btn-primary"
-                        >
+                        <a href="{{ url_for('main.edit_product', product_id=product.id) }}"
+                            class="pd-btn pd-btn-primary">
                             <i class="fas fa-edit"></i> Редактировать объявление
                         </a>
                         {% endif %} {% else %}
-                        <a
-                            href="{{ url_for('auth.login') }}"
-                            class="pd-btn pd-btn-primary"
-                        >
+                        <a href="{{ url_for('auth.login') }}" class="pd-btn pd-btn-primary">
                             <i class="fas fa-sign-in-alt"></i> Войти для связи
                         </a>
                         {% endif %}
@@ -123,23 +107,14 @@
                         <!-- Favorites -->
                         {% if current_user.is_authenticated and current_user.id
                         != product.user_id %}
-                        <form
-                            method="POST"
-                            action="{{ url_for('main.toggle_favorite', product_id=product.id) }}"
-                        >
-                            <input
-                                type="hidden"
-                                name="csrf_token"
-                                value="{{ csrf_token() }}"
-                            />
-                            <button
-                                type="submit"
-                                class="pd-btn pd-btn-favorite {% if current_user.favorited_products.filter_by(id=product.id).first() %}active{% endif %}"
-                            >
+                        <form method="POST" action="{{ url_for('main.toggle_favorite', product_id=product.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button type="submit"
+                                class="pd-btn pd-btn-favorite {% if current_user.favorited_products.filter_by(id=product.id).first() %}active{% endif %}">
                                 <i
-                                    class="{% if current_user.favorited_products.filter_by(id=product.id).first() %}fas{% else %}far{% endif %} fa-heart"
-                                ></i>
-                                {% if current_user.favorited_products.filter_by(id=product.id).first() %}В избранном{% else %}В избранное{% endif %}
+                                    class="{% if current_user.favorited_products.filter_by(id=product.id).first() %}fas{% else %}far{% endif %} fa-heart"></i>
+                                {% if current_user.favorited_products.filter_by(id=product.id).first() %}В избранном{%
+                                else %}В избранное{% endif %}
                             </button>
                         </form>
                         {% endif %}
@@ -149,139 +124,124 @@
                 <div class="pd-card pd-seller-card">
                     <div class="pd-seller-header">
                         <div class="pd-avatar">
-                            {{ product.owner.username[0]|upper if
-                            product.owner.username else
-                            product.owner.email[0]|upper }}
+                            {% if product.external_contact and product.external_contact|length > 2 %}
+                            {{ product.external_contact[0]|upper }}
+                            {% else %}
+                            {{ (product.owner.username[0]|upper if product.owner.username else
+                            product.owner.email[0]|upper) or 'A' }}
+                            {% endif %}
                         </div>
                         <div class="pd-seller-info">
                             <div class="pd-seller-name">
-                                {{ product.owner.username or
-                                product.owner.company_name or 'Пользователь' }}
+                                {% if product.external_contact and product.external_contact|length > 2 %}
+                                Разместил: {{ product.external_contact }}
+                                {% else %}
+                                {{ product.owner.username or product.owner.company_name or 'Пользователь' }}
+                                {% endif %}
                             </div>
-                            <div class="pd-seller-rating">
-                                {% set avg_rating = product.owner.average_rating
-                                %}
+                            {% if not product.external_contact or product.external_contact|length < 3 %} <div
+                                class="pd-seller-rating">
+                                {% set avg_rating = product.owner.average_rating %}
                                 <div class="pd-stars">
                                     {% for i in range(1, 6) %}
                                     <i
-                                        class="{% if avg_rating >= i %}fas{% elif avg_rating >= i-0.5 %}fas fa-star-half-alt{% else %}far{% endif %} fa-star"
-                                    ></i>
+                                        class="{% if avg_rating >= i %}fas{% elif avg_rating >= i-0.5 %}fas fa-star-half-alt{% else %}far{% endif %} fa-star"></i>
                                     {% endfor %}
                                 </div>
-                                <span
-                                    >{{ "%.1f"|format(avg_rating) if avg_rating
-                                    > 0 else "Нет оценок" }}</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        class="pd-btn-simple"
-                        onclick="openReviewsModal({{ product.user_id }})"
-                    >
-                        Прочитать {{ product.owner.reviews_count }} отзывов
-                    </button>
-
-                    <div class="pd-seller-details">
-                        <div class="pd-detail-row">
-                            <span
-                                ><i class="far fa-calendar-alt"></i> Продаёт
-                                с</span
-                            >
-                            <strong
-                                >{{ product.owner.created_at.strftime('%m.%Y')
-                                }}</strong
-                            >
-                        </div>
-                        {% if product.owner.company_name %}
-                        <div class="pd-detail-row">
-                            <span
-                                ><i class="far fa-building"></i> Компания</span
-                            >
-                            <strong>{{ product.owner.company_name }}</strong>
+                                <span>{{ "%.1f"|format(avg_rating) if avg_rating > 0 else "Нет оценок" }}</span>
                         </div>
                         {% endif %}
-                        <div class="pd-detail-row">
-                            <span
-                                ><i class="fas fa-map-marker-alt"></i>
-                                Регион</span
-                            >
-                            <strong>{{ product.city or 'Не указан' }}</strong>
-                        </div>
                     </div>
                 </div>
 
-                <div class="pd-report-box">
-                    <button onclick="openReportModal()" class="pd-report-btn">
-                        <i class="fas fa-flag"></i> Пожаловаться на объявление
-                    </button>
+                {% if not product.external_contact %}
+                <button class="pd-btn-simple" onclick="openReviewsModal({{ product.user_id }})">
+                    Прочитать {{ product.owner.reviews_count }} отзывов
+                </button>
+                {% endif %}
+
+                <div class="pd-seller-details">
+                    <div class="pd-detail-row">
+                        <span><i class="far fa-calendar-alt"></i> Размещено</span>
+                        <strong>{{ product.created_at.strftime('%d.%m.%Y') }}</strong>
+                    </div>
+                    {% if product.external_organization or product.owner.company_name %}
+                    <div class="pd-detail-row">
+                        <span><i class="far fa-building"></i> Организация</span>
+                        <strong>{{ product.external_organization or product.owner.company_name }}</strong>
+                    </div>
+                    {% endif %}
+                    <div class="pd-detail-row">
+                        <span><i class="fas fa-map-marker-alt"></i>
+                            Регион</span>
+                        <strong>{{ product.region or product.city or 'Не указан' }}</strong>
+                    </div>
                 </div>
             </div>
+
+            <div class="pd-report-box">
+                <button onclick="openReportModal()" class="pd-report-btn">
+                    <i class="fas fa-flag"></i> Пожаловаться на объявление
+                </button>
+            </div>
         </div>
+    </div>
 
-        <!-- Lower Section: Description and Specs -->
-        <div class="pd-lower-grid">
-            <div class="pd-content-col">
-                <div class="pd-card pd-content-card">
-                    <h2 class="pd-section-title">
-                        <i class="fas fa-align-left"></i> Описание товара
-                    </h2>
-                    <div class="pd-description">
-                        {{ product.description or 'Описание отсутствует' }}
-                    </div>
+    <!-- Lower Section: Description and Specs -->
+    <div class="pd-lower-grid">
+        <div class="pd-content-col">
+            <div class="pd-card pd-content-card">
+                <h2 class="pd-section-title">
+                    <i class="fas fa-align-left"></i> Описание товара
+                </h2>
+                <div class="pd-description">
+                    {{ product.description or 'Описание отсутствует' }}
                 </div>
+            </div>
 
-                <div class="pd-card pd-content-card">
-                    <h2 class="pd-section-title">
-                        <i class="fas fa-info-circle"></i> Подробные
-                        характеристики
-                    </h2>
-                    <div class="pd-specs">
-                        {% if product.manufacturer %}
-                        <div class="pd-spec-item">
-                            <span class="pd-spec-label">Производитель</span>
-                            <span class="pd-spec-value"
-                                >{{ product.manufacturer }}</span
-                            >
-                        </div>
-                        {% endif %}
-                        <div class="pd-spec-item">
-                            <span class="pd-spec-label">Количество</span>
-                            <span class="pd-spec-value"
-                                >{{ product.quantity }} шт.</span
-                            >
-                        </div>
-                        <div class="pd-spec-item">
-                            <span class="pd-spec-label">Категория</span>
-                            <span class="pd-spec-value"
-                                >{{ product.product_category.name if
-                                product.product_category else 'Не указана'
-                                }}</span
-                            >
-                        </div>
-                        <div class="pd-spec-item">
-                            <span class="pd-spec-label">Дата размещения</span>
-                            <span class="pd-spec-value"
-                                >{{ product.created_at.strftime('%d.%m.%Y')
-                                }}</span
-                            >
-                        </div>
+            <div class="pd-card pd-content-card">
+                <h2 class="pd-section-title">
+                    <i class="fas fa-info-circle"></i> Подробные
+                    характеристики
+                </h2>
+                <div class="pd-specs">
+                    <div class="pd-spec-item full-row">
+                        <span class="pd-spec-label">Категория</span>
+                        <span class="pd-spec-value">{{ product.product_category.name if
+                            product.product_category else 'Не указана'
+                            }}</span>
                     </div>
+                    <div class="pd-spec-item">
+                        <span class="pd-spec-label">Количество</span>
+                        <span class="pd-spec-value">{{ product.quantity }} шт.</span>
+                    </div>
+                    <div class="pd-spec-item">
+                        <span class="pd-spec-label">Дата размещения</span>
+                        <span class="pd-spec-value">{{ product.created_at.strftime('%d.%m.%Y')
+                            }}</span>
+                    </div>
+                    <div class="pd-spec-item">
+                        <span class="pd-spec-label">Просмотров</span>
+                        <span class="pd-spec-value">{{ product.view_count or 0 }}</span>
+                    </div>
+                    {% if product.manufacturer %}
+                    <div class="pd-spec-item">
+                        <span class="pd-spec-label">Производитель</span>
+                        <span class="pd-spec-value">{{ product.manufacturer }}</span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Modals (Simplified) -->
 <div id="reportModal" class="pd-modal-overlay">
     <div class="pd-modal">
         <h3>Пожаловаться</h3>
-        <form
-            method="POST"
-            action="{{ url_for('main.report_product', product_id=product.id) }}"
-        >
+        <form method="POST" action="{{ url_for('main.report_product', product_id=product.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <select name="reason" class="pd-select" required>
                 <option value="">Причина жалобы</option>
@@ -291,11 +251,7 @@
                 <option value="other">Другое</option>
             </select>
             <div class="pd-modal-btns">
-                <button
-                    type="button"
-                    class="pd-btn-gray"
-                    onclick="closeReportModal()"
-                >
+                <button type="button" class="pd-btn-gray" onclick="closeReportModal()">
                     Отмена
                 </button>
                 <button type="submit" class="pd-btn-red">Отправить</button>
@@ -377,6 +333,7 @@
     }
 
     @media (max-width: 1024px) {
+
         .pd-main-grid,
         .pd-lower-grid {
             grid-template-columns: 1fr !important;
@@ -675,6 +632,10 @@
         font-size: 0.9rem;
     }
 
+    .pd-spec-item.full-row {
+        grid-column: 1 / -1;
+    }
+
     /* Modals */
     .pd-modal-overlay {
         position: fixed;
@@ -776,7 +737,13 @@
         btn.innerHTML = `<i class="fas fa-phone-alt"></i> ${phone}`;
         btn.classList.add("pd-btn-primary");
         btn.classList.remove("pd-btn-secondary");
-        btn.onclick = () => (window.location.href = `tel:${phone}`);
+        // If it's a real phone (contains digits), make it clickable
+        if (/[0-9]/.test(phone)) {
+            btn.onclick = () => (window.location.href = `tel:${phone}`);
+        } else {
+            btn.onclick = null;
+            btn.style.cursor = "default";
+        }
     }
 
     function openReportModal() {
@@ -792,8 +759,8 @@
             .then((r) => r.text())
             .then(
                 (html) =>
-                    (document.getElementById("reviewsModalContent").innerHTML =
-                        html),
+                (document.getElementById("reviewsModalContent").innerHTML =
+                    html),
             );
     }
     function closeReviewsModal() {

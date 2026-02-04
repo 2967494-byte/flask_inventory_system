@@ -124,12 +124,15 @@
             <div id="productsContainer">
                 <div id="gridView" class="main-products-grid">
                     {% for product in products %}
-                    {% set image_list = product.images.split(',') if product.images and ',' in product.images else
-                    ([product.images] if product.images else []) %}
+                    {% if product.images is string %}
+                    {% set image_list = product.images.split(',') if product.images else [] %}
+                    {% else %}
+                    {% set image_list = product.images if product.images else [] %}
+                    {% endif %}
                     <div class="card main-product-card"
                         onclick="location.href='{{ url_for('main.product_detail', product_id=product.id) }}';">
                         <div class="main-product-img-box">
-                            {% if image_list and image_list|length > 0 %}
+                            {% if image_list and image_list[0] %}
                             <img src="{{ url_for('main.serve_uploaded_file', filename=image_list[0]) }}"
                                 alt="{{ product.title }}">
                             {% else %}
@@ -157,10 +160,11 @@
                             <div class="main-product-footer">
                                 <div class="main-product-loc">
                                     <i class="fas fa-map-marker-alt"></i>
-                                    <span>{{ product.city or 'Регион не указан' }}</span>
+                                    <span>{{ product.region or product.city or 'Регион не указан' }}</span>
                                 </div>
                                 <div class="main-product-meta">
-                                    <span class="main-product-owner">{{ product.owner.company_name or 'Частное лицо'
+                                    <span class="main-product-owner">{{ product.external_organization or
+                                        product.owner.company_name or 'Частное лицо'
                                         }}</span>
                                     <span><i class="far fa-eye"></i> {{ product.view_count or 0 }}</span>
                                     <span class="main-product-date">{{ product.created_at.strftime('%d.%m.%Y') }}</span>
@@ -633,7 +637,8 @@
         bottom: 0;
         background: rgba(0, 0, 0, 0.6);
         backdrop-filter: blur(4px);
-        display: none; /* Скрываем по умолчанию */
+        display: none;
+        /* Скрываем по умолчанию */
         align-items: center;
         justify-content: center;
         z-index: 2000;
@@ -641,10 +646,12 @@
     }
 
     .filter-modal-overlay.active {
-        display: flex; /* Показываем при наличии класса active */
+        display: flex;
+        /* Показываем при наличии класса active */
     }
 
     @media (max-width: 991px) {
+
         .main-category-filter,
         .main-location-selector,
         .main-search-btn {

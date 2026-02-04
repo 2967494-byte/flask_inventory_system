@@ -169,7 +169,12 @@ class Product(db.Model):
     city = db.Column(db.String(100))
     delivery = db.Column(db.Boolean, default=False)
 
-    # ← ДОБАВЛЕННЫЕ ПОЛЯ ДЛЯ ЗАВИСИМЫХ ВЫБОРОВ
+    # ← ДОБАВЛЕННЫЕ ПОЛЯ ДЛЯ ПАРСЕРА
+    source_url = db.Column(db.Text)
+    external_contact = db.Column(db.String(256))
+    external_phone = db.Column(db.String(256))
+    external_organization = db.Column(db.String(256))
+
     region_id = db.Column(db.Integer, db.ForeignKey("region.id"), nullable=True)
     city_id = db.Column(db.Integer, db.ForeignKey("city.id"), nullable=True)
 

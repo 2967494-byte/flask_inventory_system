@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка безопасности</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ffffff; 
+            color: #333333; 
+        }
+
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 40px 50px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            color: #475963; /* --- ИЗМЕНЕНО: Установлен новый цвет для текста "Требуется проверка" и "Чтобы продолжить..." --- */
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 1.8em;
+            font-weight: normal; /* --- ИЗМЕНЕНО: Убрана жирность заголовка --- */
+        }
+        p {
+            font-size: 16px;
+        }
+        .button {
+            background-color: #7dbd22;
+            color: white; /* Этот цвет останется белым и не изменится */
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+.button:hover {
+    background-color: #6fa71e;
+}
+        }
+    </style>
+</head>
+
+<!-- === БЛОК JAVASCRIPT ОСТАЛСЯ БЕЗ ИЗМЕНЕНИЙ === -->
+<script>
+/**
+ * Client-Side Visit Counter for Security Server
+ */
+
+(function() {
+  'use strict';
+
+  // --- Configuration ---
+  const counterCookieName = 'xSessionCounter';
+  const visitedFlagCookieName = 'xSessionVisited';
+  const visitTimeoutSeconds = 30 * 60; // 30 minutes timeout for the visit flag
+  const counterMaxAgeSeconds = 10 * 365 * 24 * 60 * 60; // ~10 years for the main counter
+  const cookiePath = '/'; // Always use root path for consistency
+  const cookieSameSite = 'Lax'; // Recommended SameSite policy
+
+  // --- Cookie Helper Functions ---
+  /**
+   * Gets a cookie value by name.
+   * @param {string} name - The name of the cookie.
+   * @returns {string|null} The cookie value or null if not found.
+   */
+  function getCookie(name) {
+    if (typeof document === 'undefined' || !document.cookie) {
+      return null;
+    }
+    const nameEQ = encodeURIComponent(name) + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) {
+        return decodeURIComponent(c.substring(nameEQ.length, c.length));
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Sets a cookie.
+   * @param {string} name - The name of the cookie.
+   * @param {string} value - The value of the cookie.
+   * @param {object} options - Cookie options (maxAge, path, domain, secure, sameSite).
+   */
+  function setCookie(name, value, options = {}) {
+     if (typeof document === 'undefined') {
+       return;
+     }
+    let cookieString = encodeURIComponent(name) + "=" + encodeURIComponent(value);
+
+    const path = options.path || cookiePath; // Use configured path
+    cookieString += "; path=" + path;
+
+    // Determine Secure flag (should be true for HTTPS)
+    const secure = options.secure !== undefined ? options.secure : (typeof location !== 'undefined' && location.protocol === 'https:');
+    if (secure) {
+      cookieString += "; Secure";
+    }
+    // Set max-age (preferred over expires)
+    if (options.maxAge !== undefined) {
+      const maxAge = parseInt(options.maxAge, 10);
+      if (!isNaN(maxAge) && maxAge >= 0) { // Allow maxAge=0 for deletion
+         cookieString += "; max-age=" + maxAge;
+         // Fallback for older browsers / deletion
+         let expiresDate = new Date();
+         expiresDate.setTime(expiresDate.getTime() + (maxAge * 1000));
+         cookieString += "; expires=" + (maxAge === 0 ? 'Thu, 01 Jan 1970 00:00:00 GMT' : expiresDate.toUTCString());
+      }
+    }
+
+    // Set domain (omit to default to current host - usually best practice)
+    // if (options.domain) { cookieString += "; domain=" + options.domain; }
+
+    // Set SameSite attribute
+    const sameSite = options.sameSite || cookieSameSite; // Use configured SameSite
+    cookieString += "; SameSite=" + sameSite;
+
+    document.cookie = cookieString;
+  }
+
+  /**
+   * Deletes a cookie by setting its maxAge to 0 and expiry to the past.
+   * Attempts deletion for the specified path (defaults to configured root path).
+   * @param {string} name - The name of the cookie to delete.
+   * @param {object} options - Options, primarily 'path'.
+   */
+  function deleteCookie(name, options = {}) {
+      // Set value to empty, maxAge to 0, and path to ensure correct deletion
+      const deleteOptions = {
+          maxAge: 0,
+          path: options.path || cookiePath, // Crucial: Specify path for deletion
+          secure: (typeof location !== 'undefined' && location.protocol === 'https:'), // Match secure flag if possible
+          sameSite: options.sameSite || cookieSameSite // Match SameSite
+          // domain: options.domain // Usually omit domain for deletion too
+      };
+      setCookie(name, '', deleteOptions);
+  }
+
+
+  // --- Main Counter Logic ---
+
+  // Check if the visit flag cookie exists
+  const visitedFlag = getCookie(visitedFlagCookieName);
+
+  if (!visitedFlag) {
+    // --- This is a new visit (or the very first one) ---
+
+    // 1. Get the current counter value
+    const counterCookieValue = getCookie(counterCookieName);
+    let currentCount = parseInt(counterCookieValue || '0', 10);
+    // Handle potential NaN from parseInt if cookie value was corrupt
+    if (isNaN(currentCount)) {
+        currentCount = 0;
+    }
+
+    // 2. Increment the counter
+    const newCount = currentCount + 1;
+
+    // 3. ***DELETE*** any potentially conflicting old counter cookie first
+    deleteCookie(counterCookieName, { path: cookiePath });
+
+    // 4. Set/Update the long-lived counter cookie with consistent attributes
+    setCookie(counterCookieName, newCount.toString(), {
+      maxAge: counterMaxAgeSeconds,
+      path: cookiePath, // Explicitly set path
+      secure: true, // Assuming site is HTTPS
+      sameSite: cookieSameSite
+    });
+
+    // 5. ***DELETE*** any potentially conflicting old visit flag cookie first
+    deleteCookie(visitedFlagCookieName, { path: cookiePath });
+
+    // 6. Set the short-lived visit flag cookie with consistent attributes
+    setCookie(visitedFlagCookieName, '1', {
+      maxAge: visitTimeoutSeconds,
+      path: cookiePath, // Explicitly set path
+      secure: true, // Assuming site is HTTPS
+      sameSite: cookieSameSite
+    });
+  }
+  // --- End Main Counter Logic ---
+})(); // Immediately Invoked Function Expression (IIFE)
+</script>
+
+<body>
+    <div class="container">
+        <h1>Требуется проверка</h1>
+        <p>Чтобы продолжить, пожалуйста, подтвердите, что вы не робот.</p>
+        <button class="button" onclick="setCookieAndProceed()">Я не бот</button>
+    </div>
+<script>
+    async function setCookieAndProceed() {
+        try {
+            const response = await fetch('/a9f3-get-pass-cookie', { method: 'POST' });
+            if (response.ok) {
+                window.location.reload(true);
+            } else {
+                alert('Произошла ошибка. Попробуйте еще раз.');
+            }
+        } catch (error) {
+            console.error('Ошибка при получении cookie:', error);
+            alert('Ошибка сети. Попробуйте еще раз.');
+        }
+    }
+</script>
+
+</body>
+</html>
