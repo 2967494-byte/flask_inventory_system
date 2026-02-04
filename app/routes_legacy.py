@@ -149,13 +149,23 @@ def index():
     if location and location != 'Все регионы':
         query = query.filter(
             (Product.region == location) | 
-            (Product.city == location)
+            (Product.city == location) |
+            (Product.title.ilike(f'%{location}%'))
         )
     query = query.options(joinedload(Product.product_category))
-    products = query.order_by(Product.created_at.desc()).all()
+    
+    # Пагинация
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 12, type=int)
+    pagination = query.order_by(Product.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    products = pagination.items
+    
     categories = Category.query.all()
     return render_template('main.html', 
                          products=products, 
+                         pagination=pagination,
                          categories=categories,
                          search_term=search_term)
 

@@ -182,6 +182,66 @@
                     {% endfor %}
                 </div>
             </div>
+            <!-- Pagination -->
+            {% if pagination is defined and pagination.pages > 1 %}
+            <nav class="pagination-container">
+                <ul class="pagination">
+                    <!-- Previous Button -->
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="{{ url_for('main.index', page=pagination.prev_num, search=request.args.get('search'), category_id=request.args.get('category_id'), location=request.args.get('location')) }}"
+                            aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+
+                    <!-- Page Numbers -->
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2)
+                    %}
+                    {% if page_num %}
+                    {% if page_num == pagination.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="{{ url_for('main.index', page=page_num, search=request.args.get('search'), category_id=request.args.get('category_id'), location=request.args.get('location')) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Next Button -->
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="{{ url_for('main.index', page=pagination.next_num, search=request.args.get('search'), category_id=request.args.get('category_id'), location=request.args.get('location')) }}"
+                            aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
             {% else %}
             <!-- Empty State -->
             <div class="card main-empty-state">
