@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Бесплатная система продажи остатков{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
     <!-- Font & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,8 +18,16 @@
 
     <style>
         /* Фикс сдвига при переключении Мои объявления ↔ Избранное: скроллбар и ширина не прыгают */
-        html { overflow-y: scroll !important; scrollbar-gutter: stable; }
-        body { margin: 0 !important; padding: 0 !important; overflow-x: hidden !important; }
+        html {
+            overflow-y: scroll !important;
+            scrollbar-gutter: stable;
+        }
+
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+        }
 
         /* Failsafe Brand Styles - Overriding possible caching/conflicts */
         :root {
@@ -148,7 +158,7 @@
         </div>
     </noscript>
     <!-- /Yandex.Metrika counter -->
-    
+
     <!-- CSRF Token for AJAX -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
