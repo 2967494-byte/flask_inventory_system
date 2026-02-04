@@ -156,7 +156,7 @@ def generate_products(count_to_gen):
                     external_organization=company,
                     external_contact="Отдел продаж",
                     external_phone="+X XXX XXX-XX-XX",
-                    external_email="sales@example.com",
+                    # external_email - убран, так как нет в модели
                     source_url=None,
                     vat_included=True,
                     view_count=random.randint(5, 500),
