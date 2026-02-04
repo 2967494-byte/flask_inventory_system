@@ -135,7 +135,15 @@ def index():
         query = query.order_by(Product.created_at.desc())
 
     query = query.options(joinedload(Product.product_category))
-    products = query.all()
+    
+    # --- Pagination ---
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 12, type=int)
+    pagination = query.order_by(Product.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    products = pagination.items
+    # ------------------
 
     # Используем иерархический список категорий (список словарей)
     from app.utils import get_category_choices
@@ -162,6 +170,7 @@ def index():
     return render_template(
         "main.html",
         products=products,
+        pagination=pagination,
         categories=categories,
         root_categories=root_categories,
         search_term=search_term,
