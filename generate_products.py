@@ -200,11 +200,12 @@ def generate_products(count):
                 view_count = random.randint(0, 500)
                 company = random.choice(COMPANY_NAMES)
                 
-                # Загружаем изображение
-                images = []
-                image_filename = download_product_image(product_name, upload_dir)
-                if image_filename:
-                    images.append(image_filename)
+                # Загружаем изображение (отключено из-за лимитов API)
+                # images = []
+                # image_filename = download_product_image(product_name, upload_dir)
+                # if image_filename:
+                #     images.append(image_filename)
+                images = []  # Пока без изображений
                 
                 product = Product(
                     title=product_name,
