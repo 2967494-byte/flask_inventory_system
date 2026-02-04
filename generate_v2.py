@@ -192,30 +192,56 @@ def main():
         
         cnt = 0
         
-        # Список всех доступных товаров для генерации (flatten)
-        all_possible_items = []
-        for cat_name, items in PRODUCTS_DB.items():
-            for item in items:
-                # (Категория, Данные товара)
-                all_possible_items.append((cat_name, item))
+        # 1. Формируем маппинг "Категория БД" -> "Список подходящих товаров"
+        print("📊 Анализ категорий...")
+        category_map = {}
         
+        # Общие (generic) товары на случай, если категория совсем непонятная
+        generic_items = [
+            ("Паллет деревянный 1200х800", 150, 300),
+            ("Коробка картонная 600х400х400", 20, 50),
+            ("Стрейч-пленка 500мм 20мкм", 300, 500),
+        ]
+        
+        for cat in categories:
+            matched_items = []
+            
+            # Ищем совпадение по имени категории в нашем словаре
+            # Перебор всех ключей словаря PRODUCTS_DB
+            for dict_cat_name, items in PRODUCTS_DB.items():
+                # Простая проверка вхождения строк друг в друга (case-insensitive)
+                if dict_cat_name.lower() in cat.name.lower() or cat.name.lower() in dict_cat_name.lower():
+                    matched_items.extend(items)
+            
+            # Дополнительные ключевые слова для маппинга
+            if not matched_items:
+                if 'строй' in cat.name.lower() or 'ремонт' in cat.name.lower():
+                   matched_items.extend(PRODUCTS_DB.get("Строительные материалы", []))
+                elif 'компьютер' in cat.name.lower() or 'it' in cat.name.lower():
+                   matched_items.extend(PRODUCTS_DB.get("Оргтехника", []))
+                elif 'станок' in cat.name.lower() or 'оборудование' in cat.name.lower():
+                   matched_items.extend(PRODUCTS_DB.get("Инструмент", []) + PRODUCTS_DB.get("Спецтехника", []))
+            
+            # Если так и не нашли - используем generic
+            if not matched_items:
+                category_map[cat.id] = generic_items
+            else:
+                category_map[cat.id] = matched_items
+
+        print(f"🚀 Генерация {count} товаров с УМНЫМ распределением...")
+        
+        cnt = 0
         for i in range(count):
             try:
-                # Выбираем случайную пару (Категория, Товар) из нашей базы
-                # Это гарантирует, что мы используем именно наши подготовленные категории
-                target_cat_name, item_data = random.choice(all_possible_items)
+                # 1. Выбираем случайную категорию из БД
+                cat_obj = random.choice(categories)
                 
-                # Ищем соответствующую категорию в БД (или создаем)
-                # Поиск по частичному совпадению
-                cat_obj = None
-                for c in categories:
-                    if target_cat_name.lower() in c.name.lower() or c.name.lower() in target_cat_name.lower():
-                        cat_obj = c
-                        break
+                # 2. Берем строго подходящие ей товары
+                candidates = category_map.get(cat_obj.id)
+                if not candidates:
+                    candidates = generic_items
                 
-                # Если такой категории нет в БД, берем любую (fallback)
-                if not cat_obj:
-                    cat_obj = random.choice(categories)
+                item_data = random.choice(candidates)
                 
                 if len(item_data) == 3:
                      title, min_p, max_p = item_data
@@ -224,13 +250,13 @@ def main():
                     title = item_data[0]
                     price = 1000
                 
-                # 2. Картинка (одна)
+                # 3. Картинка (одна)
                 images = []
                 img_file = download_placeholder_image(upload_dir, title)
                 if img_file:
                     images.append(img_file)
 
-                # 3. Создаем продукт
+                # 4. Создаем продукт
                 product = Product(
                     title=title,
                     description=f"Состояние: Новое\n\nПредлагаем: {title}.\nЦена указана с НДС.\nДоставка по РФ.",
