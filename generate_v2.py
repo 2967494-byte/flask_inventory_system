@@ -12,7 +12,10 @@ from datetime import datetime, timedelta
 from app import create_app, db
 from app.models import Product, Category, User, Region
 
-COUNT = 50
+import sys
+
+# Настройки по умолчанию
+DEFAULT_COUNT = 50
 OWNER_USER_ID = 1
 
 COMPANY_NAMES = [
@@ -95,6 +98,15 @@ def download_placeholder_image(upload_dir, seed_str):
     return None
 
 def main():
+    # Чтение аргументов
+    count = DEFAULT_COUNT
+    if len(sys.argv) > 1:
+        try:
+            count = int(sys.argv[1])
+        except ValueError:
+            print("❌ Ошибка: Укажите корректное число товаров")
+            return
+
     app = create_app()
     with app.app_context():
         # Сброс сессии
@@ -107,10 +119,10 @@ def main():
         categories = Category.query.all()
         regions = Region.query.filter_by(parent_id=None).all()
         
-        print(f"🚀 Генерация {COUNT} товаров с РЕАЛЬНЫМИ ценами...")
+        print(f"🚀 Генерация {count} товаров с РЕАЛЬНЫМИ ценами...")
         
         cnt = 0
-        for i in range(COUNT):
+        for i in range(count):
             try:
                 # 1. Выбор категории и товара
                 cat_obj = random.choice(categories)
