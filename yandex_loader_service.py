@@ -233,11 +233,14 @@ class YandexLoader:
 
         with self.app.app_context():
             # Находим товары БЕЗ картинок (или с пустым списком)
-            # Используем сырой запрос для надежности, т.к. images хранится как JSON или строка
+            # Используем casthint для корректного сравнения JSON с текстом
+            from sqlalchemy import cast, String, Text
+            
+            # Фильтр: images IS NULL ИЛИ images (как текст) == '[]' ИЛИ images == ''
             products = Product.query.filter(
                 (Product.images == None) | 
-                (Product.images == '[]') | 
-                (Product.images == '')
+                (cast(Product.images, String) == '[]') | 
+                (cast(Product.images, String) == '')
             ).limit(20).all() # Берем пачку 20 штук за раз
             
             if not products:
