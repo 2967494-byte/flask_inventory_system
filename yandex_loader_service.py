@@ -25,8 +25,8 @@ LOG_FILE = "yandex_loader.log"
 UPLOAD_FOLDER = 'app/static/uploads'
 
 # Паузы (секунды)
-DELAY_REQUEST = (5, 15)
-DELAY_PRODUCT = (10, 20)
+DELAY_REQUEST = (5, 15)   # Пауза перед самим HTTP-запросом (микро-пауза)
+DELAY_PRODUCT = (180, 1200) # Пауза между ТОВАРАМИ (3 - 20 минут)
 
 # Коды ошибок
 ERRORS = {
@@ -271,12 +271,35 @@ class YandexLoader:
             print(f"Найдено {len(products)} товаров для обработки.")
             
             for product in products:
+                # Обновляем состояние объекта из БД
+                db.session.refresh(product)
+                
+                # Проверяем, вдруг он уже заполнен (дубликат, обработанный на прошлом шаге)
+                current_imgs = str(product.images) if product.images else ''
+                if current_imgs and current_imgs != '[]':
+                    continue
+
                 if not self._check_limits():
                     break
                     
                 logging.info(f"📦 Обработка товара ID {product.id}: {product.title}")
                 
-                # 1. Поиск
+                # === ЭТАП 0: Умный поиск (Reuse) ===
+                # Ищем, есть ли уже товар с таким названием И картинкой
+                existing_with_img = Product.query.filter(
+                    Product.title == product.title,
+                    Product.images != None,
+                    cast(Product.images, String) != '[]',
+                    cast(Product.images, String) != ''
+                ).first()
+
+                if existing_with_img:
+                    logging.info(f"   ♻️ Найдено существующее изображение у ID {existing_with_img.id}. Копируем...")
+                    product.images = existing_with_img.images
+                    db.session.commit()
+                    continue
+
+                # === ЭТАП 1: Поиск в Яндекс ===
                 search_query = f"{product.title}"
                 results = self._search_yandex(search_query)
                 
@@ -285,11 +308,12 @@ class YandexLoader:
                     break
                 elif results == "CAPTCHA":
                     logging.warning(f"⏩ Пропуск товара ID {product.id} из-за капчи")
+                    # Если капча, можно просто пропустить, не маркируя дубликаты
                     continue
                 elif not results or isinstance(results, list) and len(results) == 0:
-                    continue # E004 уже залогирован внутри
+                    continue 
                 
-                # 2. Скачивание (макс 2 шт)
+                # === ЭТАП 2: Скачивание ===
                 saved_images = []
                 for img_url in results[:IMAGES_PER_PRODUCT]:
                     filename = self._download_and_save(img_url, product.id)
@@ -300,24 +324,34 @@ class YandexLoader:
                     random_sleep = random.uniform(2, 5)
                     time.sleep(random_sleep)
                 
-                # 3. Обновление БД
+                # === ЭТАП 3: Сохранение и дубликация ===
                 if saved_images:
                     try:
-                        # Сериализуем список для БД
-                        # Если поле Text (legacy) -> "img1.jpg,img2.jpg"
-                        # Если поле JSON (modern) -> ["img1.jpg", "img2.jpg"]
-                        
-                        # Определяем тип поля (проще всего сохранить строку через запятую, 
-                        # так как модель _serialize_images это умеет)
                         img_str = ",".join(saved_images)
                         
-                        # Обновляем напрямую через SQL для надежности
-                        db.session.execute(
-                            db.update(Product).where(Product.id == product.id).values(images=img_str)
-                        )
+                        # 1. Обновляем текущий
+                        product.images = img_str
+                        
+                        # 2. Обновляем ВСЕ товары с таким же названием, у которых нет картинок
+                        duplicates = Product.query.filter(
+                            Product.title == product.title,
+                            (Product.images == None) | 
+                            (cast(Product.images, String) == '[]') | 
+                            (cast(Product.images, String) == '')
+                        ).all()
+                        
+                        count_dups = 0
+                        for dup in duplicates:
+                            if dup.id != product.id: # Текущий уже обновили
+                                dup.images = img_str
+                                count_dups += 1
+                        
                         db.session.commit()
                         
-                        # Обновляем счетчик
+                        if count_dups > 0:
+                            logging.info(f"   ✨ Применено к {count_dups} дубликатам")
+                        
+                        # Обновляем счетчик запросов Яндекса (только 1 раз за серию)
                         self.state["count"] += 1
                         self._save_state()
                         
@@ -325,7 +359,7 @@ class YandexLoader:
                         logging.error(f"{ERRORS['E006']}: {e}")
                         db.session.rollback()
                 
-                # Пауза между товарами
+                # Пауза
                 p_delay = random.uniform(*DELAY_PRODUCT)
                 logging.info(f"💤 Пауза {p_delay:.1f} сек...")
                 time.sleep(p_delay)
