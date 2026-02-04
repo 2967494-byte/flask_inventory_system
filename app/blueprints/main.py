@@ -1,6 +1,7 @@
+from datetime import datetime
 import os
 import uuid
-from datetime import datetime
+from sqlalchemy import func, distinct
 
 from flask import (
     Blueprint,
@@ -21,7 +22,7 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from app import csrf, db
-from app.models import Category, City, Message, Product, Region, Review, User
+from app.models import Category, City, Message, Product, Region, Review, User, AnalyticsEvent
 
 main = Blueprint("main", __name__, template_folder="../../templates")
 
@@ -42,6 +43,7 @@ from app.utils import (
     _serialize_images,
     allowed_file,
     process_category_image,
+    track_event,
 )
 
 
@@ -49,6 +51,94 @@ from app.utils import (
 def deserialize_images_filter(images_field):
     """Jinja-фильтр для безопасной десериализации изображений"""
     return _deserialize_images(images_field)
+
+# === АНАЛИТИКА: Трекинг посещений ===
+@main.before_app_request
+def track_visits():
+    """Записывает посещение страницы"""
+    if request.path.startswith('/static') or request.path.startswith('/uploads'):
+        return
+    
+    # Не трекаем админку и системные запросы в 'visit', чтобы не засорять
+    if request.path.startswith('/admin') or request.path.startswith('/api'):
+        return
+
+    track_event('visit', current_user, url_path=request.path)
+
+# === АНАЛИТИКА: API для клика по телефону ===
+@main.route("/api/track-phone/<int:product_id>", methods=['POST'])
+def track_phone_click(product_id):
+    """AJAX endpoint для трекинга нажатия 'Показать телефон'"""
+    # CSRF отключен, так как это публичный AJAX, но лучше включить
+    # В данном случае csrf.exempt не нужен, если фронт шлет токен
+    track_event('show_phone', current_user, resource_id=product_id, url_path=request.referrer)
+    return jsonify({'status': 'ok'})
+
+# === АНАЛИТИКА: Страница статистики ===
+@main.route("/admin/stats")
+@login_required
+def admin_stats():
+    """Страница статистики по дням"""
+    if not current_user.role == 'admin': # Простая проверка прав, если нет поля is_admin
+         if not getattr(current_user, 'is_admin', False): # Fallback
+            flash('Доступ запрещен', 'error')
+            return redirect(url_for('main.index'))
+            
+    date_str = request.args.get('date')
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            target_date = datetime.utcnow().date()
+    else:
+        target_date = datetime.utcnow().date()
+        
+    # --- Сбор статистики за выбранный день ---
+    
+    # 1. Уникальные посетители (всего)
+    # Считаем уникальные fingerprint
+    unique_visitors = db.session.query(func.count(distinct(AnalyticsEvent.fingerprint)))\
+        .filter(func.date(AnalyticsEvent.created_at) == target_date)\
+        .scalar()
+        
+    # 2. Новые регистрации
+    registrations = db.session.query(func.count(AnalyticsEvent.id))\
+        .filter(func.date(AnalyticsEvent.created_at) == target_date)\
+        .filter(AnalyticsEvent.event_type == 'register')\
+        .scalar()
+        
+    # 3. Клики "Показать телефон" (уникальные пользователи)
+    phone_clicks_unique = db.session.query(func.count(distinct(AnalyticsEvent.fingerprint)))\
+        .filter(func.date(AnalyticsEvent.created_at) == target_date)\
+        .filter(AnalyticsEvent.event_type == 'show_phone')\
+        .scalar()
+        
+    # 4. Просмотры товаров (кто выбрал товары - зашел в карточку)
+    # event_type='view_product' - мы его добавим в product_detail
+    product_views_unique = db.session.query(func.count(distinct(AnalyticsEvent.fingerprint)))\
+        .filter(func.date(AnalyticsEvent.created_at) == target_date)\
+        .filter(AnalyticsEvent.event_type == 'view_product')\
+        .scalar()
+        
+    # 5. Посещения по страницам (Топ-20)
+    page_stats = db.session.query(
+            AnalyticsEvent.url_path, 
+            func.count(distinct(AnalyticsEvent.fingerprint)).label('unique_users'),
+            func.count(AnalyticsEvent.id).label('total_hits')
+        )\
+        .filter(func.date(AnalyticsEvent.created_at) == target_date)\
+        .group_by(AnalyticsEvent.url_path)\
+        .order_by(func.count(distinct(AnalyticsEvent.fingerprint)).desc())\
+        .limit(50)\
+        .all()
+        
+    return render_template('admin_stats.html', 
+                         target_date=target_date,
+                         unique_visitors=unique_visitors,
+                         registrations=registrations,
+                         phone_clicks=phone_clicks_unique,
+                         product_views=product_views_unique,
+                         page_stats=page_stats)
 
 
 @main.route("/privacy-policy")
@@ -272,6 +362,10 @@ def product_detail(product_id):
     if product.status == Product.STATUS_PUBLISHED:
         product.view_count = (product.view_count or 0) + 1
         db.session.commit()
+    
+    # Трекинг просмотра для аналитики
+    track_event('view_product', current_user, resource_id=product.id, url_path=request.path)
+    
     return render_template("product_detail.html", product=product)
 
 

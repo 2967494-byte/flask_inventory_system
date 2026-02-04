@@ -18,6 +18,18 @@ user_favorites = db.Table(
 )
 
 
+class AnalyticsEvent(db.Model):
+    __tablename__ = 'analytics_event'
+    id = db.Column(db.Integer, primary_key=True)
+    event_type = db.Column(db.String(50), index=True) # 'visit', 'show_phone', 'register', 'view_product'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    # Идентификатор пользователя (для уникальности)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    fingerprint = db.Column(db.String(64), index=True) # IP адрес или хэш сессии
+    # Детали
+    resource_id = db.Column(db.Integer, nullable=True) # ID товара или профиля
+    url_path = db.Column(db.String(255), nullable=True) # URL страницы
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=True)

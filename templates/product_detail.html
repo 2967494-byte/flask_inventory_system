@@ -90,7 +90,7 @@
                         </button>
                         {% if product.external_phone or product.owner.phone %}
                         <button class="pd-btn pd-btn-secondary" id="phoneBtn"
-                            onclick="showPhone('{{ product.external_phone if product.external_phone else product.owner.phone }}')">
+                            onclick="showPhone('{{ product.external_phone if product.external_phone else product.owner.phone }}', {{ product.id }})">
                             <i class="fas fa-phone"></i> Показать телефон
                         </button>
                         {% endif %} {% else %}
@@ -732,8 +732,21 @@
         thumbnail.classList.add("active");
     }
 
-    function showPhone(phone) {
+    function showPhone(phone, productId) {
         const btn = document.getElementById("phoneBtn");
+
+        // Трекинг клика (отправляем запрос на сервер)
+        if (productId) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            fetch(`/api/track-phone/${productId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            }).catch(console.error); // Не блокируем интерфейс, если ошибка
+        }
+
         btn.innerHTML = `<i class="fas fa-phone-alt"></i> ${phone}`;
         btn.classList.add("pd-btn-primary");
         btn.classList.remove("pd-btn-secondary");

@@ -60,11 +60,19 @@ def create_app():
         g.start_time = time()
 
     @app.context_processor
-    def inject_generation_time():
+    def inject_helpers():
+        from datetime import datetime, timedelta
+        
+        c = {}
         if hasattr(g, "start_time"):
             elapsed = (time() - g.start_time) * 1000  # мс
-            return {"generation_time_ms": f"{elapsed:.2f}"}
-        return {"generation_time_ms": "0.00"}
+            c["generation_time_ms"] = f"{elapsed:.2f}"
+        else:
+            c["generation_time_ms"] = "0.00"
+            
+        c['get_now'] = datetime.now
+        c['get_timedelta'] = timedelta
+        return c
 
     # Настройки login_manager
     login_manager.login_view = "auth.login"

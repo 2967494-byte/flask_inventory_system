@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика ASauda{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Аналитика платформы</h1>
+
+        <!-- Календарь -->
+        <form class="d-flex align-items-center gap-2" method="GET" action="{{ url_for('main.admin_stats') }}">
+            {% set prev_day = target_date - get_timedelta(days=1) %}
+            {% set next_day = target_date + get_timedelta(days=1) %}
+
+            <a href="{{ url_for('main.admin_stats', date=prev_day) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+
+            <input type="date" name="date" class="form-control" value="{{ target_date }}" onchange="this.form.submit()"
+                style="width: 160px;">
+
+            <a href="{{ url_for('main.admin_stats', date=next_day) }}"
+                class="btn btn-outline-secondary {% if next_day > get_now().date() %}disabled{% endif %}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </form>
+    </div>
+
+    <!-- Карточки -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase mb-2">Уникальных посетителей</h6>
+                    <div class="display-4 fw-bold text-primary">{{ unique_visitors or 0 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase mb-2">Просмотрено товаров</h6>
+                    <div class="display-4 fw-bold text-info"
+                        title="Уникальных пользователей, зашедших в карточку товара">{{ product_views or 0 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase mb-2">Кликнули "Телефон"</h6>
+                    <div class="display-4 fw-bold text-success">{{ phone_clicks or 0 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase mb-2">Новых регистраций</h6>
+                    <div class="display-4 fw-bold text-warning">{{ registrations or 0 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица посещаемости -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Популярные страницы (Топ-50)</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>URL страницы</th>
+                        <th class="text-center" style="width: 150px;">Уник. посетителей</th>
+                        <th class="text-center" style="width: 150px;">Всего просмотров</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in page_stats %}
+                    <tr>
+                        <td class="text-break">
+                            <a href="{{ page.url_path }}" target="_blank" class="text-decoration-none">{{ page.url_path
+                                }}</a>
+                        </td>
+                        <td class="text-center fw-bold">{{ page.unique_users }}</td>
+                        <td class="text-center text-muted">{{ page.total_hits }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted">
+                            Нет данных за выбранный день
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

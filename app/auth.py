@@ -21,7 +21,7 @@ from app.models import User
 
 # === ДОБАВЬТЕ ЭТОТ ИМПОРТ ===
 from app.telegram_bot import telegram_bot
-from app.utils import generate_captcha_image
+from app.utils import generate_captcha_image, track_event
 
 auth = Blueprint("auth", __name__)
 logger = logging.getLogger(__name__)
@@ -108,6 +108,9 @@ def register():
 
             db.session.add(new_user)
             db.session.commit()
+            
+            # АНАЛИТИКА
+            track_event('register', new_user)
 
             # === ДОБАВЬТЕ ЭТОТ КОД ДЛЯ TELEGRAM УВЕДОМЛЕНИЯ ===
             try:

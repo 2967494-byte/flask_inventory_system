@@ -76,6 +76,42 @@ def generate_captcha_image():
     return code, byte_io
 
 
+from flask import current_app, request
+from app import db
+from app.models import AnalyticsEvent
+
+def track_event(event_type, user=None, resource_id=None, url_path=None):
+    """
+    Записывает событие аналитики в базу данных.
+    """
+    try:
+        # Пытаемся получить IP
+        if request.headers.getlist("X-Forwarded-For"):
+            ip = request.headers.getlist("X-Forwarded-For")[0]
+        else:
+            ip = request.remote_addr
+            
+        user_id = user.id if user and user.is_authenticated else None
+        
+        # Обрезаем URL если слишком длинный
+        if url_path and len(url_path) > 250:
+            url_path = url_path[:250]
+            
+        event = AnalyticsEvent(
+            event_type=event_type,
+            user_id=user_id,
+            fingerprint=ip,
+            resource_id=resource_id,
+            url_path=url_path
+        )
+        db.session.add(event)
+        # Commit делаем сразу, чтобы статистика была realtime
+        db.session.commit()
+    except Exception as e:
+        # Аналитика не должна ломать основное приложение
+        print(f"Analytics Error: {e}")
+        db.session.rollback()
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
