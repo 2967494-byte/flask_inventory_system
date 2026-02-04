@@ -10,29 +10,35 @@ def add_source_url_field():
     
     with app.app_context():
         try:
-            with db.engine.connect() as conn:
-                print("Проверка наличия поля source_url...")
-                
-                # Проверяем, существует ли поле
-                result = conn.execute(text(
-                    "SELECT column_name FROM information_schema.columns "
-                    "WHERE table_name = 'product' AND column_name = 'source_url'"
-                ))
-                
-                if result.fetchone():
-                    print("✓ Поле source_url уже существует")
-                    return
-                
-                print("Добавление поля source_url...")
-                
-                # Добавляем поле
-                conn.execute(text(
-                    "ALTER TABLE product ADD COLUMN source_url TEXT"
-                ))
-                
-                conn.commit()
-                print("✓ Поле source_url успешно добавлено")
-                
+            # Используем raw connection для DDL операций
+            connection = db.engine.raw_connection()
+            connection.autocommit = True
+            cursor = connection.cursor()
+            
+            print("Проверка наличия поля source_url...")
+            
+            # Проверяем, существует ли поле
+            cursor.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'product' AND column_name = 'source_url'"
+            )
+            
+            if cursor.fetchone():
+                print("✓ Поле source_url уже существует")
+                cursor.close()
+                connection.close()
+                return
+            
+            print("Добавление поля source_url...")
+            
+            # Добавляем поле
+            cursor.execute("ALTER TABLE product ADD COLUMN source_url TEXT")
+            
+            cursor.close()
+            connection.close()
+            
+            print("✓ Поле source_url успешно добавлено")
+            
         except Exception as e:
             print(f"❌ Ошибка миграции: {e}")
 
