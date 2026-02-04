@@ -149,38 +149,58 @@ class YandexLoader:
                 self._save_state()
                 return "BLOCK"
 
-            # 2. Парсинг HTML (ищем data-bem JSON)
-            # Яндекс прячет картинки в атрибуте data-bem div-ов класса 'serp-item'
+            # 2. Продвинутый парсинг (ищем JSON в скриптах)
             soup = BeautifulSoup(response.text, 'html.parser')
-            items = soup.find_all('div', class_='serp-item')
-            
             found_urls = []
-            
-            for item in items[:5]: # Смотрим первые 5 результатов
-                try:
-                    data_bem = json.loads(item.get('data-bem', '{}'))
-                    if 'serp-item' in data_bem:
-                        img_url = data_bem['serp-item'].get('img_href')
-                        if not img_url:
-                            # Пробуем достать origin url
-                            if 'preview' in data_bem['serp-item']:
-                                img_url = data_bem['serp-item']['preview'][0].get('url')
-                        
-                        if img_url and img_url.startswith('http') and not img_url.endswith('.gif'):
-                            found_urls.append(img_url)
-                except:
-                    continue
-            
-            if not found_urls:
-                # Fallback: парсинг через регулярки, если структура поменялась
-                urls = re.findall(r'"url":"(https?://[^"]+\.(?:jpg|jpeg|png))"', response.text)
-                found_urls = list(set(urls))[:5]
 
+            # Способ А: Ищем в тегах <script> (там часто лежит JSON с данными)
+            scripts = soup.find_all('script')
+            for script in scripts:
+                if script.string:
+                    # Ищем прямые ссылки на картинки (оригиналы)
+                    urls = re.findall(r'"url":"(https?://[^"]+\.(?:jpg|jpeg|png))"', script.string)
+                    found_urls.extend(urls)
+                    
+                    # Ищем origin url в другой нотации
+                    urls2 = re.findall(r'"origin":\s*{"url":"(https?://[^"]+)"', script.string)
+                    found_urls.extend(urls2)
+
+            # Способ Б: data-bem (legacy)
             if not found_urls:
+                items = soup.find_all('div', class_='serp-item')
+                for item in items:
+                    try:
+                        data = json.loads(item.get('data-bem', '{}'))
+                        if 'serp-item' in data:
+                            u = data['serp-item'].get('img_href')
+                            if u: found_urls.append(u)
+                    except: pass
+            
+            # Способ В: Хардкорный Regex по всему тексту (на самый крайний случай)
+            if not found_urls:
+                # Ищем http...jpg, но фильтруем маленькие иконки
+                urls = re.findall(r'(https?://[^"\'\s]+\.(?:jpg|jpeg|png))', response.text)
+                # Фильтруем мусор (yandex.net, аватарки и т.д.)
+                clean_urls = [u for u in urls if 'avatars.mds.yandex.net' not in u and 'favicon' not in u]
+                found_urls.extend(clean_urls)
+            
+            # Удаляем дубликаты и оставляем топ-5
+            unique_urls = []
+            seen = set()
+            for u in found_urls:
+                if u not in seen:
+                    unique_urls.append(u)
+                    seen.add(u)
+            
+            final_urls = unique_urls[:5]
+
+            if not final_urls:
                 logging.warning(f"⚠️ {ERRORS['E004']} для запроса: {query}")
+                # Для отладки можно сохранить HTML
+                # with open("debug_yandex.html", "w", encoding="utf-8") as f: f.write(response.text)
                 return []
                 
-            return found_urls
+            return final_urls
 
         except Exception as e:
             logging.error(f"❌ Ошибка сети: {e}")
