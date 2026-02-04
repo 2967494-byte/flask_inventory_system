@@ -272,9 +272,14 @@ class YandexLoader:
             print(f"Найдено {len(products)} товаров для обработки.")
             
             for product in products:
-                # Обновляем состояние объекта из БД
-                db.session.refresh(product)
-                
+                try:
+                    # Обновляем состояние объекта из БД
+                    db.session.refresh(product)
+                except Exception as e:
+                    logging.warning(f"⚠️ Ошибка refresh для товара {product.id}, пробуем rollback: {e}")
+                    db.session.rollback()
+                    continue
+
                 # Проверяем, вдруг он уже заполнен (дубликат, обработанный на прошлом шаге)
                 current_imgs = str(product.images) if product.images else ''
                 if current_imgs and current_imgs != '[]':
@@ -285,7 +290,8 @@ class YandexLoader:
                     
                 logging.info(f"📦 Обработка товара ID {product.id}: {product.title}")
                 
-                # === ЭТАП 0: Умный поиск (Reuse) ===
+                try:
+                    # === ЭТАП 0: Умный поиск (Reuse) ===
                 # Ищем, есть ли уже товар с таким названием И картинкой
                 existing_with_img = Product.query.filter(
                     Product.title == product.title,
@@ -362,9 +368,9 @@ class YandexLoader:
                         self.state["count"] += 1
                         self._save_state()
                         
-                    except Exception as e:
-                        logging.error(f"{ERRORS['E006']}: {e}")
-                        db.session.rollback()
+                except Exception as e:
+                    logging.error(f"❌ Ошибка при обработке товара {product.id}: {e}")
+                    db.session.rollback()
                 
                 # Пауза
                 p_delay = random.uniform(*DELAY_PRODUCT)
