@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Новости — Админка{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="admin-header">
+        <h1 class="h2">📰 Управление новостями</h1>
+        <p class="admin-subtitle">Создавайте и редактируйте новости для главной страницы</p>
+    </div>
+
+    <!-- Вкладки -->
+    <div class="admin-tabs mb-4">
+        <div class="tabs">
+            <a href="{{ url_for('main.admin_categories') }}" class="tab-btn">📂 Категории</a>
+            <a href="{{ url_for('main.admin_news') }}" class="tab-btn active">� Новости</a>
+            <a href="#" class="tab-btn disabled">� Пользователи</a>
+            <a href="#" class="tab-btn disabled">� Сообщения</a>
+            <a href="#" class="tab-btn disabled">📢 Баннер</a>
+            <a href="#" class="tab-btn disabled">🩺 Мониторинг</a>
+        </div>
+    </div>
+
+    <!-- Список новостей -->
+    <div class="admin-section">
+        <div class="section-header">
+            <h4>📰 Список новостей</h4>
+            <a href="{{ url_for('main.admin_add_news') }}" class="btn btn-primary btn-sm">
+                ➕ Добавить новость
+            </a>
+        </div>
+        
+        <div class="section-card">
+            {% if news_list %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Заголовок</th>
+                            <th>Дата создания</th>
+                            <th>Дата обновления</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for news in news_list %}
+                        <tr>
+                            <td>
+                                <strong>{{ news.title }}</strong>
+                            </td>
+                            <td>{{ news.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>{{ news.updated_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>
+                                {% if news.is_active %}
+                                    <span class="badge bg-success">Активна</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Неактивна</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.admin_edit_news', news_id=news.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    ✏️ Редактировать
+                                </a>
+                                <form method="POST" 
+                                      action="{{ url_for('main.admin_delete_news', news_id=news.id) }}" 
+                                      style="display: inline;">
+                                    <input type="hidden" name="confirm" value="yes">
+                                    <button type="submit" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Удалить новость?')">
+                                        🗑️ Удалить
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted">Новостей пока нет</p>
+                <a href="{{ url_for('main.admin_add_news') }}" class="btn btn-primary">
+                    ➕ Создать первую новость
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-header {
+        background: #4A90E2;
+        color: white;
+        padding: 32px;
+        text-align: center;
+        border-radius: 8px;
+        margin-bottom: 32px;
+    }
+    
+    .admin-header h1 {
+        margin: 0;
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+    
+    .admin-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 16px;
+    }
+    
+    .admin-tabs {
+        background: var(--background);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+    }
+    
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .tab-btn {
+        padding: 12px 24px;
+        text-decoration: none;
+        color: var(--text-secondary);
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    
+    .tab-btn:hover {
+        background: var(--background-secondary);
+        color: var(--text-primary);
+    }
+    
+    .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        background: rgba(74, 144, 226, 0.1);
+    }
+    
+    .admin-section {
+        background: white;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        margin-bottom: 24px;
+    }
+    
+    .section-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .section-header h4 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 18px;
+    }
+    
+    .section-card {
+        padding: 24px;
+    }
+    
+    .table-responsive {
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+    
+    .table {
+        margin: 0;
+        font-size: 14px;
+    }
+    
+    .table th {
+        background: var(--background-secondary);
+        font-weight: 600;
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .table td {
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .bg-success {
+        background: #28a745;
+        color: white;
+    }
+    
+    .bg-secondary {
+        background: #6c757d;
+        color: white;
+    }
+</style>
+{% endblock %}

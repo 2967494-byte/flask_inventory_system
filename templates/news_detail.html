@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}{{ news.title }} — Новости{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="news-detail-header">
+        <div class="news-breadcrumb">
+            <a href="{{ url_for('main.index') }}" class="breadcrumb-link">Главная</a>
+            <span class="breadcrumb-separator">/</span>
+            <a href="{{ url_for('main.index') }}" class="breadcrumb-link">Новости</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">{{ news.title }}</span>
+        </div>
+        
+        <div class="news-detail-content">
+            <h1 class="news-detail-title">{{ news.title }}</h1>
+            <div class="news-detail-meta">
+                <span class="news-detail-date">
+                    <i class="far fa-calendar"></i>
+                    {{ news.created_at.strftime('%d') }} {{ news.created_at.strftime('%B') | replace('January', 'января') | replace('February', 'февраля') | replace('March', 'марта') | replace('April', 'апреля') | replace('May', 'мая') | replace('June', 'июня') | replace('July', 'июля') | replace('August', 'августа') | replace('September', 'сентября') | replace('October', 'октября') | replace('November', 'ноября') | replace('December', 'декабря') }} {{ news.created_at.strftime('%Y') }} в {{ news.created_at.strftime('%H:%M') }}
+                </span>
+                {% if current_user.is_admin %}
+                <div class="news-detail-actions">
+                    <a href="{{ url_for('main.admin_edit_news', news_id=news.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                    <form method="POST" action="{{ url_for('main.admin_delete_news', news_id=news.id) }}" 
+                          style="display: inline;" 
+                          onsubmit="return confirm('Удалить новость?')">
+                        <input type="hidden" name="confirm" value="yes">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="news-detail-body">
+        {% if news.image %}
+        <div class="news-detail-image">
+            <img src="{{ url_for('main.serve_uploaded_file', filename=news.image) }}" 
+                 alt="{{ news.title }}" 
+                 class="news-image">
+        </div>
+        {% endif %}
+        <div class="news-detail-text">
+            {{ news.content | nl2br | safe }}
+        </div>
+    </div>
+    
+    <div class="news-detail-footer">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> Вернуться к новостям
+        </a>
+    </div>
+</div>
+
+<style>
+    .news-detail-header {
+        background: white;
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+    }
+    
+    .news-breadcrumb {
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+    
+    .breadcrumb-link {
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    
+    .breadcrumb-link:hover {
+        color: var(--primary);
+    }
+    
+    .breadcrumb-separator {
+        margin: 0 8px;
+        color: var(--text-tertiary);
+    }
+    
+    .breadcrumb-current {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    .news-detail-content {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 20px;
+        margin-bottom: 24px;
+    }
+    
+    .news-detail-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        line-height: 1.3;
+    }
+    
+    .news-detail-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .news-detail-date {
+        color: var(--text-secondary);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .news-detail-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .news-detail-body {
+        background: white;
+        border-radius: var(--radius);
+        padding: 32px;
+        box-shadow: var(--shadow);
+        margin-bottom: 24px;
+    }
+    
+    .news-detail-image {
+        margin-bottom: 24px;
+        text-align: left;
+    }
+    
+    .news-image {
+        max-width: 50%;
+        height: auto;
+        border-radius: var(--radius);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        float: left;
+        margin-right: 24px;
+        margin-bottom: 16px;
+    }
+    
+    .news-detail-text {
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--text-primary);
+        white-space: normal;
+        overflow: hidden;
+    }
+    
+    .news-detail-text p {
+        margin-bottom: 16px;
+    }
+    
+    .news-detail-text p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .news-detail-footer {
+        text-align: center;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+    
+    .btn-outline-primary {
+        background: transparent;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+    }
+    
+    .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .btn-outline-danger {
+        background: transparent;
+        color: #dc3545;
+        border: 1px solid #dc3545;
+    }
+    
+    .btn-outline-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}

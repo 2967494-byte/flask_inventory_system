@@ -270,10 +270,38 @@
                 <div class="banner-hint">Место под баннер</div>
             </div>
             {% endif %}
+
+            <!-- Блок новостей -->
+            {% if news_list %}
+            <div class="news-section">
+                <div class="news-header">
+                    <h4>Новости</h4>
+                </div>
+                <div class="news-list">
+                    {% for news in news_list %}
+                    <div class="news-item" data-news-id="{{ news.id }}">
+                        <div class="news-title">
+                            <strong>{{ news.title }}</strong>
+                        </div>
+                        <div class="news-content">
+                            {% if news.content|length > 50 %}
+                                {{ news.content[:50] }}...
+                            {% else %}
+                                {{ news.content }}
+                            {% endif %}
+                        </div>
+                        <div class="news-meta">
+                            <span class="news-date">{{ news.created_at.strftime('%d.%m.%Y') }}</span>
+                            <span class="news-read-more" data-news-id="{{ news.id }}">Читать далее →</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Hero Dismissal Logic
@@ -377,49 +405,29 @@
                 // View switching logic would go here
             });
         });
-    });
 
-    // Favorite button functionality
-    function toggleFavorite(productId, button) {
-        // Check if user is logged in
-        {% if not current_user.is_authenticated %}
-        alert('Пожалуйста, войдите в систему, чтобы добавить товар в избранное');
-        window.location.href = '{{ url_for("auth.login") }}';
-        return;
-        {% endif %}
-
-        // Toggle active state
-        button.classList.toggle('active');
-
-        // Send request to server
-        fetch(`/favorites/toggle/${productId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update button state based on server response
-                    if (data.is_favorite) {
-                        button.classList.add('active');
-                    } else {
-                        button.classList.remove('active');
-                    }
-                } else {
-                    // Revert on error
-                    button.classList.toggle('active');
-                    alert('Ошибка при добавлении в избранное');
+        // News click handlers
+        const newsItems = document.querySelectorAll('.news-item');
+        newsItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                const newsId = this.getAttribute('data-news-id');
+                if (newsId) {
+                    window.location.href = `/news/${newsId}`;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                button.classList.toggle('active');
-                alert('Ошибка при добавлении в избранное');
             });
-    }
+        });
+
+        const newsReadMore = document.querySelectorAll('.news-read-more');
+        newsReadMore.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const newsId = this.getAttribute('data-news-id');
+                if (newsId) {
+                    window.location.href = `/news/${newsId}`;
+                }
+            });
+        });
+    });
 </script>
 
 <!-- Add main.js for filter and location logic with versioning -->
@@ -964,7 +972,6 @@
         width: 100%;
         height: auto;
         display: block;
-        border-radius: var(--radius-lg);
     }
 
     .main-products-title h2 {
@@ -1337,6 +1344,94 @@
         text-align: center;
         color: var(--gray-400);
         font-size: 0.875rem;
+    }
+
+    /* Стили для блока новостей */
+    .news-section {
+        background: white;
+        border-radius: 0;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-top: 16px;
+    }
+
+    .news-header {
+        background: transparent;
+        color: var(--text-primary);
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+        .news-list {
+            padding: 0;
+        }
+
+        .news-item {
+            padding: 16px;
+            border: 1px solid var(--gray-100);
+            border-radius: 0;
+            margin-bottom: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            width: 100%;
+            box-sizing: border-box;
+            display: block;
+        }
+
+        .news-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-light);
+        }
+
+    .news-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .news-title {
+        margin-bottom: 8px;
+        line-height: 1.3;
+    }
+
+    .news-title strong {
+        color: var(--text-primary);
+        font-size: 16px;
+        font-weight: 600;
+        display: block;
+    }
+
+    .news-content {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        min-height: 40px;
+    }
+
+    .news-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .news-date {
+        color: var(--text-tertiary);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .news-read-more {
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: color 0.2s ease;
+    }
+
+    .news-item:hover .news-read-more {
+        color: var(--primary-dark);
     }
 
     /* Scrollbar for suggestions */

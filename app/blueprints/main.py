@@ -23,7 +23,7 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from app import csrf, db
-from app.models import Category, City, Message, Product, Region, Review, User, AnalyticsEvent
+from app.models import Category, City, Message, Product, Region, Review, User, AnalyticsEvent, News
 
 main = Blueprint("main", __name__, template_folder="../../templates")
 
@@ -302,6 +302,152 @@ def admin_categories():
         return redirect(url_for('main.admin_categories'))
 
 
+# ========== НОВОСТИ ==========
+@main.route("/admin/news")
+@login_required
+def admin_news():
+    """Админ-панель управления новостями"""
+    try:
+        current_app.logger.info(f'admin_news accessed by user {current_user.id}, role: {current_user.role}, is_admin: {current_user.is_admin}')
+        
+        if not current_user.is_admin:
+            current_app.logger.warning(f'Access denied for user {current_user.id}: not admin')
+            flash('Доступ запрещен', 'error')
+            return redirect(url_for('main.index'))
+        
+        current_app.logger.info('Fetching news list...')
+        news_list = News.query.order_by(News.created_at.desc()).all()
+        current_app.logger.info(f'Found {len(news_list)} news items')
+        
+        return render_template('admin_news.html', news_list=news_list)
+    except Exception as e:
+        current_app.logger.error(f'Error in admin_news: {str(e)}')
+        current_app.logger.error(traceback.format_exc())
+        flash(f'Ошибка: {str(e)}', 'error')
+        return redirect(url_for('main.index'))
+
+
+@main.route("/admin/news/add", methods=['GET', 'POST'])
+@login_required
+def admin_add_news():
+    """Добавление новости"""
+    if not current_user.is_admin:
+        flash('Доступ запрещен', 'error')
+        return redirect(url_for('main.index'))
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        
+        if not title or not content:
+            flash('Заголовок и текст обязательны', 'error')
+            return redirect(url_for('main.admin_add_news'))
+        
+        # Обработка загрузки изображения
+        image_filename = None
+        if 'image' in request.files:
+            image_file = request.files['image']
+            if image_file and image_file.filename:
+                # Создаем безопасное имя файла
+                filename = secure_filename(image_file.filename)
+                # Добавляем уникальный префикс
+                unique_filename = f"{uuid.uuid4().hex}_{filename}"
+                image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                
+                # Создаем папку, если не существует
+                os.makedirs(os.path.dirname(image_path), exist_ok=True)
+                
+                # Сохраняем файл
+                image_file.save(image_path)
+                image_filename = unique_filename
+        
+        news = News(title=title, content=content, image=image_filename)
+        db.session.add(news)
+        db.session.commit()
+        flash('Новость успешно добавлена', 'success')
+        return redirect(url_for('main.admin_news'))
+    
+    return render_template('admin_news_form.html')
+
+
+@main.route("/admin/news/<int:news_id>/edit", methods=['GET', 'POST'])
+@login_required
+def admin_edit_news(news_id):
+    """Редактирование новости"""
+    if not current_user.is_admin:
+        flash('Доступ запрещен', 'error')
+        return redirect(url_for('main.index'))
+    
+    news = News.query.get_or_404(news_id)
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        
+        if not title or not content:
+            flash('Заголовок и текст обязательны', 'error')
+            return redirect(url_for('main.admin_edit_news', news_id=news_id))
+        
+        # Обработка загрузки нового изображения
+        if 'image' in request.files:
+            image_file = request.files['image']
+            if image_file and image_file.filename:
+                # Создаем безопасное имя файла
+                filename = secure_filename(image_file.filename)
+                # Добавляем уникальный префикс
+                unique_filename = f"{uuid.uuid4().hex}_{filename}"
+                image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                
+                # Создаем папку, если не существует
+                os.makedirs(os.path.dirname(image_path), exist_ok=True)
+                
+                # Сохраняем файл
+                image_file.save(image_path)
+                
+                # Удаляем старое изображение, если оно было
+                if news.image:
+                    old_image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], news.image)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+                
+                news.image = unique_filename
+        
+        news.title = title
+        news.content = content
+        news.updated_at = datetime.utcnow()
+        db.session.commit()
+        flash('Новость успешно обновлена', 'success')
+        return redirect(url_for('main.admin_news'))
+    
+    return render_template('admin_news_form.html', news=news)
+
+
+@main.route("/admin/news/<int:news_id>/delete", methods=['POST'])
+@login_required
+def admin_delete_news(news_id):
+    """Удаление новости"""
+    if not current_user.is_admin:
+        flash('Доступ запрещен', 'error')
+        return redirect(url_for('main.index'))
+    
+    news = News.query.get_or_404(news_id)
+    
+    if request.form.get('confirm') == 'yes':
+        db.session.delete(news)
+        db.session.commit()
+        flash('Новость успешно удалена', 'success')
+        return redirect(url_for('main.admin_news'))
+    
+    return redirect(url_for('main.admin_news'))
+
+
+@main.route("/news/<int:news_id>")
+def news_detail(news_id):
+    """Детальная страница новости"""
+    news = News.query.get_or_404(news_id)
+    return render_template('news_detail.html', news=news)
+
+
 @main.route("/")
 def index():
     category_id = request.args.get("category_id")
@@ -403,6 +549,9 @@ def index():
                 sidebar_banner = f"sidebar_banner.{ext}"
                 break
 
+    # Get news for main page
+    news_list = News.query.filter_by(is_active=True).order_by(News.created_at.desc()).limit(3).all()
+
     return render_template(
         "main.html",
         products=products,
@@ -412,6 +561,7 @@ def index():
         search_term=search_term,
         sidebar_banner=sidebar_banner,
         regions=all_regions,
+        news_list=news_list,
     )
 
 

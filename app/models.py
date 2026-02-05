@@ -393,7 +393,6 @@ class Message(db.Model):
         return cls.query.filter(
             cls.recipient_id == user_id,
             cls.is_read == False,
-            cls.is_deleted_by_recipient == False,
         ).count()
 
     @classmethod
@@ -421,3 +420,20 @@ class Message(db.Model):
             .limit(limit)
             .all()
         )
+
+
+class News(db.Model):
+    __tablename__ = "news"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    image = db.Column(db.String(500), nullable=True)  # Путь к изображению
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return f"<News {self.title}>"
