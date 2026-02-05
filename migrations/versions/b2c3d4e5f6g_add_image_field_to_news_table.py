@@ -1,6 +1,6 @@
 """Add image field to news table
 Revision ID: b2c3d4e5f6g
-Revises: a1b2c3d4e5f
+Revises: 2bf6c6d96f43
 Create Date: 2026-02-05 12:00:00.000000
 """
 from alembic import op
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'b2c3d4e5f6g'
-down_revision = 'a1b2c3d4e5f'
+down_revision = '2bf6c6d96f43'
 branch_labels = None
 depends_on = None
 
