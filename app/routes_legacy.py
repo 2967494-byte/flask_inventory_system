@@ -606,6 +606,62 @@ def admin_users():
     users = query.order_by(User.created_at.desc()).all()
     return render_template('admin_users.html', users=users, search=search)
 
+@main.route('/admin/categories', methods=['GET', 'POST'])
+@login_required
+def admin_categories():
+    try:
+        # Отладочная информация
+        current_app.logger.info(f'admin_categories accessed by user {current_user.id}, method: {request.method}')
+        
+        if request.method == 'POST':
+            action = request.form.get('action')
+            current_app.logger.info(f'POST action: {action}')
+            
+            if action == 'add_category':
+                name = request.form.get('name')
+                parent_id = request.form.get('parent_id') or None
+                description = request.form.get('description')
+                
+                current_app.logger.info(f'add_category: name={name}, parent_id={parent_id}')
+                
+                if not name:
+                    flash('Название категории обязательно', 'error')
+                    return redirect(url_for('main.admin_categories'))
+                
+                existing_category = Category.query.filter_by(name=name, parent_id=parent_id).first()
+                if existing_category:
+                    flash('Такая категория уже существует', 'error')
+                    return redirect(url_for('main.admin_categories'))
+                
+                # === ОБРАБОТКА ЗАГРУЗКИ ИЗОБРАЖЕНИЯ ===
+                image_filename = None
+                if 'category_image' in request.files:
+                    image_file = request.files['category_image']
+                    if image_file and image_file.filename:
+                        current_app.logger.info(f'Processing image: {image_file.filename}')
+                        image_filename, error = process_category_image(image_file)
+                        if error:
+                            flash(f'Ошибка обработки изображения: {error}', 'warning')
+                            current_app.logger.error(f'Image processing error: {error}')
+                
+                # === КОНЕЦ ОБРАБОТКИ ИЗОБРАЖЕНИЯ ===
+                
+                new_category = Category(
+                    name=name,
+                    description=description,
+                    parent_id=parent_id if parent_id else None,
+                    image=image_filename
+                )
+                db.session.add(new_category)
+                db.session.commit()
+                flash(f'Категория "{name}" успешно добавлена', 'success')
+                current_app.logger.info(f'Category "{name}" added successfully')
+        return render_template('admin_categories.html')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Ошибка: {str(e)}', 'error')
+        return redirect(url_for('main.admin_categories'))
+
 @main.route('/admin/regions/add', methods=['POST'])
 @login_required
 def add_region():
@@ -1500,3 +1556,38 @@ Disallow: /static/
     
     response = Response(robots_txt, mimetype='text/plain')
     return response
+
+# Debug route
+@main.route('/debug/admin')
+@login_required
+def debug_admin():
+    """Отладочная информация для админ-панели"""
+    if not current_user.is_admin:
+        return "Access denied", 403
+    
+    try:
+        debug_info = {
+            'user_id': current_user.id,
+            'user_email': current_user.email,
+            'method': request.method,
+            'categories_count': Category.query.count(),
+            'regions_count': Region.query.count(),
+            'cities_count': City.query.count(),
+            'products_count': Product.query.count(),
+            'db_connection': str(db.engine.url) if db.engine else 'No engine'
+        }
+        
+        return f"""
+        <h1>Debug Info</h1>
+        <pre>
+{str(debug_info)}
+        </pre>
+        """
+    except Exception as e:
+        return f"""
+        <h1>Debug Error</h1>
+        <pre>
+        Error: {str(e)}
+        Traceback: {traceback.format_exc()}
+        </pre>
+        """
