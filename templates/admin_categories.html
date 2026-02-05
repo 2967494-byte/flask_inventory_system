@@ -558,14 +558,36 @@
                             <strong>Изображения:</strong> JPG, PNG, GIF, WebP
                         </div>
                         <div class="format-item">
-                            <strong>Макс. размер:</strong> 5MB
+                            <strong>CSV:</strong> Регионы;Города
                         </div>
                         <div class="format-item">
-                            <strong>Рекомендуемый размер:</strong> 300×300px
+                            <strong>JSON:</strong> {"regions": [...], "cities": [...]}
                         </div>
-                        <div class="format-item">
-                            <strong>CSV для локаций:</strong><br>
-                            <code>регион;город</code>
+                    </div>
+                </div>
+
+                <!-- SEO Инструменты -->
+                <div class="sidebar-section">
+                    <h4 class="sidebar-title">🔍 SEO Инструменты</h4>
+                    <div class="seo-tools">
+                        <div class="tool-item">
+                            <strong>Карта сайта:</strong>
+                            <a href="{{ url_for('main.sitemap') }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-sitemap"></i> sitemap.xml
+                            </a>
+                        </div>
+                        <div class="tool-item">
+                            <strong>Robots.txt:</strong>
+                            <a href="{{ url_for('main.robots') }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-robot"></i> robots.txt
+                            </a>
+                        </div>
+                        <div class="tool-item">
+                            <strong>Индексация:</strong>
+                            <div class="index-status">
+                                <span class="status-dot status-success"></span>
+                                <span class="status-text">Товары открыты для индексации</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1006,6 +1028,82 @@
         font-size: 40px;
         margin-bottom: 16px;
         opacity: 0.5;
+    }
+
+    .format-info .format-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .format-info .format-item:last-child {
+        border-bottom: none;
+    }
+
+    /* SEO Tools Styles */
+    .seo-tools .tool-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .seo-tools .tool-item:last-child {
+        border-bottom: none;
+    }
+    
+    .seo-tools .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    
+    .seo-tools .btn-outline-primary {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: transparent;
+    }
+    
+    .seo-tools .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .seo-tools .btn-outline-secondary {
+        border-color: var(--border);
+        color: var(--text-secondary);
+        background: transparent;
+    }
+    
+    .seo-tools .btn-outline-secondary:hover {
+        background: var(--border);
+        color: var(--text-main);
+    }
+    
+    .index-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    
+    .status-success {
+        background: #28a745;
+    }
+    
+    .status-text {
+        font-size: 12px;
+        color: var(--text-secondary);
     }
 
     /* File Input */
