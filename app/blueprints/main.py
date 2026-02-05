@@ -357,9 +357,33 @@ def admin_add_news():
                 # Создаем папку, если не существует
                 os.makedirs(os.path.dirname(image_path), exist_ok=True)
                 
-                # Сохраняем файл
-                image_file.save(image_path)
-                image_filename = unique_filename
+                # Обрабатываем и сжимаем изображение
+                try:
+                    # Открываем изображение
+                    img = Image.open(image_file)
+                    
+                    # Конвертируем в RGB если нужно (для JPEG)
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        if img.mode == 'P':
+                            img = img.convert('RGBA')
+                        background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                        img = background
+                    
+                    # Уменьшаем размер изображения
+                    max_width = 800  # Максимальная ширина
+                    max_height = 600  # Максимальная высота
+                    img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+                    
+                    # Сохраняем с качеством 85%
+                    img.save(image_path, 'JPEG', quality=85, optimize=True)
+                    image_filename = unique_filename
+                    
+                except Exception as e:
+                    current_app.logger.error(f'Error processing image: {str(e)}')
+                    # Если обработка не удалась, сохраняем как есть
+                    image_file.save(image_path)
+                    image_filename = unique_filename
         
         news = News(title=title, content=content, image=image_filename)
         db.session.add(news)
@@ -401,16 +425,47 @@ def admin_edit_news(news_id):
                 # Создаем папку, если не существует
                 os.makedirs(os.path.dirname(image_path), exist_ok=True)
                 
-                # Сохраняем файл
-                image_file.save(image_path)
-                
-                # Удаляем старое изображение, если оно было
-                if news.image:
-                    old_image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], news.image)
-                    if os.path.exists(old_image_path):
-                        os.remove(old_image_path)
-                
-                news.image = unique_filename
+                # Обрабатываем и сжимаем изображение
+                try:
+                    # Открываем изображение
+                    img = Image.open(image_file)
+                    
+                    # Конвертируем в RGB если нужно (для JPEG)
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        if img.mode == 'P':
+                            img = img.convert('RGBA')
+                        background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                        img = background
+                    
+                    # Уменьшаем размер изображения
+                    max_width = 800  # Максимальная ширина
+                    max_height = 600  # Максимальная высота
+                    img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+                    
+                    # Сохраняем с качеством 85%
+                    img.save(image_path, 'JPEG', quality=85, optimize=True)
+                    
+                    # Удаляем старое изображение, если оно было
+                    if news.image:
+                        old_image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], news.image)
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
+                    
+                    news.image = unique_filename
+                    
+                except Exception as e:
+                    current_app.logger.error(f'Error processing image: {str(e)}')
+                    # Если обработка не удалась, сохраняем как есть
+                    image_file.save(image_path)
+                    
+                    # Удаляем старое изображение, если оно было
+                    if news.image:
+                        old_image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], news.image)
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
+                    
+                    news.image = unique_filename
         
         news.title = title
         news.content = content

@@ -37,7 +37,7 @@ class Config:
         UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MAX_CONTENT_LENGTH = 128 * 1024 * 1024
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     MESSAGE_ALLOWED_EXTENSIONS = {
         'png', 'jpg', 'jpeg', 'gif', 'webp',
