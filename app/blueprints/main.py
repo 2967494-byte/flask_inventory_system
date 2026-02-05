@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import uuid
+import traceback
 from sqlalchemy import func, distinct
 
 from flask import (
@@ -154,6 +155,151 @@ def help():
 @main.route("/system-description")
 def system_description():
     return render_template("system_description.html")
+
+
+# Debug route
+@main.route("/debug/admin")
+@login_required
+def debug_admin():
+    """Отладочная информация для админ-панели"""
+    if not current_user.is_admin:
+        return "Access denied", 403
+    
+    try:
+        debug_info = {
+            'user_id': current_user.id,
+            'user_email': current_user.email,
+            'method': request.method,
+            'categories_count': Category.query.count(),
+            'regions_count': Region.query.count(),
+            'cities_count': City.query.count(),
+            'products_count': Product.query.count(),
+            'db_connection': str(db.engine.url) if db.engine else 'No engine'
+        }
+        
+        return f"""
+        <h1>Debug Info</h1>
+        <pre>
+{str(debug_info)}
+        </pre>
+        """
+    except Exception as e:
+        return f"""
+        <h1>Debug Error</h1>
+        <pre>
+        Error: {str(e)}
+        Traceback: {traceback.format_exc()}
+        </pre>
+        """
+
+
+@main.route("/admin/categories", methods=['GET', 'POST'])
+@login_required
+def admin_categories():
+    try:
+        # Отладочная информация
+        current_app.logger.info(f'admin_categories accessed by user {current_user.id}, method: {request.method}')
+        
+        if request.method == 'POST':
+            action = request.form.get('action')
+            current_app.logger.info(f'POST action: {action}')
+            
+            if action == 'add_category':
+                name = request.form.get('name')
+                parent_id = request.form.get('parent_id') or None
+                description = request.form.get('description')
+                
+                current_app.logger.info(f'add_category: name={name}, parent_id={parent_id}')
+                
+                if not name:
+                    flash('Название категории обязательно', 'error')
+                    return redirect(url_for('main.admin_categories'))
+                
+                existing_category = Category.query.filter_by(name=name, parent_id=parent_id).first()
+                if existing_category:
+                    flash('Такая категория уже существует', 'error')
+                    return redirect(url_for('main.admin_categories'))
+                
+                # === ОБРАБОТКА ЗАГРУЗКИ ИЗОБРАЖЕНИЯ ===
+                image_filename = None
+                if 'category_image' in request.files:
+                    image_file = request.files['category_image']
+                    if image_file and image_file.filename:
+                        current_app.logger.info(f'Processing image: {image_file.filename}')
+                        image_filename, error = process_category_image(image_file)
+                        if error:
+                            flash(f'Ошибка обработки изображения: {error}', 'warning')
+                            current_app.logger.error(f'Image processing error: {error}')
+                
+                # === КОНЕЦ ОБРАБОТКИ ИЗОБРАЖЕНИЯ ===
+                
+                new_category = Category(
+                    name=name,
+                    description=description,
+                    parent_id=parent_id if parent_id else None,
+                    image=image_filename
+                )
+                db.session.add(new_category)
+                db.session.commit()
+                flash(f'Категория "{name}" успешно добавлена', 'success')
+                current_app.logger.info(f'Category "{name}" added successfully')
+        
+        # ========== ОЧИСТКА НАЗВАНИЙ РЕГИОНОВ ==========
+        current_app.logger.info('Starting region names cleanup')
+        regions_to_clean = Region.query.filter(Region.name.like('% - %')).all()
+        if regions_to_clean:
+            for region in regions_to_clean:
+                cleaned_name = region.name.split('-', 1)[-1].strip()
+                region.name = cleaned_name
+            db.session.commit()
+            current_app.logger.info(f'Cleaned {len(regions_to_clean)} region names')
+            
+        current_app.logger.info('Loading categories for admin panel')
+        categories = Category.query.all()
+        parent_categories = Category.query.filter_by(parent_id=None).all()
+        total_products = Product.query.count()
+        current_app.logger.info(f'Loaded {len(categories)} categories, {len(parent_categories)} parent categories, {total_products} total products')
+        
+        all_regions = Region.query.all()
+        regions = Region.query.filter_by(parent_id=None).all()
+        child_regions = Region.query.filter(Region.parent_id.isnot(None)).all()
+        all_cities = City.query.all()
+        cities_count = len(all_cities)
+        
+        # Подсчет категорий с изображениями
+        try:
+            categories_with_images = Category.query.filter(Category.image.isnot(None)).all()
+            current_app.logger.info(f'Categories with images: {len(categories_with_images)}')
+        except AttributeError:
+            categories_with_images = []
+            current_app.logger.warning('AttributeError when counting categories with images')
+        
+        regions_with_cities = []
+        for region in regions:
+            region_cities = [city for city in all_cities if city.region_id == region.id]
+            regions_with_cities.append({
+                'region': region,
+                'cities': region_cities
+            })
+        
+        current_app.logger.info('Rendering admin_categories template')
+        return render_template('admin_categories.html', 
+                         categories=categories,
+                         parent_categories=parent_categories,
+                         categories_with_images=categories_with_images,
+                         total_products=total_products,
+                         all_regions=all_regions,
+                         regions=regions,
+                         child_regions=child_regions,
+                         cities=all_cities,
+                         cities_count=cities_count,
+                         regions_with_cities=regions_with_cities)
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error in admin_categories: {str(e)}')
+        current_app.logger.error(traceback.format_exc())
+        flash(f'Ошибка в админ-панели: {str(e)}', 'error')
+        return redirect(url_for('main.admin_categories'))
 
 
 @main.route("/")
