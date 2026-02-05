@@ -10,6 +10,16 @@
         {% endif %}
     </h5>
 
+    <!-- Кнопка добавления отзыва -->
+    {% if current_user.is_authenticated and current_user.id != user.id %}
+    <div class="mb-3">
+        <a href="{{ url_for('main.add_review_direct', user_id=user.id) }}" 
+           class="btn btn-primary btn-sm">
+            <i class="fas fa-star me-2"></i>Оставить отзыв
+        </a>
+    </div>
+    {% endif %}
+
     <!-- Общая оценка -->
     <div class="overall-rating mb-3">
         <div class="d-flex align-items-center gap-2">

@@ -1809,3 +1809,89 @@ def category_image(filename):
         os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories'),
         filename
     )
+
+# Sitemap.xml
+@main.route('/sitemap.xml')
+def sitemap():
+    """Генерирует sitemap.xml со всеми товарами"""
+    from flask import Response
+    
+    # Базовый URL
+    base_url = request.host_url + '/'
+    
+    # Собираем все URL
+    urls = []
+    
+    # Главная страница
+    urls.append(f"""    <url>
+        <loc>{base_url}</loc>
+        <lastmod>{datetime.utcnow().strftime('%Y-%m-%d')}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>""")
+    
+    # Страницы категорий
+    categories = Category.query.filter_by(parent_id=None).all()
+    for category in categories:
+        urls.append(f"""    <url>
+        <loc>{base_url}?category_id={category.id}</loc>
+        <lastmod>{datetime.utcnow().strftime('%Y-%m-%d')}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>""")
+    
+    # Страницы товаров (только опубликованные)
+    products = Product.query.filter_by(status=Product.STATUS_PUBLISHED).all()
+    for product in products:
+        urls.append(f"""    <url>
+        <loc>{base_url}product/{product.id}</loc>
+        <lastmod>{product.updated_at.strftime('%Y-%m-%d') if product.updated_at else product.created_at.strftime('%Y-%m-%d')}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>""")
+    
+    # Формируем XML
+    sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{chr(10).join(urls)}
+</urlset>"""
+    
+    response = Response(sitemap_xml, mimetype='application/xml')
+    return response
+
+# Robots.txt
+@main.route('/robots.txt')
+def robots():
+    """Генерирует robots.txt"""
+    from flask import Response
+    
+    base_url = request.host_url + '/'
+    
+    robots_txt = f"""User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: {base_url}sitemap.xml
+
+# Закрываем служебные страницы
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /profile/
+Disallow: /messages/
+Disallow: /favorites/
+Disallow: /add_product
+Disallow: /product/*/edit
+Disallow: /product/*/delete
+Disallow: /product/*/renew
+Disallow: /product/*/unpublish
+Disallow: /product/*/favorite
+Disallow: /product/*/report
+Disallow: /user/*/add_review_direct
+Disallow: /review/*/delete
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /static/
+"""
+    
+    response = Response(robots_txt, mimetype='text/plain')
+    return response
