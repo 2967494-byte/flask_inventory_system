@@ -153,14 +153,72 @@ async def get_projects(db: AsyncSession = Depends(database.get_db)):
     projects = result.scalars().all()
     return projects
 
-@app.post("/api/v1/projects")
-async def create_project(data: dict, db: AsyncSession = Depends(database.get_db)):
-    new_p = models.Project(
-        name=data.get("name"),
-        type=data.get("type", models.ProjectType.IT),
-        meta_data=data.get("meta_data", {})
-    )
-    db.add(new_p)
+@app.get("/api/v1/projects/{project_id}")
+async def get_project(project_id: uuid.UUID, db: AsyncSession = Depends(database.get_db)):
+    result = await db.execute(select(models.Project).where(models.Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
+
+@app.get("/api/v1/tasks")
+async def get_tasks(project_id: uuid.UUID = None, db: AsyncSession = Depends(database.get_db)):
+    query = select(models.Task)
+    if project_id:
+        query = query.where(models.Task.project_id == project_id)
+    result = await db.execute(query.order_by(models.Task.created_at.desc()))
+    return result.scalars().all()
+
+@app.patch("/api/v1/tasks/{task_id}")
+async def update_task(task_id: uuid.UUID, data: dict, db: AsyncSession = Depends(database.get_db)):
+    result = await db.execute(select(models.Task).where(models.Task.id == task_id))
+    task = result.scalar_one_or_none()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if "is_completed" in data:
+        task.is_completed = data["is_completed"]
+    if "title" in data:
+        task.title = data["title"]
+        
     await db.commit()
-    await db.refresh(new_p)
-    return new_p
+    await db.refresh(task)
+    return task
+
+@app.get("/api/v1/transactions")
+async def get_transactions(db: AsyncSession = Depends(database.get_db)):
+    result = await db.execute(select(models.Transaction).order_by(models.Transaction.date.desc()))
+    return result.scalars().all()
+
+@app.get("/api/v1/dashboard/stats")
+async def get_stats(db: AsyncSession = Depends(database.get_db)):
+    # 1. Total projects
+    p_result = await db.execute(select(models.Project))
+    p_count = len(p_result.scalars().all())
+    
+    # 2. Total tasks (completed vs total)
+    t_result = await db.execute(select(models.Task))
+    tasks = t_result.scalars().all()
+    t_count = len(tasks)
+    t_completed = len([t for t in tasks if t.is_completed])
+    
+    # 3. Finance balance
+    f_result = await db.execute(select(models.Transaction))
+    transactions = f_result.scalars().all()
+    income = sum([tr.amount for tr in transactions if tr.type == models.TransactionType.INCOME])
+    expense = sum([tr.amount for tr in transactions if tr.type == models.TransactionType.EXPENSE])
+    balance = float(income - expense)
+    
+    return {
+        "projects_count": p_count,
+        "tasks": {
+            "total": t_count,
+            "completed": t_completed,
+            "percentage": (t_completed / t_count * 100) if t_count > 0 else 0
+        },
+        "finance": {
+            "income": float(income),
+            "expense": float(expense),
+            "balance": balance
+        }
+    }

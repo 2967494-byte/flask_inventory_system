@@ -6,190 +6,224 @@ import {
   Wallet,
   Settings,
   Activity,
-  Plus
+  Plus,
+  CheckCircle2,
+  Circle,
+  TrendingDown,
+  TrendingUp,
+  Clock
 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import './index.css'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [projects, setProjects] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+  const apiHost = window.location.hostname
+  const BASE_URL = `http://${apiHost}:8001/api/v1`
+
   useEffect(() => {
-    fetchData()
+    fetchAll()
   }, [])
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
+    setLoading(true)
     try {
-      const apiHost = window.location.hostname
-      const res = await axios.get(`http://${apiHost}:8001/api/v1/projects`)
-      setProjects(res.data)
-      setLoading(false)
+      const [pRes, tRes, trRes, sRes] = await Promise.all([
+        axios.get(`${BASE_URL}/projects`),
+        axios.get(`${BASE_URL}/tasks`),
+        axios.get(`${BASE_URL}/transactions`),
+        axios.get(`${BASE_URL}/dashboard/stats`)
+      ])
+      setProjects(pRes.data)
+      setTasks(tRes.data)
+      setTransactions(trRes.data)
+      setStats(sRes.data)
     } catch (err) {
       console.error("Ошибка синхронизации:", err)
-      setLoading(false)
+    }
+    setLoading(false)
+  }
+
+  const toggleTask = async (id: string, completed: boolean) => {
+    try {
+      await axios.patch(`${BASE_URL}/tasks/${id}`, { is_completed: !completed })
+      fetchAll() // Refresh data
+    } catch (err) {
+      console.error("Ошибка обновления задачи:", err)
     }
   }
 
+  const renderDashboard = () => (
+    <div className="fade-in">
+      <div className="grid-stats">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass card">
+          <div className="card-label">Активные Проекты <FolderKanban size={14} /></div>
+          <div className="stat-value">{stats?.projects_count || 0}</div>
+          <div className="stat-sub" style={{ color: '#00ff95' }}>Система синхронизирована</div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass card">
+          <div className="card-label">Баланс <Wallet size={14} /></div>
+          <div className="stat-value" style={{ color: (stats?.finance?.balance || 0) < 0 ? '#ff4d4d' : '#00ff95' }}>
+            {stats?.finance?.balance?.toLocaleString() || 0} ₽
+          </div>
+          <div className="stat-sub">Общий поток транзакций</div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="glass card">
+          <div className="card-label">Выполнение задач <CheckSquare size={14} /></div>
+          <div className="stat-value">{Math.round(stats?.tasks?.percentage || 0)}%</div>
+          <div className="stat-sub">{stats?.tasks?.completed || 0} из {stats?.tasks?.total || 0} завершено</div>
+        </motion.div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '30px', marginTop: '30px' }}>
+        <div className="glass card">
+          <div className="card-header">
+            <h3>Последние Задачи</h3>
+            <span className="live-tag">LIVE</span>
+          </div>
+          <div className="list-container">
+            {tasks.slice(0, 5).map((task) => (
+              <div key={task.id} className="list-item" onClick={() => toggleTask(task.id, task.is_completed)}>
+                {task.is_completed ? <CheckCircle2 size={18} color="#00ff95" /> : <Circle size={18} color="var(--accent)" />}
+                <div style={{ flex: 1, textDecoration: task.is_completed ? 'line-through' : 'none', opacity: task.is_completed ? 0.5 : 1 }}>
+                  {task.title}
+                </div>
+                <Clock size={12} color="var(--text-dim)" />
+              </div>
+            ))}
+            {tasks.length === 0 && <p className="empty-state">Нет активных задач</p>}
+          </div>
+        </div>
+
+        <div className="glass card">
+          <div className="card-header">
+            <h3>Фин. Потоки</h3>
+          </div>
+          <div className="list-container">
+            {transactions.slice(0, 5).map((tr) => (
+              <div key={tr.id} className="list-item">
+                {tr.type === 'income' ? <TrendingUp size={16} color="#00ff95" /> : <TrendingDown size={16} color="#ff4d4d" />}
+                <div style={{ flex: 1 }}>{tr.category || 'Прочее'}</div>
+                <div style={{ fontWeight: '700', color: tr.type === 'income' ? '#00ff95' : '#ff4d4d' }}>
+                  {tr.type === 'income' ? '+' : '-'}{tr.amount}
+                </div>
+              </div>
+            ))}
+            {transactions.length === 0 && <p className="empty-state">История пуста</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderProjects = () => (
+    <div className="fade-in">
+      <h2 className="section-title">Список Проектов</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        {projects.map(p => (
+          <div key={p.id} className="glass card project-card">
+            <div style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px' }}>{p.name}</div>
+            <div className="status-badge" style={{ marginBottom: '15px' }}>{p.type.toUpperCase()}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
+              <span>Создан: {new Date(p.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  const renderTasks = () => (
+    <div className="fade-in">
+      <h2 className="section-title">Все Задачи</h2>
+      <div className="glass card">
+        <div className="list-container">
+          {tasks.map((task) => (
+            <div key={task.id} className="list-item" onClick={() => toggleTask(task.id, task.is_completed)}>
+              {task.is_completed ? <CheckCircle2 size={20} color="#00ff95" /> : <Circle size={20} color="var(--accent)" />}
+              <div style={{ flex: 1, fontSize: '16px', textDecoration: task.is_completed ? 'line-through' : 'none', opacity: task.is_completed ? 0.6 : 1 }}>
+                {task.title}
+              </div>
+              <div className="status-badge" style={{ fontSize: '10px' }}>
+                {projects.find(p => p.id === task.project_id)?.name || 'Личное'}
+              </div>
+            </div>
+          ))}
+          {tasks.length === 0 && <p className="empty-state">Задач пока нет. Отправьте команду боту.</p>}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="dashboard">
+    <div className="dashboard-container">
       <div className="scanline" />
 
       {/* Боковая панель */}
       <aside className="sidebar">
-        <div className="logo" style={{ letterSpacing: '4px' }}>SYNAPSE_OS</div>
+        <div className="logo-section">
+          <div className="logo-main">SYNAPSE</div>
+          <div className="logo-sub">PERSONAL_OS</div>
+        </div>
 
-        <nav style={{ flex: 1 }}>
-          <div
-            className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <LayoutDashboard size={20} />
-            <span>Панель управления</span>
+        <nav className="nav-menu">
+          <div className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+            <LayoutDashboard size={20} /> <span>Панель</span>
           </div>
-          <div
-            className={`nav-item ${activeTab === 'projects' ? 'active' : ''}`}
-            onClick={() => setActiveTab('projects')}
-          >
-            <FolderKanban size={20} />
-            <span>Управление проектами</span>
+          <div className={`nav-link ${activeTab === 'projects' ? 'active' : ''}`} onClick={() => setActiveTab('projects')}>
+            <FolderKanban size={20} /> <span>Проекты</span>
           </div>
-          <div
-            className={`nav-item ${activeTab === 'tasks' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tasks')}
-          >
-            <CheckSquare size={20} />
-            <span>Задачи и цели</span>
+          <div className={`nav-link ${activeTab === 'tasks' ? 'active' : ''}`} onClick={() => setActiveTab('tasks')}>
+            <CheckSquare size={20} /> <span>Задачи</span>
           </div>
-          <div
-            className={`nav-item ${activeTab === 'finance' ? 'active' : ''}`}
-            onClick={() => setActiveTab('finance')}
-          >
-            <Wallet size={20} />
-            <span>Финансовый учет</span>
+          <div className={`nav-link ${activeTab === 'finance' ? 'active' : ''}`} onClick={() => setActiveTab('finance')}>
+            <Wallet size={20} /> <span>Финансы</span>
           </div>
         </nav>
 
-        <div className="nav-item">
-          <Settings size={20} />
-          <span>Системные настройки</span>
+        <div className="sidebar-footer">
+          <div className="nav-link"><Settings size={20} /> <span>Настройки</span></div>
+          <div className="system-status">
+            <div className="status-dot pulsed" />
+            УЗЕЛ_ОНЛАЙН
+          </div>
         </div>
       </aside>
 
-      {/* Основная рабочая область */}
-      <main className="main-view">
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+      {/* Основная область */}
+      <main className="main-content">
+        <header className="main-header">
           <div>
-            <h1 style={{ fontSize: '26px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--accent)' }}>
-              Информационный Терминал
+            <div className="breadcrumb">СИСТЕМА / {activeTab.toUpperCase()}</div>
+            <h1 className="page-title">
+              {activeTab === 'dashboard' && 'Системный Терминал'}
+              {activeTab === 'projects' && 'Реестр Проектов'}
+              {activeTab === 'tasks' && 'Менеджер Задач'}
+              {activeTab === 'finance' && 'Учет Потоков'}
             </h1>
-            <p style={{ color: 'var(--text-dim)', fontSize: '14px', marginTop: '4px' }}>
-              Узел: <span style={{ color: 'var(--text-main)', fontWeight: '600' }}>asauda_server</span> | Состояние: <span style={{ color: '#00ff95', fontWeight: '600' }}>СИСТЕМА_АКТИВНА</span>
-            </p>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="glass" style={{ padding: '12px 24px', color: 'var(--accent)', fontWeight: '700', cursor: 'pointer', border: '1px solid var(--accent-glow)', borderRadius: '8px' }}>
-              <Plus size={18} style={{ marginBottom: '-3px', marginRight: '8px' }} />
-              БЫСТРЫЙ ВВОД
-            </button>
-          </div>
+          <button className="action-btn" onClick={fetchAll}>
+            {loading ? <Activity className="animate-spin" size={18} /> : <Plus size={18} />}
+            ОБНОВИТЬ ДАННЫЕ
+          </button>
         </header>
 
-        {/* Сводка показателей */}
-        <div className="grid-stats">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass card">
-            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase', fontWeight: '600' }}>
-              Активные Проекты
-              <FolderKanban size={14} color="var(--accent)" />
-            </div>
-            <div className="stat-value">{projects.length}</div>
-            <div style={{ color: '#00ff95', fontSize: '11px', marginTop: '6px', fontWeight: '500' }}>Стабильная работа подсистем</div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass card">
-            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase', fontWeight: '600' }}>
-              Баланс Потоков
-              <Wallet size={14} color="var(--accent)" />
-            </div>
-            <div className="stat-value" style={{ color: '#ff4d4d' }}>-2,450 ₽</div>
-            <div style={{ color: 'var(--text-dim)', fontSize: '11px', marginTop: '6px', fontWeight: '500' }}>Синхронизация за сегодня</div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="glass card">
-            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase', fontWeight: '600' }}>
-              Память Ядра
-              <Activity size={14} color="var(--accent)" />
-            </div>
-            <div className="stat-value">14.2 ГБ</div>
-            <div style={{ color: 'var(--accent)', fontSize: '11px', marginTop: '6px', fontWeight: '500' }}>ИИ-контекст оптимизирован</div>
-          </motion.div>
-        </div>
-
-        {/* Центр обработки данных */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '30px' }}>
-          <div className="glass card" style={{ minHeight: '450px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>
-              <h3 style={{ fontSize: '15px', textTransform: 'uppercase', color: 'var(--text-main)', letterSpacing: '1px' }}>Нейронный Реестр Событий</h3>
-              <div style={{ color: 'var(--accent)', fontSize: '12px', fontWeight: '700' }}>АКТУАЛЬНЫЕ ДАННЫЕ</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '50px' }}>
-                  <p style={{ color: 'var(--accent)' }}>Установка соединения...</p>
-                </div>
-              ) : projects.length > 0 ? (
-                projects.map((p, i) => (
-                  <div key={i} className="nav-item" style={{ background: 'rgba(255,255,255,0.03)', padding: '18px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)' }}>{p.name}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-dim)', fontFamily: 'monospace' }}>Код: {p.id.slice(0, 12).toUpperCase()}</div>
-                    </div>
-                    <span className="status-badge" style={{ background: 'rgba(0, 242, 255, 0.1)', color: 'var(--accent)', border: '1px solid var(--accent-glow)' }}>
-                      {p.type === 'IT' ? 'РАЗРАБОТКА' : p.type}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-dim)' }}>
-                  <Activity size={40} style={{ opacity: 0.1, marginBottom: '20px' }} />
-                  <p style={{ fontSize: '14px' }}>В системной базе данных пока пусто. Отправьте голосовое сообщение или текст боту, чтобы инициализировать первый проект.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="glass card">
-            <h3 style={{ fontSize: '15px', textTransform: 'uppercase', color: 'var(--text-main)', marginBottom: '30px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>Аналитика Ядра ИИ</h3>
-            <div style={{ padding: '25px', background: 'rgba(0, 242, 255, 0.05)', borderLeft: '4px solid var(--accent)', borderRadius: '0 12px 12px 0', marginBottom: '30px' }}>
-              <p style={{ fontSize: '14px', color: 'var(--text-main)', lineHeight: '1.7', fontStyle: 'italic' }}>
-                "Текущее наблюдение: Обнаружена высокая активность по созданию новых задач. Ваша эффективность за последние 24 часа выросла на 12%. Рекомендую сфокусироваться на проекте 'Разработка', так как он содержит наиболее приоритетные цели."
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ padding: '15px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '10px', fontWeight: '600' }}>
-                  <span>Целостность данных</span>
-                  <span style={{ color: '#00ff95' }}>98%</span>
-                </div>
-                <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }}>
-                  <div style={{ width: '98%', height: '100%', background: '#00ff95', borderRadius: '3px', boxShadow: '0 0 10px rgba(0, 255, 149, 0.3)' }} />
-                </div>
-              </div>
-              <div style={{ padding: '15px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '10px', fontWeight: '600' }}>
-                  <span>Выполнение целей</span>
-                  <span style={{ color: 'var(--accent)' }}>84%</span>
-                </div>
-                <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }}>
-                  <div style={{ width: '84%', height: '100%', background: 'var(--accent)', borderRadius: '3px', boxShadow: '0 0 10px var(--accent-glow)' }} />
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="content-scroll">
+          <AnimatePresence mode="wait">
+            {activeTab === 'dashboard' && renderDashboard()}
+            {activeTab === 'projects' && renderProjects()}
+            {activeTab === 'tasks' && renderTasks()}
+            {activeTab === 'finance' && <div className="glass card"><p className="empty-state">Модуль финансов в разработке...</p></div>}
+          </AnimatePresence>
         </div>
       </main>
     </div>
