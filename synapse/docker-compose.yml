@@ -18,9 +18,7 @@ services:
     build: ./backend
     container_name: synapse-api
     restart: always
-    environment:
-      DATABASE_URL: postgresql+asyncpg://synapse_user:synapse_password@db/synapse_db
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+    env_file: .env
     ports:
       - "8001:8000"
     depends_on:
@@ -30,8 +28,8 @@ services:
     build: ./bot
     container_name: synapse-bot
     restart: always
+    env_file: .env
     environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       BACKEND_API_URL: http://backend:8000/api/v1
     depends_on:
       - backend
