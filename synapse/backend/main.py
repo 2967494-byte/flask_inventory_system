@@ -28,33 +28,38 @@ ai_service = AIService()
 # Multi-user helper with token support
 async def get_current_user(
     x_telegram_id: int = Header(None), 
+    x_user_full_name: str = Header(None),
+    x_user_username: str = Header(None),
+    x_user_photo: str = Header(None),
     authorization: str = Header(None),
     db: AsyncSession = Depends(database.get_db)
 ):
     # 1. Web Auth (Token)
+    # ... previous web auth code ...
+# For the sake of efficiency, I'll update the user retrieval part
+    user = None
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
-        t_res = await db.execute(
-            select(models.LoginToken).where(
-                models.LoginToken.token == token,
-                models.LoginToken.expires_at > datetime.utcnow()
-            )
-        )
+        t_res = await db.execute(select(models.LoginToken).where(models.LoginToken.token == token, models.LoginToken.expires_at > datetime.utcnow()))
         token_obj = t_res.scalar_one_or_none()
         if token_obj:
             user_res = await db.execute(select(models.User).where(models.User.id == token_obj.user_id))
-            return user_res.scalar_one()
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    # 2. Bot Auth (Internal header)
-    if x_telegram_id:
+            user = user_res.scalar_one_or_none()
+    
+    elif x_telegram_id:
         result = await db.execute(select(models.User).where(models.User.telegram_id == x_telegram_id))
         user = result.scalar_one_or_none()
         if not user:
             user = models.User(telegram_id=x_telegram_id)
             db.add(user)
-            await db.commit()
-            await db.refresh(user)
+            await db.flush()
+
+    if user:
+        # Sync meta info if provided
+        if x_user_full_name: user.full_name = x_user_full_name
+        if x_user_username: user.username = x_user_username
+        if x_user_photo: user.profile_photo = x_user_photo
+        await db.commit()
         return user
 
     raise HTTPException(status_code=401, detail="Authentication required")
@@ -71,6 +76,16 @@ async def generate_token(db: AsyncSession = Depends(database.get_db), user: mode
     db.add(new_token)
     await db.commit()
     return {"token": token}
+
+@app.get("/api/v1/user/me")
+async def get_me(user: models.User = Depends(get_current_user)):
+    return {
+        "id": str(user.id),
+        "telegram_id": user.telegram_id,
+        "username": user.username,
+        "full_name": user.full_name,
+        "profile_photo": user.profile_photo
+    }
 
 @app.on_event("startup")
 async def startup():

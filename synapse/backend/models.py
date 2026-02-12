@@ -29,6 +29,7 @@ class User(Base):
     telegram_id = Column(BigInteger, unique=True, nullable=False)
     username = Column(String, nullable=True)
     full_name = Column(String, nullable=True)
+    profile_photo = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     projects = relationship("Project", back_populates="user")

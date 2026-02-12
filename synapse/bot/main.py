@@ -27,14 +27,27 @@ async def cmd_start(message: Message):
 
 @dp.message(Command("login"))
 async def cmd_login(message: Message):
+    # Sync basic info
+    photo_url = None
+    try:
+        photos = await bot.get_user_profile_photos(message.from_user.id, limit=1)
+        if photos.total_count > 0:
+            file = await bot.get_file(photos.photos[0][-1].file_id)
+            photo_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file.file_path}"
+    except: pass
+
     try:
         async with httpx.AsyncClient() as client:
-            headers = {"X-Telegram-Id": str(message.from_user.id)}
+            headers = {
+                "X-Telegram-Id": str(message.from_user.id),
+                "X-User-Full-Name": message.from_user.full_name or "",
+                "X-User-Username": message.from_user.username or "",
+                "X-User-Photo": photo_url or ""
+            }
             response = await client.post(f"{API_URL}/auth/request-token", headers=headers)
             
             if response.status_code == 200:
                 token = response.json().get("token")
-                # Detect site URL (hardcoded for now as per server setup)
                 web_url = "http://asauda.ru:8002" 
                 login_url = f"{web_url}/?token={token}"
                 
@@ -94,12 +107,32 @@ async def handle_voice(message: Message):
         if os.path.exists(local_filename):
             os.remove(local_filename)
 
+async def sync_user_data(user_tg: types.User):
+    # Get profile photo
+    photo_url = None
+    try:
+        photos = await bot.get_user_profile_photos(user_tg.id, limit=1)
+        if photos.total_count > 0:
+            file = await bot.get_file(photos.photos[0][-1].file_id)
+            # We skip local downloading for now, just use TG file path or placeholder
+            photo_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file.file_path}"
+    except:
+        pass
+
+    async with httpx.AsyncClient() as client:
+        # We'll add a sync endpoint or just pass data with ingest
+        pass
+    return photo_url
+
 @dp.message(F.text)
 async def handle_text(message: Message):
-    # Send text directly to backend
     try:
         async with httpx.AsyncClient() as client:
-            headers = {"X-Telegram-Id": str(message.from_user.id)}
+            headers = {
+                "X-Telegram-Id": str(message.from_user.id),
+                "X-User-Full-Name": message.from_user.full_name or "",
+                "X-User-Username": message.from_user.username or ""
+            }
             response = await client.post(
                 f"{API_URL}/ingest/text", 
                 json={"text": message.text},

@@ -25,6 +25,7 @@ function App() {
   const [tasks, setTasks] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState<string | null>(localStorage.getItem('synapse_token'))
   const [authError, setAuthError] = useState(false)
@@ -46,8 +47,19 @@ function App() {
   useEffect(() => {
     if (token) {
       fetchAll()
+      fetchUser()
     }
   }, [token])
+
+  const fetchUser = async () => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } }
+      const res = await axios.get(`${BASE_URL}/user/me`, config)
+      setUser(res.data)
+    } catch (err) {
+      console.error("Ошибка загрузки профиля:", err)
+    }
+  }
 
   const fetchAll = async () => {
     if (!token) return
@@ -89,6 +101,7 @@ function App() {
   const logout = () => {
     localStorage.removeItem('synapse_token')
     setToken(null)
+    setUser(null)
   }
 
   if (!token) {
@@ -132,6 +145,22 @@ function App() {
           <div className="logo-main">SYNAPSE</div>
           <div className="logo-sub">PERSONAL_OS</div>
         </div>
+
+        {user && (
+          <div className="user-profile-section glass">
+            {user.profile_photo ? (
+              <img src={user.profile_photo} alt="User" className="user-avatar" />
+            ) : (
+              <div className="user-avatar-placeholder">
+                {user.full_name?.charAt(0) || user.username?.charAt(0) || '?'}
+              </div>
+            )}
+            <div className="user-info">
+              <div className="user-name">{user.full_name || 'Пользователь'}</div>
+              <div className="user-handle">@{user.username || 'unknown'}</div>
+            </div>
+          </div>
+        )}
 
         <nav className="nav-menu">
           <div className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
