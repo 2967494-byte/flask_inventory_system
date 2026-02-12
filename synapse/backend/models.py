@@ -57,6 +57,16 @@ class Project(Base):
     type = Column(Enum(ProjectType), default=ProjectType.IT)
     status = Column(Enum(ProjectStatus), default=ProjectStatus.ACTIVE)
     meta_data = Column(JSONB, default={})
+    
+    # Passport fields
+    description = Column(String, nullable=True)
+    goals = Column(String, nullable=True)
+    deadline = Column(DateTime, nullable=True)
+    budget = Column(Numeric(10, 2), nullable=True)
+    progress = Column(Integer, default=0)  # 0-100%
+    notes = Column(String, nullable=True)
+    tags = Column(JSONB, default=[])
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     
     user = relationship("User", back_populates="projects")

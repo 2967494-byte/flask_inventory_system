@@ -30,6 +30,7 @@ function App() {
   const [user, setUser] = useState<any>(null)
   const [financeAnalytics, setFinanceAnalytics] = useState<any>(null)
   const [aiInsight, setAiInsight] = useState<string | null>(null)
+  const [selectedProject, setSelectedProject] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState<string | null>(localStorage.getItem('synapse_token'))
   const [authError, setAuthError] = useState(false)
@@ -327,10 +328,34 @@ function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
                   {projects.map(p => (
                     <div key={p.id} className="glass card project-card">
-                      <div style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px' }}>{p.name}</div>
-                      <div className="status-badge" style={{ marginBottom: '15px' }}>{p.type.toUpperCase()}</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px' }}>
+                        <div>
+                          <div style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px' }}>{p.name}</div>
+                          <div className="status-badge">{p.type.toUpperCase()}</div>
+                        </div>
+                        <button
+                          className="action-btn"
+                          style={{ fontSize: '11px', padding: '6px 12px' }}
+                          onClick={() => setSelectedProject(p)}
+                        >
+                          📋 Паспорт
+                        </button>
+                      </div>
+                      {p.description && <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '10px', lineHeight: '1.5' }}>{p.description.substring(0, 100)}{p.description.length > 100 && '...'}</p>}
+                      {p.progress !== undefined && p.progress !== null && (
+                        <div style={{ marginTop: '15px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '5px' }}>
+                            <span>Прогресс</span>
+                            <span style={{ color: 'var(--accent)' }}>{p.progress}%</span>
+                          </div>
+                          <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), #00ff95)', transition: 'width 0.3s' }} />
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', marginTop: '15px' }}>
                         <span>Создан: {new Date(p.created_at).toLocaleDateString()}</span>
+                        {p.deadline && <span style={{ color: 'var(--accent)' }}>⏰ {new Date(p.deadline).toLocaleDateString()}</span>}
                       </div>
                     </div>
                   ))}
@@ -438,6 +463,127 @@ function App() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Project Passport Modal */}
+      {selectedProject && (
+        <div className="modal-overlay" onClick={() => setSelectedProject(null)}>
+          <motion.div
+            className="modal-content glass"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="modal-header">
+              <h2 style={{ fontSize: '24px', fontWeight: '900' }}>📋 Паспорт проекта</h2>
+              <button className="close-btn" onClick={() => setSelectedProject(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '28px', marginBottom: '5px' }}>{selectedProject.name}</h3>
+                <span className="status-badge">{selectedProject.type}</span>
+              </div>
+
+              <div className="form-group">
+                <label>Описание</label>
+                <textarea
+                  value={selectedProject.description || ''}
+                  onChange={(e) => setSelectedProject({ ...selectedProject, description: e.target.value })}
+                  placeholder="Опишите проект..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Цели и задачи</label>
+                <textarea
+                  value={selectedProject.goals || ''}
+                  onChange={(e) => setSelectedProject({ ...selectedProject, goals: e.target.value })}
+                  placeholder="Что нужно достичь..."
+                  rows={3}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="form-group">
+                  <label>Дедлайн</label>
+                  <input
+                    type="date"
+                    value={selectedProject.deadline ? selectedProject.deadline.split('T')[0] : ''}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, deadline: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Бюджет (₽)</label>
+                  <input
+                    type="number"
+                    value={selectedProject.budget || ''}
+                    onChange={(e) => setSelectedProject({ ...selectedProject, budget: parseFloat(e.target.value) || 0 })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Прогресс: {selectedProject.progress || 0}%</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={selectedProject.progress || 0}
+                  onChange={(e) => setSelectedProject({ ...selectedProject, progress: parseInt(e.target.value) })}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Заметки</label>
+                <textarea
+                  value={selectedProject.notes || ''}
+                  onChange={(e) => setSelectedProject({ ...selectedProject, notes: e.target.value })}
+                  placeholder="Дополнительная информация..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Теги (через запятую)</label>
+                <input
+                  type="text"
+                  value={Array.isArray(selectedProject.tags) ? selectedProject.tags.join(', ') : ''}
+                  onChange={(e) => setSelectedProject({ ...selectedProject, tags: e.target.value.split(',').map((t: string) => t.trim()).filter((t: string) => t) })}
+                  placeholder="frontend, дизайн, срочно"
+                />
+              </div>
+
+              <button
+                className="action-btn"
+                style={{ width: '100%', marginTop: '20px', padding: '12px' }}
+                onClick={async () => {
+                  try {
+                    const config = { headers: { Authorization: `Bearer ${token}` } }
+                    await axios.patch(`${BASE_URL}/projects/${selectedProject.id}/passport`, {
+                      description: selectedProject.description,
+                      goals: selectedProject.goals,
+                      deadline: selectedProject.deadline,
+                      budget: selectedProject.budget,
+                      progress: selectedProject.progress,
+                      notes: selectedProject.notes,
+                      tags: selectedProject.tags
+                    }, config)
+                    fetchAll()
+                    setSelectedProject(null)
+                  } catch (err) {
+                    console.error("Ошибка сохранения паспорта:", err)
+                  }
+                }}
+              >
+                💾 Сохранить паспорт
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

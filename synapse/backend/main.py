@@ -244,6 +244,44 @@ async def get_project(project_id: uuid.UUID, db: AsyncSession = Depends(database
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
+@app.patch("/api/v1/projects/{project_id}/passport")
+async def update_project_passport(
+    project_id: uuid.UUID,
+    passport_data: dict,
+    db: AsyncSession = Depends(database.get_db),
+    user: models.User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(models.Project).where(
+            models.Project.id == project_id,
+            models.Project.user_id == user.id
+        )
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Update passport fields
+    if "description" in passport_data:
+        project.description = passport_data["description"]
+    if "goals" in passport_data:
+        project.goals = passport_data["goals"]
+    if "deadline" in passport_data:
+        from datetime import datetime
+        project.deadline = datetime.fromisoformat(passport_data["deadline"]) if passport_data["deadline"] else None
+    if "budget" in passport_data:
+        project.budget = passport_data["budget"]
+    if "progress" in passport_data:
+        project.progress = passport_data["progress"]
+    if "notes" in passport_data:
+        project.notes = passport_data["notes"]
+    if "tags" in passport_data:
+        project.tags = passport_data["tags"]
+    
+    await db.commit()
+    await db.refresh(project)
+    return project
+
 @app.get("/api/v1/tasks")
 async def get_tasks(project_id: uuid.UUID = None, db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
     query = select(models.Task).where(models.Task.user_id == user.id)
