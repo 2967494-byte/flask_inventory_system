@@ -28,7 +28,7 @@ function App() {
       setProjects(res.data)
       setLoading(false)
     } catch (err) {
-      console.error("Ошибка загрузки:", err)
+      console.error("Ошибка синхронизации:", err)
       setLoading(false)
     }
   }
@@ -37,9 +37,9 @@ function App() {
     <div className="dashboard">
       <div className="scanline" />
 
-      {/* Sidebar / Боковая панель */}
+      {/* Боковая панель */}
       <aside className="sidebar">
-        <div className="logo">SYNAPSE_OS</div>
+        <div className="logo" style={{ letterSpacing: '4px' }}>SYNAPSE_OS</div>
 
         <nav style={{ flex: 1 }}>
           <div
@@ -47,141 +47,145 @@ function App() {
             onClick={() => setActiveTab('dashboard')}
           >
             <LayoutDashboard size={20} />
-            <span>Панель</span>
+            <span>Панель управления</span>
           </div>
           <div
             className={`nav-item ${activeTab === 'projects' ? 'active' : ''}`}
             onClick={() => setActiveTab('projects')}
           >
             <FolderKanban size={20} />
-            <span>Проекты</span>
+            <span>Управление проектами</span>
           </div>
           <div
             className={`nav-item ${activeTab === 'tasks' ? 'active' : ''}`}
             onClick={() => setActiveTab('tasks')}
           >
             <CheckSquare size={20} />
-            <span>Задачи</span>
+            <span>Задачи и цели</span>
           </div>
           <div
             className={`nav-item ${activeTab === 'finance' ? 'active' : ''}`}
             onClick={() => setActiveTab('finance')}
           >
             <Wallet size={20} />
-            <span>Финансы</span>
+            <span>Финансовый учет</span>
           </div>
         </nav>
 
         <div className="nav-item">
           <Settings size={20} />
-          <span>Настройки</span>
+          <span>Системные настройки</span>
         </div>
       </aside>
 
-      {/* Main Content / Основной контент */}
+      {/* Основная рабочая область */}
       <main className="main-view">
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Системный Терминал
+            <h1 style={{ fontSize: '26px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--accent)' }}>
+              Информационный Терминал
             </h1>
-            <p style={{ color: 'var(--text-dim)', fontSize: '14px' }}>
-              Узел: <span style={{ color: 'var(--accent)' }}>asauda_production</span> | Статус: <span style={{ color: '#00ff95' }}>ИИ_АКТИВЕН</span>
+            <p style={{ color: 'var(--text-dim)', fontSize: '14px', marginTop: '4px' }}>
+              Узел: <span style={{ color: 'var(--text-main)', fontWeight: '600' }}>asauda_server</span> | Состояние: <span style={{ color: '#00ff95', fontWeight: '600' }}>СИСТЕМА_АКТИВНА</span>
             </p>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="glass" style={{ padding: '10px 20px', color: 'var(--accent)', fontWeight: '600', cursor: 'pointer', border: '1px solid var(--accent-glow)' }}>
-              <Plus size={18} style={{ marginBottom: '-4px', marginRight: '8px' }} />
-              Быстрый ввод
+            <button className="glass" style={{ padding: '12px 24px', color: 'var(--accent)', fontWeight: '700', cursor: 'pointer', border: '1px solid var(--accent-glow)', borderRadius: '8px' }}>
+              <Plus size={18} style={{ marginBottom: '-3px', marginRight: '8px' }} />
+              БЫСТРЫЙ ВВОД
             </button>
           </div>
         </header>
 
-        {/* Stats Grid / Сетка статистики */}
+        {/* Сводка показателей */}
         <div className="grid-stats">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass card">
-            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase' }}>
-              Проекты
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass card">
+            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase', fontWeight: '600' }}>
+              Активные Проекты
               <FolderKanban size={14} color="var(--accent)" />
             </div>
             <div className="stat-value">{projects.length}</div>
-            <div style={{ color: '#00ff95', fontSize: '11px', marginTop: '4px' }}>Активные подсистемы</div>
+            <div style={{ color: '#00ff95', fontSize: '11px', marginTop: '6px', fontWeight: '500' }}>Стабильная работа подсистем</div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass card">
-            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase' }}>
-              Денежный поток
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="glass card">
+            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase', fontWeight: '600' }}>
+              Баланс Потоков
               <Wallet size={14} color="var(--accent)" />
             </div>
             <div className="stat-value" style={{ color: '#ff4d4d' }}>-2,450 ₽</div>
-            <div style={{ color: 'var(--text-dim)', fontSize: '11px', marginTop: '4px' }}>Дневная синхронизация</div>
+            <div style={{ color: 'var(--text-dim)', fontSize: '11px', marginTop: '6px', fontWeight: '500' }}>Синхронизация за сегодня</div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass card">
-            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase' }}>
-              Загрузка памяти
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="glass card">
+            <div style={{ color: 'var(--text-dim)', fontSize: '12px', display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase', fontWeight: '600' }}>
+              Память Ядра
               <Activity size={14} color="var(--accent)" />
             </div>
             <div className="stat-value">14.2 ГБ</div>
-            <div style={{ color: 'var(--accent)', fontSize: '11px', marginTop: '4px' }}>Контекст ИИ оптимизирован</div>
+            <div style={{ color: 'var(--accent)', fontSize: '11px', marginTop: '6px', fontWeight: '500' }}>ИИ-контекст оптимизирован</div>
           </motion.div>
         </div>
 
-        {/* Action Center / Центр управления */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
-          <div className="glass card" style={{ minHeight: '400px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '14px', textTransform: 'uppercase', color: 'var(--text-dim)' }}>Нейронный Реестр</h3>
-              <div style={{ color: 'var(--accent)', fontSize: '12px' }}>ПРЯМОЙ_ЭФИР</div>
+        {/* Центр обработки данных */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '30px' }}>
+          <div className="glass card" style={{ minHeight: '450px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>
+              <h3 style={{ fontSize: '15px', textTransform: 'uppercase', color: 'var(--text-main)', letterSpacing: '1px' }}>Нейронный Реестр Событий</h3>
+              <div style={{ color: 'var(--accent)', fontSize: '12px', fontWeight: '700' }}>АКТУАЛЬНЫЕ ДАННЫЕ</div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {loading ? (
-                <p>Синхронизация...</p>
+                <div style={{ textAlign: 'center', padding: '50px' }}>
+                  <p style={{ color: 'var(--accent)' }}>Установка соединения...</p>
+                </div>
               ) : projects.length > 0 ? (
                 projects.map((p, i) => (
-                  <div key={i} className="nav-item" style={{ background: 'rgba(255,255,255,0.02)', padding: '16px' }}>
+                  <div key={i} className="nav-item" style={{ background: 'rgba(255,255,255,0.03)', padding: '18px', border: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '600' }}>{p.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>ID: {p.id.slice(0, 8)}...</div>
+                      <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)' }}>{p.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-dim)', fontFamily: 'monospace' }}>Код: {p.id.slice(0, 12).toUpperCase()}</div>
                     </div>
-                    <span className="status-badge status-active">{p.type}</span>
+                    <span className="status-badge" style={{ background: 'rgba(0, 242, 255, 0.1)', color: 'var(--accent)', border: '1px solid var(--accent-glow)' }}>
+                      {p.type === 'IT' ? 'РАЗРАБОТКА' : p.type}
+                    </span>
                   </div>
                 ))
               ) : (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-dim)' }}>
-                  <Activity size={32} style={{ opacity: 0.2, marginBottom: '12px' }} />
-                  <p style={{ fontSize: '13px' }}>В базе нет проектов. Отправьте команду боту, чтобы создать первый.</p>
+                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-dim)' }}>
+                  <Activity size={40} style={{ opacity: 0.1, marginBottom: '20px' }} />
+                  <p style={{ fontSize: '14px' }}>В системной базе данных пока пусто. Отправьте голосовое сообщение или текст боту, чтобы инициализировать первый проект.</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="glass card">
-            <h3 style={{ fontSize: '14px', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '24px' }}>Аналитика Ядра ИИ</h3>
-            <div style={{ padding: '20px', background: 'rgba(0, 242, 255, 0.03)', borderLeft: '2px solid var(--accent)', borderRadius: '0 8px 8px 0', marginBottom: '20px' }}>
-              <p style={{ fontSize: '13px', color: 'var(--text-main)', lineHeight: '1.6', fontStyle: 'italic' }}>
-                "Текущее наблюдение: Вы инициировали 12 задач на этой неделе. Рейтинг эффективности — 84%. Проект 'Synapse' является наиболее активным узлом."
+            <h3 style={{ fontSize: '15px', textTransform: 'uppercase', color: 'var(--text-main)', marginBottom: '30px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>Аналитика Ядра ИИ</h3>
+            <div style={{ padding: '25px', background: 'rgba(0, 242, 255, 0.05)', borderLeft: '4px solid var(--accent)', borderRadius: '0 12px 12px 0', marginBottom: '30px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-main)', lineHeight: '1.7', fontStyle: 'italic' }}>
+                "Текущее наблюдение: Обнаружена высокая активность по созданию новых задач. Ваша эффективность за последние 24 часа выросла на 12%. Рекомендую сфокусироваться на проекте 'Разработка', так как он содержит наиболее приоритетные цели."
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ padding: '12px', border: '1px solid var(--border)', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                  <span>Финансовая Целостность</span>
-                  <span style={{ color: '#00ff95' }}>Стабильно</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ padding: '15px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '10px', fontWeight: '600' }}>
+                  <span>Целостность данных</span>
+                  <span style={{ color: '#00ff95' }}>98%</span>
                 </div>
-                <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-                  <div style={{ width: '70%', height: '100%', background: 'var(--accent)', borderRadius: '2px' }} />
+                <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }}>
+                  <div style={{ width: '98%', height: '100%', background: '#00ff95', borderRadius: '3px', boxShadow: '0 0 10px rgba(0, 255, 149, 0.3)' }} />
                 </div>
               </div>
-              <div style={{ padding: '12px', border: '1px solid var(--border)', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                  <span>Завершение задач</span>
+              <div style={{ padding: '15px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '10px', fontWeight: '600' }}>
+                  <span>Выполнение целей</span>
                   <span style={{ color: 'var(--accent)' }}>84%</span>
                 </div>
-                <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-                  <div style={{ width: '84%', height: '100%', background: 'var(--accent)', borderRadius: '2px' }} />
+                <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }}>
+                  <div style={{ width: '84%', height: '100%', background: 'var(--accent)', borderRadius: '3px', boxShadow: '0 0 10px var(--accent-glow)' }} />
                 </div>
               </div>
             </div>

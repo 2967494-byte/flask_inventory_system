@@ -1,11 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
+
+# Install build dependencies for PostgreSQL and other C-extensions
+RUN apk add --no-cache gcc musl-dev postgresql-dev libffi-dev
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Принудительно указываем 0.0.0.0, чтобы API был доступен другим контейнерам
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
