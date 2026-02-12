@@ -2,9 +2,8 @@ FROM python:3.11-alpine
 
 WORKDIR /app
 
-# Install build dependencies for PostgreSQL and other C-extensions
-RUN apk add --no-cache gcc musl-dev postgresql-dev libffi-dev
-
+# asyncpg and other deps usually don't need these heavy build tools
+# If a build fails, we can add them back selectively, but for now let's save space.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
