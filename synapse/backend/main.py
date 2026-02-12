@@ -273,6 +273,42 @@ async def get_transactions(db: AsyncSession = Depends(database.get_db), user: mo
     result = await db.execute(select(models.Transaction).where(models.Transaction.user_id == user.id).order_by(models.Transaction.date.desc()))
     return result.scalars().all()
 
+@app.get("/api/v1/analytics/finance")
+async def get_finance_analytics(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    # Get all user transactions
+    result = await db.execute(
+        select(models.Transaction)
+        .where(models.Transaction.user_id == user.id)
+        .order_by(models.Transaction.date.desc())
+    )
+    transactions = result.scalars().all()
+    
+    # Group by category
+    categories = {}
+    for tr in transactions:
+        cat = tr.category or "Прочее"
+        if cat not in categories:
+            categories[cat] = {"income": 0, "expense": 0, "count": 0}
+        
+        if tr.type == models.TransactionType.INCOME:
+            categories[cat]["income"] += float(tr.amount)
+        else:
+            categories[cat]["expense"] += float(tr.amount)
+        categories[cat]["count"] += 1
+    
+    # Convert to list for frontend
+    chart_data = []
+    for cat, data in categories.items():
+        chart_data.append({
+            "category": cat,
+            "income": data["income"],
+            "expense": data["expense"],
+            "net": data["income"] - data["expense"],
+            "count": data["count"]
+        })
+    
+    return {"categories": chart_data}
+
 @app.get("/api/v1/dashboard/stats")
 async def get_stats(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
     # 1. Total projects
@@ -305,3 +341,76 @@ async def get_stats(db: AsyncSession = Depends(database.get_db), user: models.Us
             "balance": balance
         }
     }
+
+@app.get("/api/v1/tasks/upcoming")
+async def get_upcoming_tasks(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    # Get tasks with deadlines in the next 24 hours
+    from datetime import timedelta
+    tomorrow = datetime.utcnow() + timedelta(hours=24)
+    
+    result = await db.execute(
+        select(models.Task)
+        .where(
+            models.Task.user_id == user.id,
+            models.Task.is_completed == False,
+            models.Task.deadline != None,
+            models.Task.deadline <= tomorrow,
+            models.Task.deadline >= datetime.utcnow()
+        )
+        .order_by(models.Task.deadline.asc())
+    )
+    return result.scalars().all()
+
+@app.get("/api/v1/analytics/ai-insights")
+async def get_ai_insights(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    # Gather all user data for analysis
+    p_result = await db.execute(select(models.Project).where(models.Project.user_id == user.id))
+    projects = p_result.scalars().all()
+    
+    t_result = await db.execute(select(models.Task).where(models.Task.user_id == user.id))
+    tasks = t_result.scalars().all()
+    
+    f_result = await db.execute(select(models.Transaction).where(models.Transaction.user_id == user.id))
+    transactions = f_result.scalars().all()
+    
+    # Prepare data summary for AI
+    summary = f"""
+Пользователь: {user.full_name or 'Неизвестно'}
+
+Проекты ({len(projects)} всего):
+{chr(10).join([f"- {p.name} ({p.type}, {p.status})" for p in projects[:5]])}
+
+Задачи ({len(tasks)} всего, завершено: {len([t for t in tasks if t.is_completed])}):
+{chr(10).join([f"- {t.title} {'✅' if t.is_completed else '❌'}" for t in tasks[:10]])}
+
+Финансы:
+- Доходы: {sum([tr.amount for tr in transactions if tr.type == models.TransactionType.INCOME])}₽
+- Расходы: {sum([tr.amount for tr in transactions if tr.type == models.TransactionType.EXPENSE])}₽
+- Баланс: {sum([tr.amount for tr in transactions if tr.type == models.TransactionType.INCOME]) - sum([tr.amount for tr in transactions if tr.type == models.TransactionType.EXPENSE])}₽
+
+Проанализируй эти данные и дай краткий (3-4 предложения) инсайт: что идёт хорошо, где проблемы, что улучшить.
+"""
+
+    # Send to DeepSeek
+    import httpx
+    import os
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.deepseek.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": summary}],
+                "temperature": 0.7,
+                "max_tokens": 300
+            },
+            timeout=30.0
+        )
+        
+        if response.status_code == 200:
+            ai_response = response.json()["choices"][0]["message"]["content"]
+            return {"insight": ai_response}
+        else:
+            return {"insight": "Не удалось получить инсайт от AI. Попробуйте позже."}

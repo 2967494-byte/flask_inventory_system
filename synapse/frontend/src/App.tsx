@@ -16,7 +16,10 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import './index.css'
+
+const COLORS = ['#00f2ff', '#ff4d4d', '#00ff95', '#ffcc00', '#9945ff', '#ff6b9d', '#4dffa6']
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -25,6 +28,8 @@ function App() {
   const [transactions, setTransactions] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
+  const [financeAnalytics, setFinanceAnalytics] = useState<any>(null)
+  const [aiInsight, setAiInsight] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState<string | null>(localStorage.getItem('synapse_token'))
   const [authError, setAuthError] = useState(false)
@@ -60,6 +65,16 @@ function App() {
     }
   }
 
+  const fetchFinanceAnalytics = async () => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } }
+      const res = await axios.get(`${BASE_URL}/analytics/finance`, config)
+      setFinanceAnalytics(res.data)
+    } catch (err) {
+      console.error("Ошибка загрузки аналитики:", err)
+    }
+  }
+
   const fetchAll = async () => {
     if (!token) return
     setLoading(true)
@@ -86,6 +101,12 @@ function App() {
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (activeTab === 'finance' && token) {
+      fetchFinanceAnalytics()
+    }
+  }, [activeTab])
 
   const toggleTask = async (id: string, completed: boolean) => {
     try {
@@ -231,6 +252,35 @@ function App() {
                   </motion.div>
                 </div>
 
+                {/* AI Insights Section */}
+                <div className="glass card" style={{ marginTop: '30px' }}>
+                  <div className="card-header">
+                    <h3>🧠 AI-Аналитика</h3>
+                    <button
+                      className="action-btn"
+                      style={{ fontSize: '12px', padding: '8px 16px' }}
+                      onClick={async () => {
+                        try {
+                          const config = { headers: { Authorization: `Bearer ${token}` } }
+                          const res = await axios.get(`${BASE_URL}/analytics/ai-insights`, config)
+                          setAiInsight(res.data.insight)
+                        } catch (err) {
+                          console.error("Ошибка AI-инсайта:", err)
+                        }
+                      }}
+                    >
+                      Получить инсайт
+                    </button>
+                  </div>
+                  {aiInsight ? (
+                    <p style={{ lineHeight: '1.7', color: 'var(--text)', padding: '10px', background: 'rgba(0, 242, 255, 0.03)', borderRadius: '8px', borderLeft: '3px solid var(--accent)' }}>
+                      {aiInsight}
+                    </p>
+                  ) : (
+                    <p className="empty-state">Нажмите кнопку выше, чтобы получить персональный AI-инсайт</p>
+                  )}
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '30px', marginTop: '30px' }}>
                   <div className="glass card">
                     <div className="card-header">
@@ -308,7 +358,83 @@ function App() {
                 </div>
               </div>
             )}
-            {activeTab === 'finance' && <div className="glass card"><p className="empty-state">Модуль финансов в разработке...</p></div>}
+            {activeTab === 'finance' && (
+              <div className="fade-in">
+                <h2 className="section-title">Финансовая Аналитика</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+                  <div className="glass card">
+                    <h3 style={{ marginBottom: '20px' }}>Расходы по категориям</h3>
+                    {financeAnalytics && financeAnalytics.categories.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={financeAnalytics.categories.filter((c: any) => c.expense > 0)}
+                            dataKey="expense"
+                            nameKey="category"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            label={(entry: any) => `${entry.category}: ${entry.expense}₽`}
+                          >
+                            {financeAnalytics.categories.map((_: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="empty-state">Нет данных о расходах</p>
+                    )}
+                  </div>
+
+                  <div className="glass card">
+                    <h3 style={{ marginBottom: '20px' }}>Доходы  по категориям</h3>
+                    {financeAnalytics && financeAnalytics.categories.filter((c: any) => c.income > 0).length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={financeAnalytics.categories.filter((c: any) => c.income > 0)}
+                            dataKey="income"
+                            nameKey="category"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            label={(entry: any) => `${entry.category}: ${entry.income}₽`}
+                          >
+                            {financeAnalytics.categories.map((_: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="empty-state">Нет данных о доходах</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="glass card" style={{ marginTop: '30px' }}>
+                  <h3 style={{ marginBottom: '20px' }}>Детализация по категориям</h3>
+                  <div className="list-container">
+                    {financeAnalytics && financeAnalytics.categories.map((cat: any) => (
+                      <div key={cat.category} className="list-item">
+                        <div style={{ flex: 1, fontWeight: '700' }}>{cat.category}</div>
+                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                          {cat.income > 0 && <span style={{ color: '#00ff95' }}>+{cat.income}₽</span>}
+                          {cat.expense > 0 && <span style={{ color: '#ff4d4d' }}>-{cat.expense}₽</span>}
+                          <span style={{ color: 'var(--text-dim)', fontSize: '12px' }}>({cat.count} операций)</span>
+                        </div>
+                      </div>
+                    ))}
+                    {(!financeAnalytics || financeAnalytics.categories.length === 0) && (
+                      <p className="empty-state">Нет финансовых данных. Добавьте транзакции через бота.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </AnimatePresence>
         </div>
       </main>
