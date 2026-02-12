@@ -50,6 +50,15 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
             return None
 
         p_obj = find_project(entity.get("project_name"))
+        
+        # Auto-create project if name is provided but not found
+        if not p_obj and entity.get("project_name"):
+            new_p = models.Project(name=entity.get("project_name"), type=models.ProjectType.IT)
+            db.add(new_p)
+            await db.flush() # Get ID without committing
+            p_obj = new_p
+            processed.append({"type": "project", "status": "auto-created", "name": p_obj.name})
+
         p_id = p_obj.id if p_obj else None
 
         if e_type == "transaction":

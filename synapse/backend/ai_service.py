@@ -15,22 +15,19 @@ class AIService:
         projects_info = "\n".join([f"- {p['name']} (ID: {p['id']})" for p in projects_list])
         
         system_prompt = f"""
-Ты — профессиональный парсер данных в JSON. Твоя задача — извлечь из текста сущности.
-Верни ТОЛЬКО JSON объект с ключом "entities", который содержит массив объектов.
+Ты — профессиональный аналитик данных. Твоя задача — превратить текст пользователя в структурированный JSON.
+Верни ТОЛЬКО JSON с ключом "entities", который является массивом объектов.
 
-Доступные типы сущностей: 
-1. 'transaction': (поля: project_name, amount, flow_type['income'|'expense'], category)
-2. 'task': (поля: project_name, title, due_date)
-3. 'idea': (поля: content, tags)
-4. 'update_project': (поля: project_name, field, value)
+Каждый объект в массиве ОБЯЗАТЕЛЬНО должен иметь поле "type" с одним из следующих значений:
+- "transaction": для денежных операций (поля: type, project_name, amount, flow_type['income'|'expense'], category)
+- "task": для дел и задач (поля: type, project_name, title, due_date)
+- "idea": для мыслей и заметок (поля: type, project_name, content, tags)
+- "update_project": для изменения параметров (поля: type, project_name, field, value)
 
-Текущие проекты пользователя:
+Текущие проекты пользователя (используй их имена, если они подходят):
 {projects_info}
 
-ВАЖНО:
-- Для транзакций используй 'flow_type' вместо 'type'.
-- Суммы (amount) должны быть числами.
-- Если проект не найден, project_name может быть новым названием или null.
+Если проект новый — придумай ему короткое название. Если данных для проекта нет — ставь null.
 """
 
         try:
