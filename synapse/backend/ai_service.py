@@ -1,17 +1,22 @@
 import os
 import json
 import logging
-from groq import AsyncGroq
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class AIService:
     def __init__(self):
-        self.client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
-        self.model = "llama3-8b-8192"
+        # DeepSeek is OpenAI-compatible
+        self.api_key = os.getenv("DEEPSEEK_API_KEY")
+        self.client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url="https://api.deepseek.com"
+        )
+        self.model = "deepseek-chat"
 
-    async def parse_text_to_json(self, text: str, projects_list: list) -> list:
+    async def parse_text_to_json(self, text: str, projects_list: list) -> tuple:
         projects_info = "\n".join([f"- {p['name']} (ID: {p['id']})" for p in projects_list])
         
         system_prompt = f"""
@@ -31,17 +36,19 @@ class AIService:
 """
 
         try:
-            chat_completion = await self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
+                model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": text}
+                    {"role": "user", "content": text},
                 ],
-                model=self.model,
-                response_format={"type": "json_object"}
+                response_format={
+                    'type': 'json_object'
+                }
             )
 
-            response_content = chat_completion.choices[0].message.content
-            print(f"DEBUG: Raw AI Response: {response_content}")
+            response_content = response.choices[0].message.content
+            print(f"DEBUG: Raw DeepSeek Response: {response_content}")
             data = json.loads(response_content)
             
             entities = []
@@ -55,14 +62,12 @@ class AIService:
             
             return entities, response_content
         except Exception as e:
-            logging.error(f"AI Parsing Error: {e}")
+            logging.error(f"DeepSeek Parsing Error: {e}")
             return [], str(e)
 
     async def transcribe_audio(self, audio_file_path: str) -> str:
-        with open(audio_file_path, "rb") as file:
-            transcription = await self.client.audio.transcriptions.create(
-                file=(audio_file_path, file.read()),
-                model="whisper-large-v3",
-                response_format="text",
-            )
-        return transcription
+        """
+        DeepSeek currently doesn't support audio. 
+        As an alternative for Russia, we recommend a local Whisper or a proxy for OpenAI Whisper.
+        """
+        return "Голосовой ввод временно недоступен (DeepSeek не поддерживает аудио). Используйте текст."

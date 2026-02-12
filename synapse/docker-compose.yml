@@ -20,7 +20,7 @@ services:
     restart: always
     environment:
       DATABASE_URL: postgresql+asyncpg://synapse_user:synapse_password@db/synapse_db
-      GROQ_API_KEY: ${GROQ_API_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
     ports:
       - "8001:8000"
     depends_on:
