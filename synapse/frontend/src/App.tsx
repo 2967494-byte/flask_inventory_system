@@ -338,7 +338,7 @@ function App() {
                           style={{ fontSize: '11px', padding: '6px 12px' }}
                           onClick={() => setSelectedProject(p)}
                         >
-                          📋 Паспорт
+                          Паспорт
                         </button>
                       </div>
                       {p.description && <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '10px', lineHeight: '1.5' }}>{p.description.substring(0, 100)}{p.description.length > 100 && '...'}</p>}
@@ -474,7 +474,7 @@ function App() {
             animate={{ opacity: 1, scale: 1 }}
           >
             <div className="modal-header">
-              <h2 style={{ fontSize: '24px', fontWeight: '900' }}>📋 Паспорт проекта</h2>
+              <h2 style={{ fontSize: '24px', fontWeight: '900' }}>Паспорт проекта</h2>
               <button className="close-btn" onClick={() => setSelectedProject(null)}>✕</button>
             </div>
             <div className="modal-body">
@@ -560,9 +560,12 @@ function App() {
                 className="action-btn"
                 style={{ width: '100%', marginTop: '20px', padding: '12px' }}
                 onClick={async () => {
+                  console.log("Кнопка нажата, начинаю сохранение...");
+                  console.log("Данные проекта:", selectedProject);
                   try {
                     const config = { headers: { Authorization: `Bearer ${token}` } }
-                    await axios.patch(`${BASE_URL}/projects/${selectedProject.id}/passport`, {
+                    console.log("Отправляю запрос на:", `${BASE_URL}/projects/${selectedProject.id}/passport`);
+                    const response = await axios.patch(`${BASE_URL}/projects/${selectedProject.id}/passport`, {
                       description: selectedProject.description,
                       goals: selectedProject.goals,
                       deadline: selectedProject.deadline,
@@ -571,14 +574,17 @@ function App() {
                       notes: selectedProject.notes,
                       tags: selectedProject.tags
                     }, config)
+                    console.log("Успешно сохранено:", response.data);
                     fetchAll()
                     setSelectedProject(null)
-                  } catch (err) {
-                    console.error("Ошибка сохранения паспорта:", err)
+                  } catch (err: any) {
+                    console.error("Ошибка сохранения паспорта:", err);
+                    console.error("Детали ошибки:", err.response?.data);
+                    alert(`Ошибка сохранения: ${err.response?.data?.detail || err.message}`)
                   }
                 }}
               >
-                💾 Сохранить паспорт
+                Сохранить паспорт
               </button>
             </div>
           </motion.div>
