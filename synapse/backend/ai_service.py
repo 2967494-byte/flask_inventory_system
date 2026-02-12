@@ -44,19 +44,19 @@ class AIService:
             print(f"DEBUG: Raw AI Response: {response_content}")
             data = json.loads(response_content)
             
-            # Handle cases where AI returns a list directly or wraps it differently
+            entities = []
             if isinstance(data, list):
-                return data
-            if isinstance(data, dict):
+                entities = data
+            elif isinstance(data, dict):
                 if "entities" in data:
-                    return data["entities"]
-                # If it's a single object that looks like an entity, wrap it in a list
-                if "project_name" in data or "type" in data or "content" in data:
-                    return [data]
-            return []
+                    entities = data["entities"]
+                elif "project_name" in data or "type" in data or "content" in data:
+                    entities = [data]
+            
+            return entities, response_content
         except Exception as e:
             logging.error(f"AI Parsing Error: {e}")
-            return []
+            return [], str(e)
 
     async def transcribe_audio(self, audio_file_path: str) -> str:
         with open(audio_file_path, "rb") as file:

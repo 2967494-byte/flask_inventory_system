@@ -33,11 +33,12 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
     projects_list = [{"id": str(p.id), "name": p.name} for p in projects]
 
     # 2. Parse text via AI
-    entities = await ai_service.parse_text_to_json(text, projects_list)
+    entities, raw_ai_output = await ai_service.parse_text_to_json(text, projects_list)
     print(f"DEBUG: Parsed entities: {entities}")
 
     # 3. Process entities
     processed = []
+    # ... previous processing logic exists here ...
     for entity in entities:
         e_type = entity.get("type")
         
@@ -108,7 +109,11 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
             processed.append({"type": "update", "status": "updated", "project": p_obj.name})
 
     await db.commit()
-    return {"status": "success", "processed_entities": processed}
+    return {
+        "status": "success", 
+        "processed_entities": processed,
+        "raw_ai_output": raw_ai_output
+    }
 
 @app.post("/api/v1/ingest/voice")
 async def ingest_voice(file: UploadFile = File(...), db: AsyncSession = Depends(database.get_db)):

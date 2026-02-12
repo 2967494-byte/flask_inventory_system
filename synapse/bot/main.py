@@ -83,8 +83,15 @@ async def handle_text(message: Message):
         if response.status_code == 200:
             result = response.json()
             processed = result.get("processed_entities", [])
+            raw_ai = result.get("raw_ai_output", "N/A")
+            
             entities_text = "\n".join([f"✅ {e['type']} ({e['status']})" for e in processed])
-            await message.answer(f"**Результат обработки:**\n{entities_text or 'Сущности не найдены'}")
+            
+            msg = f"**Результат обработки:**\n{entities_text or 'Сущности не найдены'}"
+            if not processed:
+                msg += f"\n\n**DEBUG (AI Answer):**\n`{raw_ai}`"
+            
+            await message.answer(msg, parse_mode="Markdown")
         else:
             await message.answer("❌ Сервер не смог обработать текст.")
     except Exception as e:
