@@ -34,3 +34,12 @@ services:
     depends_on:
       - backend
 
+  frontend:
+    build: ./frontend
+    container_name: synapse-frontend
+    restart: always
+    ports:
+      - "8002:80"
+    depends_on:
+      - backend
+

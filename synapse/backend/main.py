@@ -4,11 +4,21 @@ from sqlalchemy import select
 import models
 import database
 from ai_service import AIService
+from fastapi.middleware.cors import CORSMiddleware
 import os
 import shutil
 import uuid
 
 app = FastAPI(title="SYNAPSE API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 ai_service = AIService()
 
 @app.on_event("startup")
