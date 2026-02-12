@@ -4,7 +4,6 @@ import {
   FolderKanban,
   CheckSquare,
   Wallet,
-  Settings,
   Activity,
   Plus,
   CheckCircle2,
