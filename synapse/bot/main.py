@@ -149,7 +149,21 @@ async def handle_text(message: Message):
                 await message.answer(answers[0])
                 return
 
-            entities_text = "\n".join([f"✅ {e['type']} ({e['status']})" for e in processed])
+            # Format entities with details
+            entities_lines = []
+            for e in processed:
+                line = f"✅ {e['type']} ({e['status']})"
+                if e['type'] == 'task' and e.get('deadline'):
+                    from datetime import datetime
+                    try:
+                        dt = datetime.fromisoformat(e['deadline'].replace('Z', '+00:00'))
+                        # Format in user's timezone (Moscow +3)
+                        line += f" — срок: {dt.strftime('%d.%m.%Y %H:%M')}"
+                    except:
+                        pass
+                entities_lines.append(line)
+            
+            entities_text = "\n".join(entities_lines)
             msg = f"**Результат обработки:**\n{entities_text or 'Сущности не найдены'}"
             await message.answer(msg, parse_mode="Markdown")
         else:

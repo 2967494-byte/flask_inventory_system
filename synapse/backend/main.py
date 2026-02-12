@@ -156,15 +156,29 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db), u
             except Exception as e:
                 logging.error(f"Error creating transaction: {e}")
 
+
         elif e_type == "task":
+            # Parse deadline if provided
+            deadline = None
+            if entity.get("deadline"):
+                try:
+                    deadline = datetime.fromisoformat(entity.get("deadline").replace('Z', '+00:00'))
+                except:
+                    pass
+            
             new_task = models.Task(
                 user_id=user.id,
                 project_id=p_id,
                 title=entity.get("title", "Без названия"),
-                due_date=None
+                deadline=deadline
             )
             db.add(new_task)
-            processed.append({"type": "task", "status": "created", "project": entity.get("project_name")})
+            processed.append({
+                "type": "task", 
+                "status": "created", 
+                "project": entity.get("project_name"),
+                "deadline": deadline.isoformat() if deadline else None
+            })
 
         elif e_type == "idea":
             new_note = models.Note(

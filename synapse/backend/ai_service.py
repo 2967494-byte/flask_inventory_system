@@ -17,18 +17,33 @@ class AIService:
         self.model = "deepseek-chat"
 
     async def parse_text_to_json(self, text: str, projects_list: list) -> tuple:
+        from datetime import datetime
+        current_date = datetime.utcnow().isoformat()
+        
         projects_info = "\n".join([f"- {p['name']} (ID: {p['id']})" for p in projects_list])
         
         system_prompt = f"""
 Ты — профессиональный аналитик данных. Твоя задача — превратить текст пользователя в структурированный JSON.
 Верни ТОЛЬКО JSON с ключом "entities", который является массивом объектов.
 
+ТЕКУЩАЯ ДАТА И ВРЕМЯ (UTC): {current_date}
+
 Каждый объект в массиве ОБЯЗАТЕЛЬНО должен иметь поле "type" с одним из следующих значений:
 - "transaction": для денежных операций (поля: type, project_name, amount, flow_type['income'|'expense'], category)
-- "task": для дел и задач (поля: type, project_name, title, due_date)
+- "task": для дел и задач (поля: type, project_name, title, deadline)
 - "idea": для мыслей и заметок (поля: type, project_name, content, tags)
 - "update_project": для изменения параметров (поля: type, project_name, field, value)
 - "query": если пользователь задает ВОПРОС о своих данных (поля: type, target['transactions'|'tasks'|'notes'], filter_key['category'|'project'|'date'|'all'], filter_value)
+
+ВАЖНО для задач (type="task"):
+- Если в тексте указан срок/дедлайн ("до завтра", "к пятнице", "до конца недели", "через 3 дня", "к 15 числу"), 
+  обязательно заполни поле "deadline" в формате ISO 8601 (YYYY-MM-DDTHH:MM:SS).
+- Используй ТЕКУЩУЮ ДАТУ выше как точку отсчёта.
+- Примеры:
+  * "до конца завтрашнего дня" → завтра 23:59:59
+  * "к пятнице" → ближайшая пятница 17:00:00
+  * "через неделю" → +7 дней от текущей даты
+- Если срок не указан, ставь deadline: null
 
 Текущие проекты пользователя (используй их имена, если они подходят):
 {projects_info}

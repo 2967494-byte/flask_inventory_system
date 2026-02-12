@@ -295,6 +295,9 @@ function App() {
                           <div style={{ flex: 1, textDecoration: task.is_completed ? 'line-through' : 'none', opacity: task.is_completed ? 0.5 : 1 }}>
                             {task.title}
                           </div>
+                          <div className="status-badge" style={{ fontSize: '9px', marginRight: '8px' }}>
+                            {projects.find(p => p.id === task.project_id)?.name || 'Личное'}
+                          </div>
                           <Clock size={12} color="var(--text-dim)" />
                         </div>
                       ))}
