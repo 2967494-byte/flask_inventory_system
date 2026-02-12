@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import models
@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import shutil
 import uuid
+import logging
 
 app = FastAPI(title="SYNAPSE API")
 
@@ -21,6 +22,24 @@ app.add_middleware(
 
 ai_service = AIService()
 
+# Multi-user helper
+async def get_current_user(x_telegram_id: int = Header(None), db: AsyncSession = Depends(database.get_db)):
+    if not x_telegram_id:
+        # For web frontend without auth yet, we'll return a default or error
+        # In a real app, this would be a JWT. For now, we expect the ID.
+        raise HTTPException(status_code=401, detail="X-Telegram-Id header missing")
+    
+    result = await db.execute(select(models.User).where(models.User.telegram_id == x_telegram_id))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        user = models.User(telegram_id=x_telegram_id)
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    
+    return user
+
 @app.on_event("startup")
 async def startup():
     async with database.engine.begin() as conn:
@@ -29,30 +48,28 @@ async def startup():
 
 @app.get("/")
 async def root():
-    return {"message": "SYNAPSE API is running"}
+    return {"message": "SYNAPSE API is running in multi-user mode"}
 
 @app.post("/api/v1/ingest/text")
-async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
+async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
     text = data.get("text")
     if not text:
         raise HTTPException(status_code=400, detail="Text is required")
 
-    # 1. Fetch existing projects for context
-    result = await db.execute(select(models.Project))
+    # 1. Fetch user's projects for context
+    result = await db.execute(select(models.Project).where(models.Project.user_id == user.id))
     projects = result.scalars().all()
     projects_list = [{"id": str(p.id), "name": p.name} for p in projects]
 
     # 2. Parse text via AI
     entities, raw_ai_output = await ai_service.parse_text_to_json(text, projects_list)
-    print(f"DEBUG: Parsed entities: {entities}")
-
+    
     # 3. Process entities
     processed = []
-    # ... previous processing logic exists here ...
     for entity in entities:
         e_type = entity.get("type")
         
-        # Helper: Find project by name
+        # Helper: Find project by name (user specific)
         def find_project(name):
             if not name: return None
             for p in projects:
@@ -64,21 +81,23 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
         
         # Auto-create project if name is provided but not found
         if not p_obj and entity.get("project_name"):
-            new_p = models.Project(name=entity.get("project_name"), type=models.ProjectType.IT)
+            new_p = models.Project(name=entity.get("project_name"), type=models.ProjectType.IT, user_id=user.id)
             db.add(new_p)
-            await db.flush() # Get ID without committing
+            await db.flush()
             p_obj = new_p
+            # Refresh local projects list
+            projects.append(p_obj)
             processed.append({"type": "project", "status": "auto-created", "name": p_obj.name})
 
         p_id = p_obj.id if p_obj else None
 
         if e_type == "transaction":
             try:
-                # Map 'flow_type' from AI to DB 'type'
                 flow_type = entity.get("flow_type", "expense")
                 if flow_type not in ["income", "expense"]: flow_type = "expense"
                 
                 new_t = models.Transaction(
+                    user_id=user.id,
                     project_id=p_id,
                     amount=float(entity.get("amount", 0)),
                     type=flow_type,
@@ -88,10 +107,11 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
                 db.add(new_t)
                 processed.append({"type": "transaction", "status": "created", "project": entity.get("project_name")})
             except Exception as e:
-                print(f"Error creating transaction: {e}")
+                logging.error(f"Error creating transaction: {e}")
 
         elif e_type == "task":
             new_task = models.Task(
+                user_id=user.id,
                 project_id=p_id,
                 title=entity.get("title", "Без названия"),
                 due_date=None
@@ -101,6 +121,7 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
 
         elif e_type == "idea":
             new_note = models.Note(
+                user_id=user.id,
                 project_id=p_id,
                 content=entity.get("content"),
                 tags=entity.get("tags", [])
@@ -112,7 +133,6 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
             field = entity.get("field")
             value = entity.get("value")
             if not p_obj.meta_data: p_obj.meta_data = {}
-            # Update nested JSONB
             new_meta = dict(p_obj.meta_data)
             new_meta[field] = value
             p_obj.meta_data = new_meta
@@ -125,7 +145,7 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
             
             summary_data = []
             if target == "transactions":
-                q = select(models.Transaction)
+                q = select(models.Transaction).where(models.Transaction.user_id == user.id)
                 if f_key == "category" and f_val:
                     q = q.where(models.Transaction.category.ilike(f"%{f_val}%"))
                 elif f_key == "project" and p_id:
@@ -135,74 +155,59 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
                 summary_data = [f"{r.amount}р ({r.category}) от {r.date.date()}" for r in rows]
             
             elif target == "tasks":
-                q = select(models.Task)
+                q = select(models.Task).where(models.Task.user_id == user.id)
                 if p_id: q = q.where(models.Task.project_id == p_id)
                 res = await db.execute(q)
                 rows = res.scalars().all()
                 summary_data = [f"[{'x' if r.is_completed else ' '}] {r.title}" for r in rows]
             
-            # Generate a human answer using AI
             if summary_data:
                 answer_prompt = f"Пользователь спросил: '{text}'. Найдено данных: {', '.join(summary_data)}. Ответь кратко и понятно."
-                # We'll hijack a simple call or add a method to ai_service
                 answer = await ai_service.generate_simple_answer(answer_prompt)
                 processed.append({"type": "answer", "content": answer})
             else:
                 processed.append({"type": "answer", "content": "К сожалению, я не нашел данных по вашему запросу."})
 
     await db.commit()
-    return {
-        "status": "success", 
-        "processed_entities": processed
-    }
+    return {"status": "success", "processed_entities": processed}
 
 @app.post("/api/v1/ingest/voice")
-async def ingest_voice(file: UploadFile = File(...), db: AsyncSession = Depends(database.get_db)):
-    # Save temp file
+async def ingest_voice(file: UploadFile = File(...), db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
     temp_path = f"temp_{uuid.uuid4()}_{file.filename}"
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    
     try:
-        # 1. Transcribe
         text = await ai_service.transcribe_audio(temp_path)
-        
-        # 2. Re-use text ingestion logic (simplified for demonstration)
-        result = await ingest_text({"text": text}, db)
-        
-        return {
-            "transcription": text,
-            "result": result
-        }
+        result = await ingest_text({"text": text}, db, user)
+        return {"transcription": text, "result": result}
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
 @app.get("/api/v1/projects")
-async def get_projects(db: AsyncSession = Depends(database.get_db)):
-    result = await db.execute(select(models.Project))
-    projects = result.scalars().all()
-    return projects
+async def get_projects(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    result = await db.execute(select(models.Project).where(models.Project.user_id == user.id))
+    return result.scalars().all()
 
 @app.get("/api/v1/projects/{project_id}")
-async def get_project(project_id: uuid.UUID, db: AsyncSession = Depends(database.get_db)):
-    result = await db.execute(select(models.Project).where(models.Project.id == project_id))
+async def get_project(project_id: uuid.UUID, db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    result = await db.execute(select(models.Project).where(models.Project.id == project_id, models.Project.user_id == user.id))
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
 @app.get("/api/v1/tasks")
-async def get_tasks(project_id: uuid.UUID = None, db: AsyncSession = Depends(database.get_db)):
-    query = select(models.Task)
+async def get_tasks(project_id: uuid.UUID = None, db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    query = select(models.Task).where(models.Task.user_id == user.id)
     if project_id:
         query = query.where(models.Task.project_id == project_id)
     result = await db.execute(query.order_by(models.Task.created_at.desc()))
     return result.scalars().all()
 
 @app.patch("/api/v1/tasks/{task_id}")
-async def update_task(task_id: uuid.UUID, data: dict, db: AsyncSession = Depends(database.get_db)):
-    result = await db.execute(select(models.Task).where(models.Task.id == task_id))
+async def update_task(task_id: uuid.UUID, data: dict, db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    result = await db.execute(select(models.Task).where(models.Task.id == task_id, models.Task.user_id == user.id))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -217,24 +222,24 @@ async def update_task(task_id: uuid.UUID, data: dict, db: AsyncSession = Depends
     return task
 
 @app.get("/api/v1/transactions")
-async def get_transactions(db: AsyncSession = Depends(database.get_db)):
-    result = await db.execute(select(models.Transaction).order_by(models.Transaction.date.desc()))
+async def get_transactions(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    result = await db.execute(select(models.Transaction).where(models.Transaction.user_id == user.id).order_by(models.Transaction.date.desc()))
     return result.scalars().all()
 
 @app.get("/api/v1/dashboard/stats")
-async def get_stats(db: AsyncSession = Depends(database.get_db)):
+async def get_stats(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
     # 1. Total projects
-    p_result = await db.execute(select(models.Project))
+    p_result = await db.execute(select(models.Project).where(models.Project.user_id == user.id))
     p_count = len(p_result.scalars().all())
     
     # 2. Total tasks (completed vs total)
-    t_result = await db.execute(select(models.Task))
+    t_result = await db.execute(select(models.Task).where(models.Task.user_id == user.id))
     tasks = t_result.scalars().all()
     t_count = len(tasks)
     t_completed = len([t for t in tasks if t.is_completed])
     
     # 3. Finance balance
-    f_result = await db.execute(select(models.Transaction))
+    f_result = await db.execute(select(models.Transaction).where(models.Transaction.user_id == user.id))
     transactions = f_result.scalars().all()
     income = sum([tr.amount for tr in transactions if tr.type == models.TransactionType.INCOME])
     expense = sum([tr.amount for tr in transactions if tr.type == models.TransactionType.EXPENSE])

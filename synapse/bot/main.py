@@ -47,7 +47,8 @@ async def handle_voice(message: Message):
         async with httpx.AsyncClient(timeout=60.0) as client:
             with open(local_filename, "rb") as f:
                 files = {"file": (local_filename, f, "audio/ogg")}
-                response = await client.post(f"{API_URL}/ingest/voice", files=files)
+                headers = {"X-Telegram-Id": str(message.from_user.id)}
+                response = await client.post(f"{API_URL}/ingest/voice", files=files, headers=headers)
         
         if response.status_code == 200:
             result = response.json()
@@ -75,9 +76,11 @@ async def handle_text(message: Message):
     # Send text directly to backend
     try:
         async with httpx.AsyncClient() as client:
+            headers = {"X-Telegram-Id": str(message.from_user.id)}
             response = await client.post(
                 f"{API_URL}/ingest/text", 
-                json={"text": message.text}
+                json={"text": message.text},
+                headers=headers
             )
             
         if response.status_code == 200:
