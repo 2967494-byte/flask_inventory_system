@@ -44,8 +44,19 @@ class AIService:
             )
 
             response_content = chat_completion.choices[0].message.content
+            print(f"DEBUG: Raw AI Response: {response_content}")
             data = json.loads(response_content)
-            return data.get("entities", [])
+            
+            # Handle cases where AI returns a list directly or wraps it differently
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict):
+                if "entities" in data:
+                    return data["entities"]
+                # If it's a single object that looks like an entity, wrap it in a list
+                if "project_name" in data or "type" in data or "content" in data:
+                    return [data]
+            return []
         except Exception as e:
             logging.error(f"AI Parsing Error: {e}")
             return []

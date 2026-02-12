@@ -34,6 +34,7 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
 
     # 2. Parse text via AI
     entities = await ai_service.parse_text_to_json(text, projects_list)
+    print(f"DEBUG: Parsed entities: {entities}")
 
     # 3. Process entities
     processed = []
