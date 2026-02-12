@@ -159,10 +159,10 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db), u
 
         elif e_type == "task":
             # Parse deadline if provided
-            deadline = None
+            due_date = None
             if entity.get("deadline"):
                 try:
-                    deadline = datetime.fromisoformat(entity.get("deadline").replace('Z', '+00:00'))
+                    due_date = datetime.fromisoformat(entity.get("deadline").replace('Z', '+00:00'))
                 except:
                     pass
             
@@ -170,14 +170,14 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db), u
                 user_id=user.id,
                 project_id=p_id,
                 title=entity.get("title", "Без названия"),
-                deadline=deadline
+                due_date=due_date
             )
             db.add(new_task)
             processed.append({
                 "type": "task", 
                 "status": "created", 
                 "project": entity.get("project_name"),
-                "deadline": deadline.isoformat() if deadline else None
+                "deadline": due_date.isoformat() if due_date else None
             })
 
         elif e_type == "idea":
