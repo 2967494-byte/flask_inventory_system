@@ -25,7 +25,9 @@ function App() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`http://localhost:8001/api/v1/projects`)
+      // Use the same domain but port 8001 for API
+      const apiHost = window.location.hostname
+      const res = await axios.get(`http://${apiHost}:8001/api/v1/projects`)
       setProjects(res.data)
       setLoading(false)
     } catch (err) {
