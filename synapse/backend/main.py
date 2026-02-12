@@ -52,21 +52,28 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
         p_id = p_obj.id if p_obj else None
 
         if e_type == "transaction":
-            new_t = models.Transaction(
-                project_id=p_id,
-                amount=entity.get("amount"),
-                type=entity.get("type", "expense"),
-                category=entity.get("category"),
-                date=models.datetime.utcnow()
-            )
-            db.add(new_t)
-            processed.append({"type": "transaction", "status": "created", "project": entity.get("project_name")})
+            try:
+                # Map 'flow_type' from AI to DB 'type'
+                flow_type = entity.get("flow_type", "expense")
+                if flow_type not in ["income", "expense"]: flow_type = "expense"
+                
+                new_t = models.Transaction(
+                    project_id=p_id,
+                    amount=float(entity.get("amount", 0)),
+                    type=flow_type,
+                    category=entity.get("category"),
+                    date=models.datetime.utcnow()
+                )
+                db.add(new_t)
+                processed.append({"type": "transaction", "status": "created", "project": entity.get("project_name")})
+            except Exception as e:
+                print(f"Error creating transaction: {e}")
 
         elif e_type == "task":
             new_task = models.Task(
                 project_id=p_id,
-                title=entity.get("title"),
-                due_date=None # Could parse date here if AI provides it
+                title=entity.get("title", "Без названия"),
+                due_date=None
             )
             db.add(new_task)
             processed.append({"type": "task", "status": "created", "project": entity.get("project_name")})
