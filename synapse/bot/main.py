@@ -21,12 +21,35 @@ dp = Dispatcher()
 async def cmd_start(message: Message):
     await message.answer(
         "👋 Привет! Я **SYNAPSE** — твоя персональная AI-система.\n\n"
-        "Отправь мне голосовое сообщение или текст, и я структурирую твои данные:\n"
-        "• Транзакции (расходы/доходы)\n"
-        "• Задачи и дедлайны\n"
-        "• Заметки и идеи\n"
-        "• Обновления по проектам"
+        "Отправь мне голосовое сообщение или текст, и я структурирую твои данные.\n\n"
+        "🔗 Чтобы войти в веб-панель, используй команду /login"
     )
+
+@dp.message(Command("login"))
+async def cmd_login(message: Message):
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {"X-Telegram-Id": str(message.from_user.id)}
+            response = await client.post(f"{API_URL}/auth/request-token", headers=headers)
+            
+            if response.status_code == 200:
+                token = response.json().get("token")
+                # Detect site URL (hardcoded for now as per server setup)
+                web_url = "http://asauda.ru:8002" 
+                login_url = f"{web_url}/?token={token}"
+                
+                await message.answer(
+                    "🔐 **Вход в систему**\n\n"
+                    "Ваша временная ссылка для авторизации (действует 24 часа):\n"
+                    f"{login_url}\n\n"
+                    "⚠️ *Никому не передавайте эту ссылку!*",
+                    parse_mode="Markdown"
+                )
+            else:
+                await message.answer("❌ Не удалось сгенерировать токен. Попробуйте позже.")
+    except Exception as e:
+        logging.error(f"Login error: {e}")
+        await message.answer("❌ Ошибка связи с сервером авторизации.")
 
 @dp.message(F.voice)
 async def handle_voice(message: Message):

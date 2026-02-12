@@ -35,6 +35,17 @@ class User(Base):
     tasks = relationship("Task", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")
     notes = relationship("Note", back_populates="user")
+    login_tokens = relationship("LoginToken", back_populates="user")
+
+class LoginToken(Base):
+    __tablename__ = "login_tokens"
+    
+    token = Column(String, primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    is_used = Column(Boolean, default=False)
+    
+    user = relationship("User", back_populates="login_tokens")
 
 class Project(Base):
     __tablename__ = "projects"
