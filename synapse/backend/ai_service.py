@@ -62,8 +62,9 @@ class AIService:
             
             return entities, response_content
         except Exception as e:
-            logging.error(f"DeepSeek Parsing Error: {e}")
-            return [], str(e)
+            error_msg = f"{type(e).__name__}: {str(e)}"
+            logging.error(f"DeepSeek Error: {error_msg}")
+            return [], f"Ошибка связи с AI: {error_msg}"
 
     async def transcribe_audio(self, audio_file_path: str) -> str:
         """
