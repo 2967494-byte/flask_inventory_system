@@ -28,11 +28,13 @@ class AIService:
 - "task": для дел и задач (поля: type, project_name, title, due_date)
 - "idea": для мыслей и заметок (поля: type, project_name, content, tags)
 - "update_project": для изменения параметров (поля: type, project_name, field, value)
+- "query": если пользователь задает ВОПРОС о своих данных (поля: type, target['transactions'|'tasks'|'notes'], filter_key['category'|'project'|'date'|'all'], filter_value)
 
 Текущие проекты пользователя (используй их имена, если они подходят):
 {projects_info}
 
 Если проект новый — придумай ему короткое название. Если данных для проекта нет — ставь null.
+Если это вопрос — заполни поля для "query". Например: "Сколько я потратил на еду?" -> target: "transactions", filter_key: "category", filter_value: "еда".
 """
 
         try:
@@ -72,3 +74,14 @@ class AIService:
         As an alternative for Russia, we recommend a local Whisper or a proxy for OpenAI Whisper.
         """
         return "Голосовой ввод временно недоступен (DeepSeek не поддерживает аудио). Используйте текст."
+
+    async def generate_simple_answer(self, prompt: str) -> str:
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            logging.error(f"Error generating answer: {e}")
+            return "Не удалось получить ответ от ИИ."

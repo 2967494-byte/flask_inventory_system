@@ -118,11 +118,42 @@ async def ingest_text(data: dict, db: AsyncSession = Depends(database.get_db)):
             p_obj.meta_data = new_meta
             processed.append({"type": "update", "status": "updated", "project": p_obj.name})
 
+        elif e_type == "query":
+            target = entity.get("target")
+            f_key = entity.get("filter_key")
+            f_val = entity.get("filter_value")
+            
+            summary_data = []
+            if target == "transactions":
+                q = select(models.Transaction)
+                if f_key == "category" and f_val:
+                    q = q.where(models.Transaction.category.ilike(f"%{f_val}%"))
+                elif f_key == "project" and p_id:
+                    q = q.where(models.Transaction.project_id == p_id)
+                res = await db.execute(q)
+                rows = res.scalars().all()
+                summary_data = [f"{r.amount}р ({r.category}) от {r.date.date()}" for r in rows]
+            
+            elif target == "tasks":
+                q = select(models.Task)
+                if p_id: q = q.where(models.Task.project_id == p_id)
+                res = await db.execute(q)
+                rows = res.scalars().all()
+                summary_data = [f"[{'x' if r.is_completed else ' '}] {r.title}" for r in rows]
+            
+            # Generate a human answer using AI
+            if summary_data:
+                answer_prompt = f"Пользователь спросил: '{text}'. Найдено данных: {', '.join(summary_data)}. Ответь кратко и понятно."
+                # We'll hijack a simple call or add a method to ai_service
+                answer = await ai_service.generate_simple_answer(answer_prompt)
+                processed.append({"type": "answer", "content": answer})
+            else:
+                processed.append({"type": "answer", "content": "К сожалению, я не нашел данных по вашему запросу."})
+
     await db.commit()
     return {
         "status": "success", 
-        "processed_entities": processed,
-        "raw_ai_output": raw_ai_output
+        "processed_entities": processed
     }
 
 @app.post("/api/v1/ingest/voice")
