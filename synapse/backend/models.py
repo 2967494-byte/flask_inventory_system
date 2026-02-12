@@ -66,6 +66,7 @@ class Project(Base):
     progress = Column(Integer, default=0)  # 0-100%
     notes = Column(String, nullable=True)
     tags = Column(JSONB, default=[])
+    files = Column(JSONB, default=[])  # [{name: str, data: base64, uploaded_at: str}]
     
     created_at = Column(DateTime, default=datetime.utcnow)
     

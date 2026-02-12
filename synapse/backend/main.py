@@ -282,6 +282,65 @@ async def update_project_passport(
     await db.refresh(project)
     return project
 
+@app.post("/api/v1/projects/{project_id}/files")
+async def upload_project_file(
+    project_id: uuid.UUID,
+    file_data: dict,  # {name: str, data: base64_string}
+    db: AsyncSession = Depends(database.get_db),
+    user: models.User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(models.Project).where(
+            models.Project.id == project_id,
+            models.Project.user_id == user.id
+        )
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Initialize files list if None
+    if not project.files:
+        project.files = []
+    
+    # Add new file
+    new_file = {
+        "id": str(uuid.uuid4()),
+        "name": file_data.get("name", "Untitled"),
+        "data": file_data.get("data"),
+        "uploaded_at": datetime.utcnow().isoformat()
+    }
+    
+    project.files.append(new_file)
+    
+    await db.commit()
+    await db.refresh(project)
+    return {"message": "File uploaded", "file": new_file}
+
+@app.delete("/api/v1/projects/{project_id}/files/{file_id}")
+async def delete_project_file(
+    project_id: uuid.UUID,
+    file_id: str,
+    db: AsyncSession = Depends(database.get_db),
+    user: models.User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(models.Project).where(
+            models.Project.id == project_id,
+            models.Project.user_id == user.id
+        )
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if project.files:
+        project.files = [f for f in project.files if f.get("id") != file_id]
+        await db.commit()
+        await db.refresh(project)
+    
+    return {"message": "File deleted"}
+
 @app.get("/api/v1/tasks")
 async def get_tasks(project_id: uuid.UUID = None, db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
     query = select(models.Task).where(models.Task.user_id == user.id)

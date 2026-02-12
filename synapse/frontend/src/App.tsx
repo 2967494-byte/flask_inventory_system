@@ -556,6 +556,144 @@ function App() {
                 />
               </div>
 
+              {/* File Upload Section */}
+              <div className="form-group">
+                <label>Документы проекта</label>
+                <div
+                  style={{
+                    border: '2px dashed rgba(0, 242, 255, 0.3)',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.currentTarget.style.borderColor = 'var(--accent)'
+                    e.currentTarget.style.background = 'rgba(0, 242, 255, 0.05)'
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(0, 242, 255, 0.3)'
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault()
+                    e.currentTarget.style.borderColor = 'rgba(0, 242, 255, 0.3)'
+                    e.currentTarget.style.background = 'transparent'
+
+                    const files = Array.from(e.dataTransfer.files)
+                    for (const file of files) {
+                      const reader = new FileReader()
+                      reader.onload = async (event) => {
+                        try {
+                          const config = { headers: { Authorization: `Bearer ${token}` } }
+                          await axios.post(`${BASE_URL}/projects/${selectedProject.id}/files`, {
+                            name: file.name,
+                            data: event.target?.result
+                          }, config)
+                          // Refresh project
+                          const res = await axios.get(`${BASE_URL}/projects/${selectedProject.id}`, config)
+                          setSelectedProject(res.data)
+                        } catch (err) {
+                          console.error("Ошибка загрузки файла:", err)
+                        }
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                  }}
+                  onClick={() => {
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.multiple = true
+                    input.onchange = async (e: any) => {
+                      const files = Array.from(e.target.files)
+                      for (const file of files as File[]) {
+                        const reader = new FileReader()
+                        reader.onload = async (event) => {
+                          try {
+                            const config = { headers: { Authorization: `Bearer ${token}` } }
+                            await axios.post(`${BASE_URL}/projects/${selectedProject.id}/files`, {
+                              name: file.name,
+                              data: event.target?.result
+                            }, config)
+                            // Refresh project
+                            const res = await axios.get(`${BASE_URL}/projects/${selectedProject.id}`, config)
+                            setSelectedProject(res.data)
+                          } catch (err) {
+                            console.error("Ошибка загрузки файла:", err)
+                          }
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }
+                    input.click()
+                  }}
+                >
+                  <p style={{ margin: 0, color: 'var(--text-dim)' }}>
+                    Перетащите файлы сюда или нажмите для выбора
+                  </p>
+                </div>
+
+                {/* File List */}
+                {selectedProject.files && selectedProject.files.length > 0 && (
+                  <div style={{ marginTop: '15px' }}>
+                    {selectedProject.files.map((file: any) => (
+                      <div
+                        key={file.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '10px',
+                          background: 'rgba(0, 0, 0, 0.2)',
+                          borderRadius: '6px',
+                          marginBottom: '8px'
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600' }}>{file.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                            {new Date(file.uploaded_at).toLocaleString()}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            className="action-btn"
+                            style={{ fontSize: '11px', padding: '4px 10px' }}
+                            onClick={() => {
+                              const link = document.createElement('a')
+                              link.href = file.data
+                              link.download = file.name
+                              link.click()
+                            }}
+                          >
+                            Скачать
+                          </button>
+                          <button
+                            className="action-btn"
+                            style={{ fontSize: '11px', padding: '4px 10px', background: 'rgba(255, 77, 77, 0.2)' }}
+                            onClick={async () => {
+                              try {
+                                const config = { headers: { Authorization: `Bearer ${token}` } }
+                                await axios.delete(`${BASE_URL}/projects/${selectedProject.id}/files/${file.id}`, config)
+                                // Refresh project
+                                const res = await axios.get(`${BASE_URL}/projects/${selectedProject.id}`, config)
+                                setSelectedProject(res.data)
+                              } catch (err) {
+                                console.error("Ошибка удаления файла:", err)
+                              }
+                            }}
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 className="action-btn"
                 style={{ width: '100%', marginTop: '20px', padding: '12px' }}
