@@ -12,11 +12,14 @@ import {
   TrendingUp,
   Clock,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  Lightbulb
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import IdeasSection from './IdeasSection'
+import IdeaDetailView from './IdeaDetailView'
 import './index.css'
 
 const COLORS = ['#00f2ff', '#ff4d4d', '#00ff95', '#ffcc00', '#9945ff', '#ff6b9d', '#4dffa6']
@@ -25,6 +28,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [projects, setProjects] = useState<any[]>([])
   const [tasks, setTasks] = useState<any[]>([])
+  const [notes, setNotes] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
@@ -36,6 +40,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState<string | null>(localStorage.getItem('synapse_token'))
   const [authError, setAuthError] = useState(false)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null) // State for selected task ID
+  const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null); // State for selected idea ID
 
   const apiHost = window.location.hostname
   const BASE_URL = `http://${apiHost}:8001/api/v1`
@@ -88,12 +94,14 @@ function App() {
         axios.get(`${BASE_URL}/projects`, config),
         axios.get(`${BASE_URL}/tasks`, config),
         axios.get(`${BASE_URL}/transactions`, config),
-        axios.get(`${BASE_URL}/dashboard/stats`, config)
+        axios.get(`${BASE_URL}/dashboard/stats`, config),
+        axios.get(`${BASE_URL}/notes`, config)
       ])
       setProjects(pRes.data)
       setTasks(tRes.data)
       setTransactions(trRes.data)
       setStats(sRes.data)
+      setNotes(nRes.data)
     } catch (err: any) {
       console.error("Ошибка синхронизации:", err)
       if (err.response?.status === 401) {
@@ -105,18 +113,26 @@ function App() {
     setLoading(false)
   }
 
+  const handleTaskClick = (taskId: string) => {
+    setSelectedTaskId(taskId)
+  }
+
+  const handleIdeaClick = (ideaId: string) => {
+    setSelectedIdeaId(ideaId);
+  };
+
   useEffect(() => {
     if (activeTab === 'finance' && token) {
       fetchFinanceAnalytics()
     }
-  }, [activeTab])
 
-  const toggleTask = async (id: string, completed: boolean) => {
-    try {
-      const config = { headers: { Authorization: `Bearer ${token}` } }
-      await axios.patch(`${BASE_URL}/tasks/${id}`, { is_completed: !completed }, config)
-      fetchAll()
-    } catch (err) {
+    const toggleTask = async (id: string, completed: boolean) => {
+      try {
+        const config = { headers: { Authorization: `Bearer ${token}` } }
+        await axios.patch(`${BASE_URL}/tasks/${id}`, { is_completed: !completed }, config)
+        // After toggling, refresh tasks, but do not close the modal if it's open
+        await fetchAll()
+      } catch (err) {
       console.error("Ошибка обновления задачи:", err)
     }
   }
@@ -178,6 +194,14 @@ function App() {
                 {user.full_name?.charAt(0) || user.username?.charAt(0) || '?'}
               </div>
             )}
+            {/* Удаляем этот блок, так как он дублируется ниже */}
+            {/* {activeTab === 'ideas' && (
+              selectedIdeaId ? (
+                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
+              ) : (
+                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
+              )
+            )} */}
             <div className="user-info">
               <div className="user-name">{user.full_name || 'Пользователь'}</div>
               <div className="user-handle">@{user.username || 'unknown'}</div>
@@ -194,6 +218,9 @@ function App() {
           </div>
           <div className={`nav-link ${activeTab === 'tasks' ? 'active' : ''}`} onClick={() => setActiveTab('tasks')}>
             <CheckSquare size={20} /> <span>Задачи</span>
+          </div>
+          <div className={`nav-link ${activeTab === 'ideas' ? 'active' : ''}`} onClick={() => setActiveTab('ideas')}>
+            <Lightbulb size={20} /> <span>Идеи</span>
           </div>
           <div className={`nav-link ${activeTab === 'finance' ? 'active' : ''}`} onClick={() => setActiveTab('finance')}>
             <Wallet size={20} /> <span>Финансы</span>
@@ -221,6 +248,7 @@ function App() {
               {activeTab === 'projects' && 'Реестр Проектов'}
               {activeTab === 'tasks' && 'Менеджер Задач'}
               {activeTab === 'finance' && 'Учет Потоков'}
+              {activeTab === 'ideas' && (selectedIdeaId ? 'Детали Идеи' : 'Банк Идей')}
             </h1>
           </div>
           <button className="action-btn" onClick={fetchAll}>
@@ -332,6 +360,13 @@ function App() {
                 </div>
               </div>
             )}
+            {activeTab === 'ideas' && (
+              selectedIdeaId ? (
+                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
+              ) : (
+                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
+              )
+            )}
             {activeTab === 'projects' && (
               <div className="fade-in">
                 <h2 className="section-title">Список Проектов</h2>
@@ -379,9 +414,16 @@ function App() {
                         Открыть проект
                       </button>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
+            )}
+            {activeTab === 'ideas' && (
+              selectedIdeaId ? (
+                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} token={token} BASE_URL={BASE_URL} />
+              ) : (
+                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
+              )
             )}
             {activeTab === 'tasks' && (
               <div className="fade-in">
@@ -389,7 +431,7 @@ function App() {
                 <div className="glass card">
                   <div className="list-container">
                     {tasks.map((task) => (
-                      <div key={task.id} className="list-item" onClick={() => toggleTask(task.id, task.is_completed)}>
+                      <div key={task.id} className="list-item" onClick={() => handleTaskClick(task.id)}> {/* Changed onClick */}
                         {task.is_completed ? <CheckCircle2 size={20} color="#00ff95" /> : <Circle size={20} color="var(--accent)" />}
                         <div style={{ flex: 1, fontSize: '16px', textDecoration: task.is_completed ? 'line-through' : 'none', opacity: task.is_completed ? 0.6 : 1 }}>
                           {task.title}
@@ -408,6 +450,13 @@ function App() {
                   </div>
                 </div>
               </div>
+            )}
+            {activeTab === 'ideas' && (
+              selectedIdeaId ? (
+                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
+              ) : (
+                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
+              )
             )}
             {activeTab === 'finance' && (
               <div className="fade-in">
@@ -486,11 +535,18 @@ function App() {
                 </div>
               </div>
             )}
+            {activeTab === 'ideas' && (
+              selectedIdeaId ? (
+                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
+              ) : (
+                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
+              )
+            )}
           </AnimatePresence>
         </div>
       </main>
 
-      {/* Project Passport Modal */}
+      {/* Project Passport Modal */ }
       {selectedProject && (
         <div className="modal-overlay" onClick={() => setSelectedProject(null)}>
           <motion.div
@@ -751,12 +807,39 @@ function App() {
                 Сохранить паспорт
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
+          </div>
+        </motion.div>
+      </div>
+    )}
 
-      {/* Project Detail View */}
-      {viewingProject && (
+    {/* Task Detail Modal */ }
+    {selectedTaskId && (
+      <div className="modal-overlay" onClick={() => setSelectedTaskId(null)}>
+        <motion.div
+          className="modal-content glass"
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{ maxWidth: '700px' }}
+        >
+          {/* Task Detail Content will be loaded here */}
+          <div className="modal-header">
+            <div>
+              <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '5px' }}>{tasks.find(t => t.id === selectedTaskId)?.title || 'Детали задачи'}</h2>
+              <span className="status-badge">{projects.find(p => p.id === tasks.find(t => t.id === selectedTaskId)?.project_id)?.name || 'Личное'}</span>
+            </div>
+            <button className="close-btn" onClick={() => setSelectedTaskId(null)}>✕</button>
+          </div>
+          <div className="modal-body">
+            {/* Task details will be rendered here */}
+            <p>Loading task details...</p>
+          </div>
+        </motion.div>
+      </div>
+    )}
+
+    {/* Project Detail View */ }
+    {viewingProject && (
         <div className="modal-overlay" onClick={() => setViewingProject(null)}>
           <motion.div
             className="modal-content glass"
@@ -773,7 +856,7 @@ function App() {
               <button className="close-btn" onClick={() => setViewingProject(null)}>✕</button>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs */ }
             <div style={{ display: 'flex', gap: '10px', padding: '0 30px', borderBottom: '1px solid rgba(0, 242, 255, 0.1)' }}>
               {(['overview', 'tasks', 'finance', 'files'] as const).map(tab => (
                 <button
@@ -900,7 +983,7 @@ function App() {
                 </div>
               )}
 
-              {/* Files Tab */}
+              {/* Files Tab */ }
               {projectViewTab === 'files' && (
                 <div>
                   <h3 style={{ marginBottom: '20px' }}>Документы проекта</h3>
@@ -909,7 +992,7 @@ function App() {
                       {viewingProject.files.map((file: any) => (
                         <div
                           key={file.id}
-                          style={{
+                          style={ {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
@@ -917,7 +1000,7 @@ function App() {
                             background: 'rgba(0, 0, 0, 0.2)',
                             borderRadius: '8px',
                             marginBottom: '10px'
-                          }}
+                          } }
                         >
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: '14px', fontWeight: '600' }}>{file.name}</div>

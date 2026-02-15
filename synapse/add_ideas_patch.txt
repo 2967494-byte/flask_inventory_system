@@ -1,0 +1,111 @@
+# Патч для добавления раздела 'Идеи' в App.tsx
+
+## 1. Добавить импорт иконки Lightbulb
+В начале файла, в импортах из lucide-react, добавить:
+import { Lightbulb } from 'lucide-react';
+
+## 2. Добавить состояние для идей
+В разделе useState добавить:
+const [notes, setNotes] = useState<any[]>([]);
+
+## 3. Обновить функцию fetchAll
+Заменить блок fetchAll на:
+const fetchAll = async () => {
+  if (!token) return
+  setLoading(true)
+  setAuthError(false)
+  try {
+    const config = { headers: { Authorization: `Bearer ${token}` } }
+    const [pRes, tRes, trRes, sRes, nRes] = await Promise.all([
+      axios.get(`${BASE_URL}/projects`, config),
+      axios.get(`${BASE_URL}/tasks`, config),
+      axios.get(`${BASE_URL}/transactions`, config),
+      axios.get(`${BASE_URL}/dashboard/stats`, config),
+      axios.get(`${BASE_URL}/notes`, config)  // Добавили загрузку идей
+    ])
+    setProjects(pRes.data)
+    setTasks(tRes.data)
+    setTransactions(trRes.data)
+    setStats(sRes.data)
+    setNotes(nRes.data)  // Устанавливаем идеи
+  } catch (err: any) {
+    console.error("Ошибка синхронизации:", err)
+    if (err.response?.status === 401) {
+      setAuthError(true)
+      setToken(null)
+      localStorage.removeItem('synapse_token')
+    }
+  }
+  setLoading(false)
+}
+
+## 4. Добавить пункт в навигацию
+В навигационном меню добавить:
+<div className={`nav-link ${activeTab === 'ideas' ? 'active' : ''}`} onClick={() => setActiveTab('ideas')}>
+  <Lightbulb size={20} /> <span>Идеи</span>
+</div>
+
+## 5. Добавить заголовок для раздела
+В заголовках страницы добавить:
+{activeTab === 'ideas' && 'Банк Идей'}
+
+## 6. Добавить секцию для отображения идей
+В блоке AnimatePresence добавить после секции finance:
+{activeTab === 'ideas' && (
+  <div className="fade-in">
+    <h2 className="section-title">Банк Идей</h2>
+    <div className="glass card">
+      <div className="card-header">
+        <h3>Все идеи ({notes.length})</h3>
+      </div>
+      {notes.length === 0 ? (
+        <div className="empty-state">
+          <Lightbulb size={40} style={{ opacity: 0.3, marginBottom: '15px' }} />
+          <p>Идей пока нет. Отправьте сообщение в Telegram с идеей, и она появится здесь.</p>
+        </div>
+      ) : (
+        <div className="list-container">
+          {notes.map((note) => (
+            <div key={note.id} className="list-item" style={{ alignItems: 'flex-start' }}>
+              <div style={{ 
+                background: 'rgba(0, 242, 255, 0.1)', 
+                borderRadius: '8px', 
+                padding: '12px', 
+                flex: 1,
+                borderLeft: '3px solid var(--accent)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Lightbulb size={16} color="var(--accent)" />
+                    <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>
+                      {new Date(note.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <p style={{ margin: '10px 0', lineHeight: '1.6' }}>{note.content}</p>
+                {note.tags && note.tags.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                    {note.tags.map((tag, index) => (
+                      <span 
+                        key={index} 
+                        style={{
+                          background: 'rgba(0, 242, 255, 0.1)',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          color: 'var(--accent)'
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
