@@ -90,7 +90,7 @@ function App() {
     setAuthError(false)
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } }
-      const [pRes, tRes, trRes, sRes] = await Promise.all([
+      const [pRes, tRes, trRes, sRes, nRes] = await Promise.all([
         axios.get(`${BASE_URL}/projects`, config),
         axios.get(`${BASE_URL}/tasks`, config),
         axios.get(`${BASE_URL}/transactions`, config),
@@ -125,14 +125,15 @@ function App() {
     if (activeTab === 'finance' && token) {
       fetchFinanceAnalytics()
     }
+  }, [activeTab, token])
 
-    const toggleTask = async (id: string, completed: boolean) => {
-      try {
-        const config = { headers: { Authorization: `Bearer ${token}` } }
-        await axios.patch(`${BASE_URL}/tasks/${id}`, { is_completed: !completed }, config)
-        // After toggling, refresh tasks, but do not close the modal if it's open
-        await fetchAll()
-      } catch (err) {
+  const toggleTask = async (id: string, completed: boolean) => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } }
+      await axios.patch(`${BASE_URL}/tasks/${id}`, { is_completed: !completed }, config)
+      // After toggling, refresh tasks, but do not close the modal if it's open
+      await fetchAll()
+    } catch (err) {
       console.error("Ошибка обновления задачи:", err)
     }
   }
@@ -199,7 +200,7 @@ function App() {
               ) : (
                 <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
               )
-            )} */}
+            )}
             <div className="user-info">
               <div className="user-name">{user.full_name || 'Пользователь'}</div>
               <div className="user-handle">@{user.username || 'unknown'}</div>
