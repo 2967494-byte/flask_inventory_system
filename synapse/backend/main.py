@@ -384,6 +384,74 @@ async def get_transactions(db: AsyncSession = Depends(database.get_db), user: mo
     result = await db.execute(select(models.Transaction).where(models.Transaction.user_id == user.id).order_by(models.Transaction.date.desc()))
     return result.scalars().all()
 
+@app.get("/api/v1/notes")
+async def get_notes(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    result = await db.execute(
+        select(models.Note)
+        .where(models.Note.user_id == user.id)
+        .order_by(models.Note.created_at.desc())
+    )
+    notes = result.scalars().all()
+    
+    # Get projects for each note
+    notes_with_projects = []
+    for note in notes:
+        note_dict = {
+            "id": str(note.id),
+            "content": note.content,
+            "tags": note.tags or [],
+            "created_at": note.created_at.isoformat(),
+            "project": None
+        }
+        
+        if note.project_id:
+            p_result = await db.execute(
+                select(models.Project).where(models.Project.id == note.project_id)
+            )
+            project = p_result.scalar_one_or_none()
+            if project:
+                note_dict["project"] = {
+                    "id": str(project.id),
+                    "name": project.name
+                }
+        
+        notes_with_projects.append(note_dict)
+    
+    return notes_with_projects
+
+@app.get("/api/v1/notes/{note_id}")
+async def get_note(note_id: uuid.UUID, db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
+    result = await db.execute(
+        select(models.Note).where(
+            models.Note.id == note_id,
+            models.Note.user_id == user.id
+        )
+    )
+    note = result.scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    
+    note_dict = {
+        "id": str(note.id),
+        "content": note.content,
+        "tags": note.tags or [],
+        "created_at": note.created_at.isoformat(),
+        "project": None
+    }
+    
+    if note.project_id:
+        p_result = await db.execute(
+            select(models.Project).where(models.Project.id == note.project_id)
+        )
+        project = p_result.scalar_one_or_none()
+        if project:
+            note_dict["project"] = {
+                "id": str(project.id),
+                "name": project.name
+            }
+    
+    return note_dict
+
 @app.get("/api/v1/analytics/finance")
 async def get_finance_analytics(db: AsyncSession = Depends(database.get_db), user: models.User = Depends(get_current_user)):
     # Get all user transactions
