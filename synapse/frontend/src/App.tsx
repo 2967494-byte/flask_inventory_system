@@ -407,7 +407,7 @@ function App() {
                         Открыть проект
                       </button>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -527,7 +527,7 @@ function App() {
         </div>
       </main>
 
-      {/* Project Passport Modal */ }
+      {/* Project Passport Modal */}
       {selectedProject && (
         <div className="modal-overlay" onClick={() => setSelectedProject(null)}>
           <motion.div
@@ -788,231 +788,233 @@ function App() {
                 Сохранить паспорт
               </button>
             </div>
-          </div>
-        </motion.div>
-      </div>
-    )}
-
-    {/* Task Detail Modal */ }
-    {selectedTaskId && (
-      <div className="modal-overlay" onClick={() => setSelectedTaskId(null)}>
-        <motion.div
-          className="modal-content glass"
-          onClick={(e) => e.stopPropagation()}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={{ maxWidth: '700px' }}
-        >
-          {/* Task Detail Content will be loaded here */}
-          <div className="modal-header">
-            <div>
-              <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '5px' }}>{tasks.find(t => t.id === selectedTaskId)?.title || 'Детали задачи'}</h2>
-              <span className="status-badge">{projects.find(p => p.id === tasks.find(t => t.id === selectedTaskId)?.project_id)?.name || 'Личное'}</span>
-            </div>
-            <button className="close-btn" onClick={() => setSelectedTaskId(null)}>✕</button>
-          </div>
-          <div className="modal-body">
-            {/* Task details will be rendered here */}
-            <p>Loading task details...</p>
-          </div>
-        </motion.div>
-      </div>
-    )}
-
-    {/* Project Detail View */ }
-    {viewingProject && (
-        <div className="modal-overlay" onClick={() => setViewingProject(null)}>
-          <motion.div
-            className="modal-content glass"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{ maxWidth: '1000px' }}
-          >
-            <div className="modal-header">
-              <div>
-                <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '5px' }}>{viewingProject.name}</h2>
-                <span className="status-badge">{viewingProject.type}</span>
-              </div>
-              <button className="close-btn" onClick={() => setViewingProject(null)}>✕</button>
-            </div>
-
-            {/* Tabs */ }
-            <div style={{ display: 'flex', gap: '10px', padding: '0 30px', borderBottom: '1px solid rgba(0, 242, 255, 0.1)' }}>
-              {(['overview', 'tasks', 'finance', 'files'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setProjectViewTab(tab)}
-                  style={{
-                    padding: '12px 20px',
-                    background: projectViewTab === tab ? 'rgba(0, 242, 255, 0.1)' : 'transparent',
-                    border: 'none',
-                    borderBottom: projectViewTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
-                    color: projectViewTab === tab ? 'var(--accent)' : 'var(--text-dim)',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {tab === 'overview' && 'Обзор'}
-                  {tab === 'tasks' && `Задачи (${tasks.filter(t => t.project_id === viewingProject.id).length})`}
-                  {tab === 'finance' && 'Финансы'}
-                  {tab === 'files' && `Документы (${viewingProject.files?.length || 0})`}
-                </button>
-              ))}
-            </div>
-
-            <div className="modal-body">
-              {/* Overview Tab */}
-              {projectViewTab === 'overview' && (
-                <div>
-                  <h3 style={{ marginBottom: '20px' }}>Паспорт проекта</h3>
-                  {viewingProject.description && (
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Описание</label>
-                      <p style={{ marginTop: '5px', lineHeight: '1.6' }}>{viewingProject.description}</p>
-                    </div>
-                  )}
-                  {viewingProject.goals && (
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Цели</label>
-                      <p style={{ marginTop: '5px', lineHeight: '1.6' }}>{viewingProject.goals}</p>
-                    </div>
-                  )}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                    {viewingProject.deadline && (
-                      <div>
-                        <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Дедлайн</label>
-                        <p style={{ marginTop: '5px', fontSize: '16px', color: 'var(--accent)' }}>{new Date(viewingProject.deadline).toLocaleDateString()}</p>
-                      </div>
-                    )}
-                    {viewingProject.budget && (
-                      <div>
-                        <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Бюджет</label>
-                        <p style={{ marginTop: '5px', fontSize: '16px' }}>{viewingProject.budget} ₽</p>
-                      </div>
-                    )}
-                  </div>
-                  {viewingProject.progress !== undefined && (
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Прогресс: {viewingProject.progress}%</label>
-                      <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden', marginTop: '8px' }}>
-                        <div style={{ width: `${viewingProject.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), #00ff95)', transition: 'width 0.3s' }} />
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    className="action-btn"
-                    onClick={() => {
-                      setSelectedProject(viewingProject)
-                      setViewingProject(null)
-                    }}
-                  >
-                    Редактировать паспорт
-                  </button>
-                </div>
-              )}
-
-              {/* Tasks Tab */}
-              {projectViewTab === 'tasks' && (
-                <div>
-                  <h3 style={{ marginBottom: '20px' }}>Задачи проекта</h3>
-                  <div className="list-container">
-                    {tasks.filter(t => t.project_id === viewingProject.id).map(task => (
-                      <div key={task.id} className="list-item" onClick={() => toggleTask(task.id, task.is_completed)}>
-                        {task.is_completed ? <CheckCircle2 size={20} color="#00ff95" /> : <Circle size={20} color="var(--accent)" />}
-                        <div style={{ flex: 1, textDecoration: task.is_completed ? 'line-through' : 'none', opacity: task.is_completed ? 0.6 : 1 }}>
-                          {task.title}
-                          {task.due_date && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px' }}>
-                              Срок: {new Date(task.due_date).toLocaleDateString()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {tasks.filter(t => t.project_id === viewingProject.id).length === 0 && (
-                      <p className="empty-state">Нет задач по этому проекту</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Finance Tab */}
-              {projectViewTab === 'finance' && (
-                <div>
-                  <h3 style={{ marginBottom: '20px' }}>Финансы проекта</h3>
-                  <div className="list-container">
-                    {transactions.filter(t => t.project_id === viewingProject.id).map(tr => (
-                      <div key={tr.id} className="list-item">
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: '600' }}>{tr.category || 'Без категории'}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                            {new Date(tr.date).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '18px', fontWeight: '700', color: tr.type === 'income' ? '#00ff95' : '#ff4d4d' }}>
-                          {tr.type === 'income' ? '+' : '-'}{tr.amount} ₽
-                        </div>
-                      </div>
-                    ))}
-                    {transactions.filter(t => t.project_id === viewingProject.id).length === 0 && (
-                      <p className="empty-state">Нет финансовых операций по этому проекту</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Files Tab */ }
-              {projectViewTab === 'files' && (
-                <div>
-                  <h3 style={{ marginBottom: '20px' }}>Документы проекта</h3>
-                  {viewingProject.files && viewingProject.files.length > 0 ? (
-                    <div>
-                      {viewingProject.files.map((file: any) => (
-                        <div
-                          key={file.id}
-                          style={ {
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '15px',
-                            background: 'rgba(0, 0, 0, 0.2)',
-                            borderRadius: '8px',
-                            marginBottom: '10px'
-                          } }
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '14px', fontWeight: '600' }}>{file.name}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px' }}>
-                              Загружен: {new Date(file.uploaded_at).toLocaleString()}
-                            </div>
-                          </div>
-                          <button
-                            className="action-btn"
-                            style={{ fontSize: '12px', padding: '6px 14px' }}
-                            onClick={() => {
-                              const link = document.createElement('a')
-                              link.href = file.data
-                              link.download = file.name
-                              link.click()
-                            }}
-                          >
-                            Скачать
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="empty-state">Нет загруженных документов. Откройте паспорт проекта для загрузки.</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </motion.div>
         </div>
-      )}
+        </motion.div>
+      </div >
+    )
+}
+
+{/* Task Detail Modal */ }
+{
+  selectedTaskId && (
+    <div className="modal-overlay" onClick={() => setSelectedTaskId(null)}>
+      <motion.div
+        className="modal-content glass"
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        style={{ maxWidth: '700px' }}
+      >
+        {/* Task Detail Content will be loaded here */}
+        <div className="modal-header">
+          <div>
+            <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '5px' }}>{tasks.find(t => t.id === selectedTaskId)?.title || 'Детали задачи'}</h2>
+            <span className="status-badge">{projects.find(p => p.id === tasks.find(t => t.id === selectedTaskId)?.project_id)?.name || 'Личное'}</span>
+          </div>
+          <button className="close-btn" onClick={() => setSelectedTaskId(null)}>✕</button>
+        </div>
+        <div className="modal-body">
+          {/* Task details will be rendered here */}
+          <p>Loading task details...</p>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+{/* Project Detail View */ }
+{
+  viewingProject && (
+    <div className="modal-overlay" onClick={() => setViewingProject(null)}>
+      <motion.div
+        className="modal-content glass"
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        style={{ maxWidth: '1000px' }}
+      >
+        <div className="modal-header">
+          <div>
+            <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '5px' }}>{viewingProject.name}</h2>
+            <span className="status-badge">{viewingProject.type}</span>
+          </div>
+          <button className="close-btn" onClick={() => setViewingProject(null)}>✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '10px', padding: '0 30px', borderBottom: '1px solid rgba(0, 242, 255, 0.1)' }}>
+          {(['overview', 'tasks', 'finance', 'files'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setProjectViewTab(tab)}
+              style={{
+                padding: '12px 20px',
+                background: projectViewTab === tab ? 'rgba(0, 242, 255, 0.1)' : 'transparent',
+                border: 'none',
+                borderBottom: projectViewTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+                color: projectViewTab === tab ? 'var(--accent)' : 'var(--text-dim)',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '700',
+                transition: 'all 0.2s'
+              }}
+            >
+              {tab === 'overview' && 'Обзор'}
+              {tab === 'tasks' && `Задачи (${tasks.filter(t => t.project_id === viewingProject.id).length})`}
+              {tab === 'finance' && 'Финансы'}
+              {tab === 'files' && `Документы (${viewingProject.files?.length || 0})`}
+            </button>
+          ))}
+        </div>
+
+        <div className="modal-body">
+          {/* Overview Tab */}
+          {projectViewTab === 'overview' && (
+            <div>
+              <h3 style={{ marginBottom: '20px' }}>Паспорт проекта</h3>
+              {viewingProject.description && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Описание</label>
+                  <p style={{ marginTop: '5px', lineHeight: '1.6' }}>{viewingProject.description}</p>
+                </div>
+              )}
+              {viewingProject.goals && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Цели</label>
+                  <p style={{ marginTop: '5px', lineHeight: '1.6' }}>{viewingProject.goals}</p>
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                {viewingProject.deadline && (
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Дедлайн</label>
+                    <p style={{ marginTop: '5px', fontSize: '16px', color: 'var(--accent)' }}>{new Date(viewingProject.deadline).toLocaleDateString()}</p>
+                  </div>
+                )}
+                {viewingProject.budget && (
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Бюджет</label>
+                    <p style={{ marginTop: '5px', fontSize: '16px' }}>{viewingProject.budget} ₽</p>
+                  </div>
+                )}
+              </div>
+              {viewingProject.progress !== undefined && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Прогресс: {viewingProject.progress}%</label>
+                  <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden', marginTop: '8px' }}>
+                    <div style={{ width: `${viewingProject.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), #00ff95)', transition: 'width 0.3s' }} />
+                  </div>
+                </div>
+              )}
+              <button
+                className="action-btn"
+                onClick={() => {
+                  setSelectedProject(viewingProject)
+                  setViewingProject(null)
+                }}
+              >
+                Редактировать паспорт
+              </button>
+            </div>
+          )}
+
+          {/* Tasks Tab */}
+          {projectViewTab === 'tasks' && (
+            <div>
+              <h3 style={{ marginBottom: '20px' }}>Задачи проекта</h3>
+              <div className="list-container">
+                {tasks.filter(t => t.project_id === viewingProject.id).map(task => (
+                  <div key={task.id} className="list-item" onClick={() => toggleTask(task.id, task.is_completed)}>
+                    {task.is_completed ? <CheckCircle2 size={20} color="#00ff95" /> : <Circle size={20} color="var(--accent)" />}
+                    <div style={{ flex: 1, textDecoration: task.is_completed ? 'line-through' : 'none', opacity: task.is_completed ? 0.6 : 1 }}>
+                      {task.title}
+                      {task.due_date && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px' }}>
+                          Срок: {new Date(task.due_date).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {tasks.filter(t => t.project_id === viewingProject.id).length === 0 && (
+                  <p className="empty-state">Нет задач по этому проекту</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Finance Tab */}
+          {projectViewTab === 'finance' && (
+            <div>
+              <h3 style={{ marginBottom: '20px' }}>Финансы проекта</h3>
+              <div className="list-container">
+                {transactions.filter(t => t.project_id === viewingProject.id).map(tr => (
+                  <div key={tr.id} className="list-item">
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600' }}>{tr.category || 'Без категории'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                        {new Date(tr.date).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: tr.type === 'income' ? '#00ff95' : '#ff4d4d' }}>
+                      {tr.type === 'income' ? '+' : '-'}{tr.amount} ₽
+                    </div>
+                  </div>
+                ))}
+                {transactions.filter(t => t.project_id === viewingProject.id).length === 0 && (
+                  <p className="empty-state">Нет финансовых операций по этому проекту</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Files Tab */}
+          {projectViewTab === 'files' && (
+            <div>
+              <h3 style={{ marginBottom: '20px' }}>Документы проекта</h3>
+              {viewingProject.files && viewingProject.files.length > 0 ? (
+                <div>
+                  {viewingProject.files.map((file: any) => (
+                    <div
+                      key={file.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '15px',
+                        background: 'rgba(0, 0, 0, 0.2)',
+                        borderRadius: '8px',
+                        marginBottom: '10px'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{file.name}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px' }}>
+                          Загружен: {new Date(file.uploaded_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <button
+                        className="action-btn"
+                        style={{ fontSize: '12px', padding: '6px 14px' }}
+                        onClick={() => {
+                          const link = document.createElement('a')
+                          link.href = file.data
+                          link.download = file.name
+                          link.click()
+                        }}
+                      >
+                        Скачать
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-state">Нет загруженных документов. Откройте паспорт проекта для загрузки.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   )
 }
