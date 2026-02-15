@@ -195,12 +195,6 @@ function App() {
                 {user.full_name?.charAt(0) || user.username?.charAt(0) || '?'}
               </div>
             )}
-            {/* Удаляем этот блок, так как он дублируется ниже */}
-
-              ) : (
-                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
-              )
-            )}
             <div className="user-info">
               <div className="user-name">{user.full_name || 'Пользователь'}</div>
               <div className="user-handle">@{user.username || 'unknown'}</div>
