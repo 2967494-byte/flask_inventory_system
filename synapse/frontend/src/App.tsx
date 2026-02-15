@@ -195,9 +195,7 @@ function App() {
               </div>
             )}
             {/* Удаляем этот блок, так как он дублируется ниже */}
-            {/* {activeTab === 'ideas' && (
-              selectedIdeaId ? (
-                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
+
               ) : (
                 <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
               )
@@ -360,13 +358,7 @@ function App() {
                 </div>
               </div>
             )}
-            {activeTab === 'ideas' && (
-              selectedIdeaId ? (
-                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
-              ) : (
-                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
-              )
-            )}
+
             {activeTab === 'projects' && (
               <div className="fade-in">
                 <h2 className="section-title">Список Проектов</h2>
@@ -451,13 +443,7 @@ function App() {
                 </div>
               </div>
             )}
-            {activeTab === 'ideas' && (
-              selectedIdeaId ? (
-                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
-              ) : (
-                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
-              )
-            )}
+
             {activeTab === 'finance' && (
               <div className="fade-in">
                 <h2 className="section-title">Финансовая Аналитика</h2>
@@ -535,13 +521,7 @@ function App() {
                 </div>
               </div>
             )}
-            {activeTab === 'ideas' && (
-              selectedIdeaId ? (
-                <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} />
-              ) : (
-                <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
-              )
-            )}
+
           </AnimatePresence>
         </div>
       </main>
