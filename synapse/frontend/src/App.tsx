@@ -247,7 +247,13 @@ function App() {
               {activeTab === 'projects' && 'Реестр Проектов'}
               {activeTab === 'tasks' && 'Менеджер Задач'}
               {activeTab === 'finance' && 'Учет Потоков'}
-              {activeTab === 'ideas' && (selectedIdeaId ? 'Детали Идеи' : 'Банк Идей')}
+              {activeTab === 'ideas' && (
+                selectedIdeaId ? (
+                  <IdeaDetailView ideaId={selectedIdeaId} onBack={() => setSelectedIdeaId(null)} token={token} BASE_URL={BASE_URL} />
+                ) : (
+                  <IdeasSection notes={notes} projects={projects} onIdeaClick={handleIdeaClick} />
+                )
+              )}
             </h1>
           </div>
           <button className="action-btn" onClick={fetchAll}>
