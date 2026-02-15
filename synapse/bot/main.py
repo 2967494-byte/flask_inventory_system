@@ -37,14 +37,14 @@ async def cmd_login(message: Message):
     except: pass
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             headers = {
                 "X-Telegram-Id": str(message.from_user.id),
                 "X-User-Full-Name": message.from_user.full_name or "",
                 "X-User-Username": message.from_user.username or "",
                 "X-User-Photo": photo_url or ""
             }
-            response = await client.post(f"{API_URL}/auth/request-token", headers=headers)
+            response = await client.post(f"{API_URL}/auth/request-token", headers=headers, timeout=30.0)
             
             if response.status_code == 200:
                 token = response.json().get("token")
@@ -59,10 +59,14 @@ async def cmd_login(message: Message):
                     parse_mode="Markdown"
                 )
             else:
-                await message.answer("❌ Не удалось сгенерировать токен. Попробуйте позже.")
+                logging.error(f"Token generation failed: {response.status_code} - {response.text}")
+                await message.answer(f"❌ Не удалось сгенерировать токен. Код ошибки: {response.status_code}")
+    except httpx.TimeoutException:
+        logging.error("Login timeout")
+        await message.answer("❌ Превышено время ожидания ответа от сервера. Попробуйте позже.")
     except Exception as e:
         logging.error(f"Login error: {e}")
-        await message.answer("❌ Ошибка связи с сервером авторизации.")
+        await message.answer(f"❌ Ошибка связи с сервером авторизации: {str(e)}")
 
 @dp.message(F.voice)
 async def handle_voice(message: Message):
