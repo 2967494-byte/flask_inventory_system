@@ -476,7 +476,7 @@ function App() {
                   </div>
 
                   <div className="glass card">
-                    <h3 style={{ marginBottom: '20px' }}>Доходы  по категориям</h3>
+                    <h3 style={{ marginBottom: '20px' }}>Доходы по категориям</h3>
                     {financeAnalytics && financeAnalytics.categories.filter((c: any) => c.income > 0).length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
